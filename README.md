@@ -79,6 +79,24 @@ Designed with:
 
 ---
 
+---
+
+## 🧘 Guiding Koan
+
+> A supplier sends a PDF.  
+> The apprentice reads it with eyes.  
+> The master reads it with silence.  
+>
+> The apprentice asks, “Which field is required?”  
+> The master replies, “The one that is present.”  
+>
+> “How shall I validate truth?”  
+> “Do not chase it. Let structure reveal it.”  
+>
+> “And if it fails?”  
+> The master smiles. “All systems do.  
+> The wise one builds with grace in failure.”
+
 ## 📦 Release v1.0.0
 
 Production-ready.  
@@ -97,4 +115,21 @@ All contributions should honor the clarity, conciseness, and tone of the existin
 
 ## 📜 License
 
-MIT License — see [`LICENSE.txt`](LICENSE.txt)
+MIT License — see [`LICENSE.txt`](LICENSE.txt)---
+
+## 🖼 Vision Pipeline Integration
+
+This system supports automated ingestion of real-world PDFs using the Gemini Vision API.
+
+See `pdf_ingest/process_pdf.py` for a command-line tool that:
+1. Encodes a supplier PDF
+2. Calls Gemini Vision
+3. Extracts layout-aware text for downstream processing
+
+Use the text output as input to any of the `AGENT_PROMPT.txt` extraction workflows in V1–V3.
+
+---
+
+## 🧪 Samples
+
+See [`samples/`](samples/) for example PDF files and expected structured output.
