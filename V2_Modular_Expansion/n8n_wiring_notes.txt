@@ -1,0 +1,15 @@
+Node Layout for V2_Linear_Flow:
+
+1. IMAP Email Trigger
+2. PDF Extraction
+3. Supervisor Agent (Function)
+4. Metadata Extractor (LLM/HTTP Node)
+5. Required Field Checker
+6. Verifier Agent (LLM/HTTP Node)
+7. IF Node: Verified?
+   - Yes → Format Success Email
+   - No  → Format Failure Email
+8. Send Email (SMTP/SendGrid)
+9. Error Trigger Node (Global)
+
+Follow JSON schema rigorously for field matching.

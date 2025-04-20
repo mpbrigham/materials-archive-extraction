@@ -1,0 +1,12 @@
+Subject: ❌ Metadata Extraction Failed
+
+Dear Sender,
+
+We could not extract metadata from your PDF. Reason:
+
+{{ error_reason }}
+
+Please review the document and try again.
+
+Best,
+Materials Intake System

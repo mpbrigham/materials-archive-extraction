@@ -1,0 +1,9 @@
+Host: imap.example.com
+Port: 993
+Use SSL: true
+Username: materials-intake@example.com
+Password: ********
+
+Recommended:
+- Use OAuth or app-specific passwords
+- Monitor only the INBOX

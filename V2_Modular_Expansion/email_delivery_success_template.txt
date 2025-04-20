@@ -1,0 +1,10 @@
+Subject: ✅ Material Metadata Extracted
+
+Dear Sender,
+
+Your PDF was successfully processed. Attached is the structured metadata.
+
+[Attachment: metadata.json]
+
+Best,
+Materials Intake System
