@@ -1,45 +1,71 @@
-PROMPT DESIGN GUIDELINES
-=========================
+==============================
+PROMPT DESIGN GUIDELINES (v2)
+==============================
 
-“Form is emptiness. Emptiness is form.”
+1. ROLE DEFINITION
+------------------
+- Begin every prompt by explicitly stating the agent’s identity and operational responsibility.
+- Use assertive verbs: "Extract", "Validate", "Forward", "Reject".
 
-These guidelines focus on structure, content, and logic — the WHAT and WHY of each prompt.
+2. TASK OBJECTIVE
+-----------------
+- Define the agent's purpose in the context of the broader pipeline.
+- Include expected input and required output JSON object.
+- Specify task scope — do not overlap with downstream agent responsibilities.
 
-1. PURPOSE FIRST
-- Define the intent in 1–2 sentences before writing the prompt.
-- Ensure that every section supports this purpose.
-- Use explicit phrases like:
-  - "Your task is to..."
-  - "Return a JSON object conforming to the following schema..."
+3. STRUCTURED OUTPUT FORMAT
+---------------------------
+- Define exact keys and data types.
+- Always output a valid JSON object.
+- Use fallback markers when values are uncertain (e.g., null, "UNKNOWN").
 
-2. INPUT CLARITY
-- State exactly what the input is: PDF text, image captions, OCR output, etc.
-- Use format tags to separate input from instructions:
-  Input:
-  [text from PDF, OCR or layout-aware extraction]
+4. OUTPUT CONTRACT & FALLBACK STRATEGY
+--------------------------------------
+- All agent responses must return:
+  - `task_status`: "complete" | "partial" | "failed"
+  - `output_json`: full JSON object (may contain empty or null fields)
+  - `error_summary`: short, plain-language description (if applicable)
 
-  Task:
-  [structured instruction block]
+5. AGENT INTERFACE EXPECTATIONS
+-------------------------------
+Supervisor → Extractor:
+  {
+    "task": "extract_metadata",
+    "file_path": "...",
+    "document_type": "...",
+    "sender": "...",
+    "subject": "...",
+    "timestamp": "..."
+  }
 
-3. SCHEMA-FIRST OUTPUT
-- Provide a clear JSON schema if structured output is expected.
-- Only include optional fields if the agent is capable of graceful omission.
-- Use "omit if not found" instead of "null" to keep output lean.
+Extractor → Verifier:
+  {
+    "summary": "...",
+    "keywords": [...],
+    "name": "...",
+    ...
+  }
 
-4. EXTRACTION BEHAVIOR
-- Add behavioral rules in order of importance:
-  - "Use only what is explicitly present."
-  - "Do not hallucinate or infer missing values."
-  - "Preserve original casing and number formatting."
-  - "Omit fields not present."
+Verifier → Supervisor:
+  {
+    "verification_passed": true,
+    "reason": "...",
+    "cleaned_json": { full JSON }
+  }
 
-5. RESPONSE FORMAT
-- Be explicit:
-  - "Return a single JSON object. No extra text. No explanations."
-  - For flexibility: "Wrap all output in a code block using triple backticks."
+6. LAYOUT ANCHORING HIERARCHY
+-----------------------------
+1. Page Titles (centered, large font, bold)
+2. Repeated Headings (multi-page recurrence)
+3. Emphasized Phrases (bold, all-caps, large font)
+4. Section Labels (e.g., "Product Description", "Technical Data")
+5. Table Headers (only if emphasized or repeated elsewhere)
 
-6. ADAPTIVE STRATEGY
-- Optional: Include fallback logic or version toggling.
-- Example:
-  - "If schema fails, return minimal viable metadata set."
-  - "Use layout_type to choose from [Table, Brochure, Block]."
+7. FIELD ORDERING
+-----------------
+- Match schema field order exactly.
+- Group fields by logical category (e.g., performance, traceability).
+
+8. EXTRACTION FLAGS
+-------------------
+- Use flags like `is_archive_metadata = true` to skip non-target pages.

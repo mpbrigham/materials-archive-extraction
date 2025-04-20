@@ -1,48 +1,43 @@
-PROMPT STYLE GUIDELINES
-========================
+==============================
+PROMPT STYLE GUIDELINES (v2)
+==============================
 
-“The master does not shout. The prompt does not sprawl.”
+1. LANGUAGE AND TONE
+--------------------
+- Use precise, non-editorial language.
+- Avoid conversational phrases.
+- Always issue instructions in imperative form ("Extract...", "Do not...").
 
-These guidelines define tone, structure flow, and formatting best practices — the HOW and FEEL of your prompts.
+2. CONSISTENCY
+--------------
+- Always use double quotes in JSON examples.
+- Maintain consistent field naming and ordering.
+- Reuse exact terms from schema definitions.
 
-1. LANGUAGE
-- Use direct, polite, declarative tone.
-  Example: "Extract the following fields from this supplier document."
-- Avoid apologetics, hedging, or passive phrasing.
-- Never anthropomorphize unnecessarily.
+3. HALLUCINATION CONTROL
+------------------------
+- State explicitly: "Do not invent values not present in the document."
+- Prioritize layout-based, repeated, and emphasized information only.
+- If uncertain, omit the value or use fallback (`null`, `"UNKNOWN"`).
 
-2. SECTIONAL FORM
-Use this structure:
+4. CASING AND ORIGINALITY
+-------------------------
+- Preserve original casing from source layout (even if inconsistent).
+- Never normalize to lowercase, sentence case, or title case.
 
-System Instruction:
-[global rule set for the LLM or agent]
+5. KEYWORD INCLUSION LOGIC
+--------------------------
+Include only:
+- Repeated terms across sections
+- Visually emphasized terms (bold, all-caps, headers)
+- Phrases used as section titles or headings
 
-Input:
-[actual document content, OCR, or file reference]
+Exclude:
+- Terms found only in dense tables
+- Technical jargon without visual anchoring
 
-Schema:
-{ JSON schema here }
-
-Instructions:
-- Rule 1
-- Rule 2
-- Rule 3
-
-3. FORMATTING STANDARDS
-- Use consistent labels: Input, Instructions, Schema, Output format.
-- Prefer monospaced blocks for JSON or technical items.
-- Use --- or ### as separators when needed.
-
-4. LENGTH CONSIDERATIONS
-- Stay under 1.5K tokens for base prompt when possible.
-- Load examples only if behavior deviates from schema.
-- Use schema over sample data for clarity and compactness.
-
-5. VERSIONING
-- Add a version tag at the top:
-  Prompt Version: v1.2.0
-
-6. CONCISENESS WITH CLARITY
-- Every word earns its place. Remove fluff.
-- Clarity does not require verbosity.
-- Short, active sentences > long conditional blocks.
+6. PROMPT STRUCTURE
+-------------------
+- Start with: Agent Role → Task Objective → Input/Output Expectations → Rules → JSON Example
+- Separate sections with all-caps headers and horizontal dashes.
+- Always conclude with explicit formatting or validation rules.
