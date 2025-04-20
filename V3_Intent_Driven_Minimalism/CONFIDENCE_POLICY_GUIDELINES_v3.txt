@@ -1,0 +1,34 @@
+=================================
+CONFIDENCE POLICY GUIDELINES (v3)
+=================================
+
+1. Purpose:
+-----------
+Define agent behaviors based on confidence output from extraction models.
+
+2. ConfidenceEnvelope Interpretation:
+-------------------------------------
+- If confidence ≥ 0.9 and status == "ok": pass directly to verifier
+- If 0.7 ≤ confidence < 0.9 or status == "uncertain": mark for fallback/MVS reduction
+- If status == "fail" or confidence < 0.7: emit DocumentState = flagged
+
+3. Field-Level Behavior:
+------------------------
+Allow Verifier to override global CE based on field-level inconsistency.
+
+Example: confidence = 0.92, but fire_rating = "XYZ-9000" → status = flagged
+
+4. Minimum Viable Set (MVS):
+----------------------------
+If fallback is triggered, enforce this as the MVS:
+
+{
+  "name", "brand", "summary", "dimensions"
+}
+
+5. Audit Emission:
+------------------
+Each agent must log:
+- Input CE
+- CE override status (if applied)
+- Final CE after validation

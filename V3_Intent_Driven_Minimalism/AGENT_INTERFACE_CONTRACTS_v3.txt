@@ -1,0 +1,75 @@
+===============================
+AGENT INTERFACE CONTRACTS (v3)
+===============================
+
+1. MaterialExtractionRequest (MER)
+----------------------------------
+{
+  "request_id": "<uuid>",
+  "sender": "<email_address>",
+  "source_file_name": "<original_filename>",
+  "file_hash": "<sha256>",
+  "language": "<detected_lang>",
+  "timestamp": "<iso8601>",
+  "source_channel": "email" | "webhook",
+  "document_type_guess": "Datasheet" | "Catalogue" | ...
+}
+
+2. MaterialMetadataJSON (MMJ)
+-----------------------------
+{
+  "name": "...",
+  "brand": "...",
+  "category": "...",
+  "dimensions": "...",
+  "certifications": [...],
+  "performance": {
+    "thermal_resistance": "...",
+    "fire_rating": "...",
+    "acoustic_rating": "..."
+  },
+  "traceability": {
+    "origin_country": "...",
+    "production_batch": "..."
+  },
+  "summary": "...",
+  "keywords": [...],
+  "_metadata": {
+    "prompt_id": "...",
+    "model": "...",
+    "generated_ts": "..."
+  }
+}
+
+3. ConfidenceEnvelope (CE)
+---------------------------
+{
+  "confidence": 0.93,
+  "status": "ok" | "uncertain" | "fail",
+  "layout_signature": "brochure-style" | "tabular" | ...,
+  "layout_signature_confidence": 0.81
+}
+
+4. Verifier Output
+------------------
+{
+  "verification_passed": true | false,
+  "reason": "...",
+  "cleaned_json": { ... },
+  "field_level_validation_report": {
+    "dimensions": "plausible",
+    "fire_rating": "region mismatch",
+    ...
+  },
+  "verifier_agent_version": "v3.0.0"
+}
+
+5. Completion Manifest
+----------------------
+{
+  "document_state": "verified" | "flagged" | "completed",
+  "archive_uri": "<s3_or_fs_path>",
+  "feedback_token": "<uuid?>",
+  "delivery_channel": "email" | "webhook" | "api",
+  "delivered_ts": "<iso8601>"
+}

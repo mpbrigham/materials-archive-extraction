@@ -1,0 +1,40 @@
+============================
+STATE ENGINE SPEC (v3)
+============================
+
+1. Canonical States:
+---------------------
+- RECEIVED
+- INTERPRETED
+- VERIFIED
+- COMPLETED
+- FLAGGED
+
+2. Valid Transitions:
+----------------------
+RECEIVED → INTERPRETED → VERIFIED → COMPLETED
+             ↘                  ↘
+              FLAGGED           FLAGGED
+
+3. Event Recording:
+-------------------
+All transitions must be logged to `DocumentLifecycleLog`:
+
+{
+  "document_id": "...",
+  "state_from": "...",
+  "state_to": "...",
+  "timestamp": "...",
+  "agent": "...",
+  "notes": "optional reasoning"
+}
+
+4. State Invariants:
+---------------------
+- No reverse transitions
+- No silent terminal states
+- All transitions must be observable or reconstructable
+
+5. Streaming Option:
+---------------------
+If real-time telemetry is desired, emit state events to log stream or message queue.
