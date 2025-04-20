@@ -2,7 +2,9 @@
   "name": "V2 Modular Expansion",
   "nodes": [
     {
-      "parameters": {},
+      "parameters": {
+        "functionCode": "// Intake Agent logic placeholder\nreturn items;"
+      },
       "name": "Intake Agent",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
@@ -10,51 +12,59 @@
         200,
         300
       ],
-      "notes": "Intake Agent logic placeholder"
+      "notes": "This node simulates the behavior of the Intake Agent. Replace with actual logic or HTTP/API node as needed."
     },
     {
-      "parameters": {},
+      "parameters": {
+        "functionCode": "// Preprocessing Agent logic placeholder\nreturn items;"
+      },
       "name": "Preprocessing Agent",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        400,
+        450,
         300
       ],
-      "notes": "Preprocessing Agent logic placeholder"
+      "notes": "This node simulates the behavior of the Preprocessing Agent. Replace with actual logic or HTTP/API node as needed."
     },
     {
-      "parameters": {},
+      "parameters": {
+        "functionCode": "// Metadata Extraction Agent logic placeholder\nreturn items;"
+      },
       "name": "Metadata Extraction Agent",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        600,
+        700,
         300
       ],
-      "notes": "Metadata Extraction Agent logic placeholder"
+      "notes": "This node simulates the behavior of the Metadata Extraction Agent. Replace with actual logic or HTTP/API node as needed."
     },
     {
-      "parameters": {},
+      "parameters": {
+        "functionCode": "// Verifier Agent logic placeholder\nreturn items;"
+      },
       "name": "Verifier Agent",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        800,
+        950,
         300
       ],
-      "notes": "Verifier Agent logic placeholder"
+      "notes": "This node simulates the behavior of the Verifier Agent. Replace with actual logic or HTTP/API node as needed."
     },
     {
-      "parameters": {},
+      "parameters": {
+        "functionCode": "// Responder Agent logic placeholder\nreturn items;"
+      },
       "name": "Responder Agent",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        1000,
+        1200,
         300
       ],
-      "notes": "Responder Agent logic placeholder"
+      "notes": "This node simulates the behavior of the Responder Agent. Replace with actual logic or HTTP/API node as needed."
     }
   ],
   "connections": {

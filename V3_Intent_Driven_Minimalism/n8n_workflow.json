@@ -2,7 +2,9 @@
   "name": "V3 Intent-Driven Minimalism",
   "nodes": [
     {
-      "parameters": {},
+      "parameters": {
+        "functionCode": "// Intake Agent logic placeholder\nreturn items;"
+      },
       "name": "Intake Agent",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
@@ -10,40 +12,46 @@
         200,
         300
       ],
-      "notes": "Intake Agent logic placeholder"
+      "notes": "This node simulates the behavior of the Intake Agent. Replace with actual logic or HTTP/API node as needed."
     },
     {
-      "parameters": {},
+      "parameters": {
+        "functionCode": "// Interpreter Agent logic placeholder\nreturn items;"
+      },
       "name": "Interpreter Agent",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        400,
+        450,
         300
       ],
-      "notes": "Interpreter Agent logic placeholder"
+      "notes": "This node simulates the behavior of the Interpreter Agent. Replace with actual logic or HTTP/API node as needed."
     },
     {
-      "parameters": {},
+      "parameters": {
+        "functionCode": "// Verifier Agent logic placeholder\nreturn items;"
+      },
       "name": "Verifier Agent",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        600,
+        700,
         300
       ],
-      "notes": "Verifier Agent logic placeholder"
+      "notes": "This node simulates the behavior of the Verifier Agent. Replace with actual logic or HTTP/API node as needed."
     },
     {
-      "parameters": {},
+      "parameters": {
+        "functionCode": "// Outbound Agent logic placeholder\nreturn items;"
+      },
       "name": "Outbound Agent",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        800,
+        950,
         300
       ],
-      "notes": "Outbound Agent logic placeholder"
+      "notes": "This node simulates the behavior of the Outbound Agent. Replace with actual logic or HTTP/API node as needed."
     }
   ],
   "connections": {
