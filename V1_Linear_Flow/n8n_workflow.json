@@ -1,4 +1,72 @@
 {
-  "name": "V1_Linear_Flow Workflow",
-  "nodes": []
+  "name": "V1 Linear Flow",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Supervisor Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "notes": "Supervisor Agent logic placeholder"
+    },
+    {
+      "parameters": {},
+      "name": "Metadata Extraction Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ],
+      "notes": "Metadata Extraction Agent logic placeholder"
+    },
+    {
+      "parameters": {},
+      "name": "Verifier Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        600,
+        300
+      ],
+      "notes": "Verifier Agent logic placeholder"
+    },
+    {
+      "parameters": {},
+      "name": "Supervisor Response Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        800,
+        300
+      ],
+      "notes": "Supervisor Response Agent logic placeholder"
+    }
+  ],
+  "connections": {
+    "Supervisor Agent": [
+      {
+        "node": "Metadata Extraction Agent",
+        "type": "main",
+        "index": 0
+      }
+    ],
+    "Metadata Extraction Agent": [
+      {
+        "node": "Verifier Agent",
+        "type": "main",
+        "index": 0
+      }
+    ],
+    "Verifier Agent": [
+      {
+        "node": "Supervisor Response Agent",
+        "type": "main",
+        "index": 0
+      }
+    ]
+  }
 }

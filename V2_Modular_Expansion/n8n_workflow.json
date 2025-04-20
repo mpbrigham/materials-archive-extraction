@@ -1,4 +1,90 @@
 {
-  "name": "V2_Modular_Expansion Workflow",
-  "nodes": []
+  "name": "V2 Modular Expansion",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Intake Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "notes": "Intake Agent logic placeholder"
+    },
+    {
+      "parameters": {},
+      "name": "Preprocessing Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ],
+      "notes": "Preprocessing Agent logic placeholder"
+    },
+    {
+      "parameters": {},
+      "name": "Metadata Extraction Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        600,
+        300
+      ],
+      "notes": "Metadata Extraction Agent logic placeholder"
+    },
+    {
+      "parameters": {},
+      "name": "Verifier Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        800,
+        300
+      ],
+      "notes": "Verifier Agent logic placeholder"
+    },
+    {
+      "parameters": {},
+      "name": "Responder Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        300
+      ],
+      "notes": "Responder Agent logic placeholder"
+    }
+  ],
+  "connections": {
+    "Intake Agent": [
+      {
+        "node": "Preprocessing Agent",
+        "type": "main",
+        "index": 0
+      }
+    ],
+    "Preprocessing Agent": [
+      {
+        "node": "Metadata Extraction Agent",
+        "type": "main",
+        "index": 0
+      }
+    ],
+    "Metadata Extraction Agent": [
+      {
+        "node": "Verifier Agent",
+        "type": "main",
+        "index": 0
+      }
+    ],
+    "Verifier Agent": [
+      {
+        "node": "Responder Agent",
+        "type": "main",
+        "index": 0
+      }
+    ]
+  }
 }

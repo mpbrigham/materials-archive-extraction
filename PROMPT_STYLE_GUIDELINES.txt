@@ -1,0 +1,48 @@
+PROMPT STYLE GUIDELINES
+========================
+
+“The master does not shout. The prompt does not sprawl.”
+
+These guidelines define tone, structure flow, and formatting best practices — the HOW and FEEL of your prompts.
+
+1. LANGUAGE
+- Use direct, polite, declarative tone.
+  Example: "Extract the following fields from this supplier document."
+- Avoid apologetics, hedging, or passive phrasing.
+- Never anthropomorphize unnecessarily.
+
+2. SECTIONAL FORM
+Use this structure:
+
+System Instruction:
+[global rule set for the LLM or agent]
+
+Input:
+[actual document content, OCR, or file reference]
+
+Schema:
+{ JSON schema here }
+
+Instructions:
+- Rule 1
+- Rule 2
+- Rule 3
+
+3. FORMATTING STANDARDS
+- Use consistent labels: Input, Instructions, Schema, Output format.
+- Prefer monospaced blocks for JSON or technical items.
+- Use --- or ### as separators when needed.
+
+4. LENGTH CONSIDERATIONS
+- Stay under 1.5K tokens for base prompt when possible.
+- Load examples only if behavior deviates from schema.
+- Use schema over sample data for clarity and compactness.
+
+5. VERSIONING
+- Add a version tag at the top:
+  Prompt Version: v1.2.0
+
+6. CONCISENESS WITH CLARITY
+- Every word earns its place. Remove fluff.
+- Clarity does not require verbosity.
+- Short, active sentences > long conditional blocks.

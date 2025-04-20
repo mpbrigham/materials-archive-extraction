@@ -1,0 +1,45 @@
+PROMPT DESIGN GUIDELINES
+=========================
+
+“Form is emptiness. Emptiness is form.”
+
+These guidelines focus on structure, content, and logic — the WHAT and WHY of each prompt.
+
+1. PURPOSE FIRST
+- Define the intent in 1–2 sentences before writing the prompt.
+- Ensure that every section supports this purpose.
+- Use explicit phrases like:
+  - "Your task is to..."
+  - "Return a JSON object conforming to the following schema..."
+
+2. INPUT CLARITY
+- State exactly what the input is: PDF text, image captions, OCR output, etc.
+- Use format tags to separate input from instructions:
+  Input:
+  [text from PDF, OCR or layout-aware extraction]
+
+  Task:
+  [structured instruction block]
+
+3. SCHEMA-FIRST OUTPUT
+- Provide a clear JSON schema if structured output is expected.
+- Only include optional fields if the agent is capable of graceful omission.
+- Use "omit if not found" instead of "null" to keep output lean.
+
+4. EXTRACTION BEHAVIOR
+- Add behavioral rules in order of importance:
+  - "Use only what is explicitly present."
+  - "Do not hallucinate or infer missing values."
+  - "Preserve original casing and number formatting."
+  - "Omit fields not present."
+
+5. RESPONSE FORMAT
+- Be explicit:
+  - "Return a single JSON object. No extra text. No explanations."
+  - For flexibility: "Wrap all output in a code block using triple backticks."
+
+6. ADAPTIVE STRATEGY
+- Optional: Include fallback logic or version toggling.
+- Example:
+  - "If schema fails, return minimal viable metadata set."
+  - "Use layout_type to choose from [Table, Brochure, Block]."

@@ -1,0 +1,50 @@
+GETTING STARTED
+===============
+
+Welcome to the Intelligent Materials Intake System (IMIS). This guide helps you quickly launch and test the intelligent intake pipelines (V1–V3).
+
+WHAT YOU NEED
+-------------
+- n8n (https://n8n.io) running locally or in Docker
+- Python 3.x environment with Flask installed
+- This archive unzipped in your workspace
+
+QUICKSTART INSTRUCTIONS
+-----------------------
+
+1. Install Flask:
+   pip install flask
+
+2. Start the webhook server:
+   cd V1_Linear_Flow/
+   python webhook_handler.py
+
+3. Import a workflow:
+   - Open n8n
+   - Import `n8n_workflow.json` from any version folder
+
+4. Test the flow:
+   - Send sample input (OCR or JSON) to the webhook URL
+   - Observe the flow through Extraction, Verification, and Response
+
+FOLDER STRUCTURE
+----------------
+- V1_Linear_Flow/
+- V2_Modular_Expansion/
+- V3_Intent_Driven_Minimalism/
+- PROMPT_DESIGN_GUIDELINES.txt
+- PROMPT_STYLE_GUIDELINES.txt
+- OBSERVER_ECHO.txt
+- PROJECT_VISION.txt
+- LICENSE.txt
+- CONTRIBUTING.txt
+
+FOR MORE INFO
+-------------
+Each version folder contains:
+- README.md (logic + usage)
+- AGENT_PROMPT.txt (LLM prompt)
+- n8n_workflow.json (workflow)
+- webhook_handler.py (API entry point)
+
+Enjoy building intelligence with intent.

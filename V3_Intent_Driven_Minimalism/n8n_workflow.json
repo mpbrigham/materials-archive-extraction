@@ -1,4 +1,72 @@
 {
-  "name": "V3_Intent_Driven_Minimalism Workflow",
-  "nodes": []
+  "name": "V3 Intent-Driven Minimalism",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Intake Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "notes": "Intake Agent logic placeholder"
+    },
+    {
+      "parameters": {},
+      "name": "Interpreter Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ],
+      "notes": "Interpreter Agent logic placeholder"
+    },
+    {
+      "parameters": {},
+      "name": "Verifier Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        600,
+        300
+      ],
+      "notes": "Verifier Agent logic placeholder"
+    },
+    {
+      "parameters": {},
+      "name": "Outbound Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        800,
+        300
+      ],
+      "notes": "Outbound Agent logic placeholder"
+    }
+  ],
+  "connections": {
+    "Intake Agent": [
+      {
+        "node": "Interpreter Agent",
+        "type": "main",
+        "index": 0
+      }
+    ],
+    "Interpreter Agent": [
+      {
+        "node": "Verifier Agent",
+        "type": "main",
+        "index": 0
+      }
+    ],
+    "Verifier Agent": [
+      {
+        "node": "Outbound Agent",
+        "type": "main",
+        "index": 0
+      }
+    ]
+  }
 }

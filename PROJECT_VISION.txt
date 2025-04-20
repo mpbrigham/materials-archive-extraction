@@ -1,0 +1,15 @@
+PROJECT VISION
+==============
+
+The Intelligent Materials Intake System (IMIS) is a modular, scalable, and graceful architecture
+designed to automate the extraction, structuring, and validation of metadata from architectural
+material supplier PDFs. Its purpose is not merely automation—but to set a new standard for elegance,
+resilience, and clarity in prompt-engineered agent workflows.
+
+Three versions are presented as a case study of evolution:
+- V1: Linear logic, fast to implement
+- V2: Modular expansion, highly expressive
+- V3: Intent-driven minimalism, future-aligned
+
+This repository serves as both a production-ready toolkit and a teaching artifact—for architects
+of data, intelligence, and language.
