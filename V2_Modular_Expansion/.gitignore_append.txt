@@ -1,0 +1,4 @@
+# Do not commit secrets
+.env
+imap_settings_secure_template.env
+*.pem
