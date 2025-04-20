@@ -1,0 +1,19 @@
+[
+  {
+    "document_id": "abc-123",
+    "state_from": "RECEIVED",
+    "state_to": "INTERPRETED",
+    "timestamp": "2025-04-21T08:00:00Z",
+    "agent": "intake_agent_v3",
+    "notes": "Initial receipt and format detection passed."
+  },
+  {
+    "document_id": "abc-123",
+    "state_from": "INTERPRETED",
+    "state_to": "VERIFIED",
+    "timestamp": "2025-04-21T08:01:00Z",
+    "agent": "verifier_agent_v3",
+    "notes": "All fields passed schema and semantic checks."
+  },
+  ...
+]

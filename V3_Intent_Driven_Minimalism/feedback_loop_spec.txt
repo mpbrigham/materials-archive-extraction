@@ -1,0 +1,24 @@
+# Feedback Loop Specification
+
+1. Feedback Token:
+   - Each MER or Completion Manifest may optionally include a `feedback_token` (UUID).
+   - This token links responses back to the originator or system for correction flow.
+
+2. Feedback Intake:
+   - Implement an inbox, webhook, or annotation interface to receive human corrections or comments.
+
+3. Feedback Payload Example:
+{
+  "feedback_token": "<uuid>",
+  "document_id": "<document_id>",
+  "corrections": {
+    "dimensions": "1200x600 mm",
+    "origin_country": "France"
+  },
+  "comment": "Fire rating seems incorrect. Please verify with updated supplier sheet."
+}
+
+4. Routing:
+   - Feedback is routed back to either:
+     a. Verifier Agent for re-validation
+     b. Archive note for traceable override

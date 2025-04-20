@@ -1,0 +1,14 @@
+# Prompt Versioning Strategy
+
+Each prompt must include a metadata block in its output, as part of the MaterialMetadataJSON (_metadata section):
+
+{
+  "_metadata": {
+    "prompt_id": "v3-layout-schema-A",
+    "model": "gemini-pro-vision-2024-04",
+    "generated_ts": "<iso8601>"
+  }
+}
+
+- This enables traceability of LLM behavior.
+- Prompt versioning should be incremented when schema or layout logic changes.
