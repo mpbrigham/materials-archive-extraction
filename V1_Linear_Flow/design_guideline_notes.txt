@@ -1,6 +1,0 @@
-- Prompts must start with role identity and task summary.
-- Prefer list-based instructions for extraction rules.
-- Use double quotes in JSON field labels and values.
-- Maintain field ordering as defined in the canonical schema.
-- Avoid rhetorical instructions and conversational tones.
-- Ensure output is machine-readable and aligns to schema constraints.
