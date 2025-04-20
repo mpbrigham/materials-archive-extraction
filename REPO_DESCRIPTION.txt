@@ -1,0 +1,3 @@
+Standardized LLM-powered PDF intake system for architectural materials.
+Includes modular pipelines (V1–V3) with prompts, workflows, and webhook scaffolds.
+Designed to extract, validate, and deliver structured material metadata using best practices.

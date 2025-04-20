@@ -1,0 +1,16 @@
+REPOSITORY METADATA
+====================
+
+Description:
+Standardized LLM-powered PDF intake system for architectural materials. 
+Modular pipelines (V1–V3) + prompts, workflows, and webhook scaffolds.
+
+Suggested GitHub Topics:
+llm
+n8n
+document-extraction
+architecture
+prompt-engineering
+pdf-processing
+metadata-extraction
+agent-orchestration

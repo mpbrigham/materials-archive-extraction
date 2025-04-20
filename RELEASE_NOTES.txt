@@ -1,0 +1,19 @@
+RELEASE v1.0.0
+==============
+
+This is the first stable, production-ready release of the Intelligent Materials Intake System (IMIS).
+
+Includes:
+- Modular pipelines V1, V2, V3
+- Webhook scaffolds and LLM agent prompts
+- n8n workflow templates with annotations
+- Prompt design and style guidelines
+- Vision, contribution, license, and koan documents
+- Getting Started guide for operators
+- Observer reflections and project structure documentation
+
+Recommended:
+- Tag this as version v1.0.0 in GitHub
+- Enable Releases tab and attach this ZIP archive
+
+Released: 2025-04-20
