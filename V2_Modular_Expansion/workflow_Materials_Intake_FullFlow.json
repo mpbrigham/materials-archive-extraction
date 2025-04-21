@@ -1,0 +1,274 @@
+{
+  "name": "Materials Intake V2 Full Flow",
+  "nodes": [
+    {
+      "parameters": {
+        "protocol": "IMAP",
+        "host": "={{ $env.IMAP_HOST }}",
+        "port": "={{ $env.IMAP_PORT }}",
+        "secure": true,
+        "mailbox": "INBOX",
+        "downloadAttachments": true,
+        "attachmentPrefix": "attachment_",
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "ignoreTextEncoding": false
+        }
+      },
+      "id": "1",
+      "name": "IMAP Email Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "extract": "text"
+        }
+      },
+      "id": "2",
+      "name": "Extract From PDF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        300,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.intakeOrchestratorAgent(items, runIndex);"
+      },
+      "id": "3",
+      "name": "Intake Orchestrator Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        500,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.preprocessingAgent(items, runIndex);"
+      },
+      "id": "4",
+      "name": "Preprocessing Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        700,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "url": "={{ $env.LLM_API_ENDPOINT }}",
+        "jsonParameters": true,
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "response": {
+            "response": {
+              "maxResponseSize": 10485760,
+              "responseFormat": "json",
+              "responseType": "json"
+            }
+          }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.LLM_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "={{ $env.LLM_MODEL }}"
+            },
+            {
+              "name": "temperature",
+              "value": 0.2
+            },
+            {
+              "name": "messages",
+              "value": "={{ [\n  {\n    \"role\": \"system\",\n    \"content\": $node[\"Read Prompt\"].json[\"prompt\"]\n  },\n  {\n    \"role\": \"user\",\n    \"content\": $node[\"Extract From PDF\"].json[\"text\"]\n  }\n] }}"
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "Call Metadata Extractor LLM API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        900,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "filePath": "={{ $env.PROMPTS_PATH }}/metadata_extraction_prompt.txt"
+      },
+      "id": "6",
+      "name": "Read Prompt",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        700,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.metadataExtractionProcessor(items, runIndex);"
+      },
+      "id": "7",
+      "name": "Process LLM Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json[\"task_status\"] }}",
+              "operation": "notEqual",
+              "value2": "failed"
+            }
+          ]
+        }
+      },
+      "id": "8",
+      "name": "IF Not Failed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.verifierAgent(items, runIndex);"
+      },
+      "id": "9",
+      "name": "Verifier Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        50
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.supervisorResponseAgent(items, runIndex);"
+      },
+      "id": "10",
+      "name": "Supervisor Response Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.SMTP_USER }}",
+        "toEmail": "={{ $json[\"to\"] }}",
+        "subject": "={{ $json[\"subject\"] }}",
+        "text": "={{ $json[\"body\"] }}",
+        "options": {
+          "attachments": "={{ $json[\"attachments\"] }}"
+        }
+      },
+      "id": "11",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.documentLifecycleLogger(items, runIndex);"
+      },
+      "id": "12",
+      "name": "Log Document Lifecycle",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "channel": "={{ $env.SLACK_CHANNEL_ID }}",
+        "text": "=Document processed: {{ $json.document_id }}\nStatus: {{ $json.verification_passed ? 'Success ✅' : 'Failed ❌' }}\nSummary: {{ $json.validation_report.summary }}"
+      },
+      "id": "13",
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        2100,
+        250
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "1",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataPropertyName": "error",
+        "errorMessage": "=Document Processor Error: {{ $json.error_message || 'Unknown error' }}"
+      },
+      "id": "14",
+      "name": "Global Error Handler",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "error_message",
+              "value": "={{ $json.error }}"
+            },
+            {
+              "name": "document_id",
+              "value": "={{ $json.
