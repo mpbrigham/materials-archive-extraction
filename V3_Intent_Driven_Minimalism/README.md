@@ -1,20 +1,24 @@
 # V3 – Intent-Driven Minimalism
 
-This is the production-grade design for the IMIS pipeline, built on modular, stateless agent contracts with context-aware routing.
+Production-grade IMIS pipeline using intent-routing, fallback logic, and modular prompts.
 
-## Design Highlights
+## Flow Diagram
 
+```mermaid
+flowchart TD
+    A[IN: Email/Webhook] --> B[Intake Agent]
+    B --> C[Interpreter Agent]
+    C --> D{Confidence OK?}
+    D -->|Yes| E[Verifier Agent]
+    D -->|No| F[Fallback to MVS]
+    E --> G{All Verified?}
+    G -->|Yes| H[Outbound Agent → Archive + Email]
+    G -->|No| I[Flagged → Feedback Email]
+```
+
+## Highlights
+
+- CE scoring and fallback routing
+- Prompt versioning metadata
+- Audit trail via DocumentLifecycleLog
 - Stateless-by-default, state-aware-by-design
-- CE-driven fallback (ok | uncertain | fail)
-- All messages carry intent + context
-- Prompt routing based on layout signature
-- Versioned prompt metadata
-
-## Full Support Includes
-
-- `DocumentLifecycleLog_template.json`
-- `AGENT_INTERFACE_CONTRACTS_v3.txt`
-- `CONFIDENCE_POLICY_GUIDELINES_v3.txt`
-- `feedback_loop_spec.txt`
-
-This is the recommended base for scale deployment.

@@ -6,16 +6,16 @@ This version represents the first functional pipeline prototype with a simple, l
 
 Supervisor → Metadata Extractor → Verifier → Response
 
-Each agent operates in sequence and uses a tightly scoped prompt.
+```mermaid
+flowchart TD
+    A[Supervisor Agent] --> B[Metadata Extraction Agent]
+    B --> C[Verifier Agent]
+    C --> D[Supervisor Response Agent]
+```
 
-## Updates (Post-Patch)
+## Post-Patch Additions
 
 - ✅ ConfidenceEnvelope-based fallback to MVS
-- ✅ Prompt metadata (prompt_id, model_version) embedded in outputs
-- ✅ DocumentLifecycleLog for state traceability
-- ✅ Optional feedback handling via manual email routing
-
-## Limitations
-
-- Synchronous only
-- Minimal failure recovery
+- ✅ Prompt metadata (prompt_id, model_version)
+- ✅ DocumentLifecycleLog logging
+- ✅ Manual feedback support

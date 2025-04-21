@@ -1,21 +1,23 @@
 # V2 Modular Expansion – Intelligent Materials Intake System (IMIS)
 
-This version introduces modular, resilient agent design with observability and fallback logic.
+This version introduces modular agent design with observability and fallback logic.
 
-## Pipeline Overview
+## Workflow
 
-- Intake Orchestrator
-- Preprocessing Agent
-- Metadata Extraction Agent
-- Verifier Agent
-- Supervisor Response Agent
+```mermaid
+flowchart TD
+    A[Intake Orchestrator] --> B[Preprocessing Agent]
+    B --> C{Valid File?}
+    C -->|Yes| D[Metadata Extraction Agent]
+    C -->|No| E[Routing Error Handler]
+    D --> F[Verifier Agent]
+    F --> G[Supervisor Response Agent]
+```
 
-## Key Features
+## Features
 
-- ✅ Asynchronous agent flow
-- ✅ ConfidenceEnvelope with fallback to MVS
-- ✅ Prompt metadata + version tracking
-- ✅ Lifecycle event logging
-- ✅ Feedback loop support
-
-See: STATE_ENGINE_SPEC_v2.txt, CONFIDENCE_POLICY_GUIDELINES_v2.txt
+- Asynchronous orchestration
+- Fallback logic (CE-driven)
+- Prompt versioning
+- Feedback loop support
+- DocumentLifecycleLog enabled
