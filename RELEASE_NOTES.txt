@@ -1,19 +1,18 @@
-RELEASE v1.0.0
-==============
+# IMIS Release Notes
 
-This is the first stable, production-ready release of the Intelligent Materials Intake System (IMIS).
+## v3.0 (2025-04-21)
+- Finalized V3 pipeline with intent-driven routing
+- CE fallback logic, prompt versioning, full lifecycle logging
+- Markdown alignment and README upgrades complete
 
-Includes:
-- Modular pipelines V1, V2, V3
-- Webhook scaffolds and LLM agent prompts
-- n8n workflow templates with annotations
-- Prompt design and style guidelines
-- Vision, contribution, license, and koan documents
-- Getting Started guide for operators
-- Observer reflections and project structure documentation
+## v2.1 (2025-04-19)
+- Introduced agent modularity and fallback MVS strategy
+- Added prompt version tracking and state logging
 
-Recommended:
-- Tag this as version v1.0.0 in GitHub
-- Enable Releases tab and attach this ZIP archive
+## v1.2 (2025-04-17)
+- Implemented CE threshold fallback
+- Added verifier logging and correction handling
 
-Released: 2025-04-20
+## v1.0 (Initial Prototype)
+- Supervisor → Extractor → Verifier → Responder
+- Static prompts, direct JSON return

@@ -1,16 +1,12 @@
-REPOSITORY METADATA
-====================
-
-Description:
-Standardized LLM-powered PDF intake system for architectural materials. 
-Modular pipelines (V1–V3) + prompts, workflows, and webhook scaffolds.
-
-Suggested GitHub Topics:
-llm
-n8n
-document-extraction
-architecture
-prompt-engineering
-pdf-processing
-metadata-extraction
-agent-orchestration
+{
+  "project": "IMIS",
+  "owner": "mpbrigham",
+  "versions": ["V1_Linear_Flow", "V2_Modular_Expansion", "V3_Intent_Driven_Minimalism"],
+  "default_version": "V3_Intent_Driven_Minimalism",
+  "last_updated": "2025-04-21T00:00:00Z",
+  "prompt_guidelines": {
+    "design": "PROMPT_DESIGN_GUIDELINES.txt",
+    "style": "PROMPT_STYLE_GUIDELINES.txt"
+  },
+  "observer_active": true
+}
