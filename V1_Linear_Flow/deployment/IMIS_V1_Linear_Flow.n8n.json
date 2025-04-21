@@ -1,0 +1,211 @@
+{
+  "name": "IMIS_V1_Linear_Flow",
+  "nodes": [
+    {
+      "parameters": {
+        "downloadAttachments": true,
+        "options": {
+          "onlyDownloadAttachmentsWithMimeType": "application/pdf"
+        },
+        "mailbox": "={{ $env.IMAP_MAILBOX }}"
+      },
+      "name": "IMAP Email Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "credentials": {
+        "imap": {
+          "user": "={{ $env.IMAP_USER }}",
+          "password": "={{ $env.IMAP_PASS }}",
+          "host": "={{ $env.IMAP_HOST }}",
+          "port": "={{ $env.IMAP_PORT }}",
+          "secure": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Supervisor Agent Function Node Implementation\nconst supervisorAgent = function(items, runIndex) {\n  // Input validation\n  if (!items || items.length === 0) {\n    throw new Error(\"No items received by Supervisor Agent\");\n  }\n  \n  const item = items[0];\n  \n  // Validate that we have PDF content\n  if (!item.binary || !item.binary.attachment_1 || !item.binary.attachment_1.mimeType !== 'application/pdf') {\n    return {\n      json: {\n        task_status: \"failed\",\n        error_summary: \"Invalid or missing PDF attachment\",\n        document_id: `doc-${Date.now()}`,\n        from_state: \"RECEIVED\",\n        to_state: \"FAILED\",\n        timestamp: new Date().toISOString(),\n        agent: \"supervisor_agent_v1\",\n        notes: \"Missing PDF or invalid format\"\n      }\n    };\n  }\n  \n  // Extract email metadata\n  const sender = item.json.from || \"unknown_sender\";\n  const subject = item.json.subject || \"No Subject\";\n  const timestamp = new Date().toISOString();\n  const document_id = `doc-${Date.now()}-${sender.replace(/[^a-zA-Z0-9]/g, '')}`;\n  \n  // Determine language (simplified - expand as needed)\n  let language = \"en\";\n  if (subject.match(/\\b(nl|dutch|nederlands)\\b/i)) {\n    language = \"nl\";\n  } else if (subject.match(/\\b(de|german|deutsch)\\b/i)) {\n    language = \"de\";\n  }\n  \n  // Create document lifecycle log entry\n  const logEntry = {\n    document_id: document_id,\n    from_state: \"RECEIVED\",\n    to_state: \"INTERPRETED\",\n    timestamp: timestamp,\n    agent: \"supervisor_agent_v1\",\n    not // (truncated for brevity)"
+      },
+      "name": "Supervisor Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "model": "={{ $env.LLM_MODEL }}",
+        "endpoint": "={{ $env.LLM_API_ENDPOINT }}",
+        "authentication": "headerAuth",
+        "headerParameters": {
+          "Authorization": "Bearer {{$env.LLM_API_KEY}}"
+        },
+        "bodyParameters": {
+          "prompt": "You are the Metadata Extraction Agent for a design materials library. Your task is to extract structured metadata from a supplier's material document (PDF) using OCR and layout analysis.\n\nEXTRACTION RULES:\n- Use layout positioning, visual hierarchy, and repeated labels to guide field mapping.\n- Extract contextual metadata only if emphasized or repeated.\n- Preserve original casing for all labels and entries.\n- Skip pages marked as archive-only (`is_archive_metadata = true`).\n- Extract summary and keywords first, before structured fields.\n\nEXTRACT THE FOLLOWING FIELDS:\n{\n  \"name\": \"Name of the material as prominently stated by the supplier\",\n  \"brand\": \"Brand or company name\",\n  \"category\": \"Material category (e.g., Wood, Metal, Textile)\",\n  \"dimensions\": \"e.g., 2400x1200 mm or \u00d850 mm\",\n  \"certifications\": [\"ISO 14001\", \"FSC\", ...],\n  \"performance\": {\n    \"thermal_resistance\": \"R-value, if available\",\n    \"fire_rating\": \"EN standard or national rating\",\n    \"acoustic_rating\": \"If applicable\"\n  },\n  \"asset_urls\": [\"Public URLs of datasheets, images, etc.\"],\n  \"traceability\": {\n    \"origin_country\": \"Where the material is sourced\",\n    \"production_batch\": \"Lot or batch number\"\n  },\n  \"summary\": \"Concise overview of the material\",\n  \"keywords\": [\"Repeated, emphasized terms relevant to search/discovery\"]\n}..."
+        }
+      },
+      "name": "Metadata Extraction",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.filter(item => {\n  return item.json && item.json.name && item.json.brand && item.json.category;\n});"
+      },
+      "name": "Validate Required Fields",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "webhookUrl": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "{\"text\": \"Metadata successfully extracted for {{$json.document_id}}.\"}"
+      },
+      "name": "Send Slack Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "model": "={{ $env.LLM_MODEL }}",
+        "endpoint": "={{ $env.LLM_API_ENDPOINT }}",
+        "authentication": "headerAuth",
+        "headerParameters": {
+          "Authorization": "Bearer {{$env.LLM_API_KEY}}"
+        },
+        "bodyParameters": {
+          "prompt": "You are the Verifier Agent responsible for validating extracted metadata from a supplier's material document.\n\nOBJECTIVE:\nEnsure JSON output from the Metadata Extraction Agent is complete, accurate, and conforms to schema expectations.\n\nVALIDATION RULES:\n- All required fields must be present and non-empty\n- 'dimensions' must follow known formats (e.g., 2400x1200 mm, \u00d850 mm)\n- 'certifications' must be a non-empty array of recognized standards\n- 'performance' subfields must include at least one of thermal, fire, or acoustic rating\n- 'traceability.origin_country' must be a valid country name\n- 'keywords' must contain at least 2 unique items\n- Field values must match original casing from the source\n- Reject hallucinated or synthesized values\n\nOUTPUT:\n{\n  \"verification_passed\": true/false,\n  \"reason\": \"Detailed reason if failed\",\n  \"cleaned_json\": { full structured JSON if passed or partially corrected }\n}..."
+        }
+      },
+      "name": "Verifier Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.verification_passed }}",
+              "operation": "isTrue"
+            }
+          ]
+        }
+      },
+      "name": "Is Verification Passed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "webhookUrl": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "{\"text\": \"\u26a0\ufe0f Verification failed for {{$json.document_id}}. Reason: {{$json.reason}}\"}"
+      },
+      "name": "Slack Verification Failed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "webhookUrl": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "{\"text\": \"\u2705 Metadata extraction verified for {{$json.document_id}}.\"}"
+      },
+      "name": "Slack Verification Passed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        600
+      ]
+    }
+  ],
+  "connections": {
+    "IMAP Email Trigger": {
+      "main": [
+        [
+          "Supervisor Agent"
+        ]
+      ]
+    },
+    "Supervisor Agent": {
+      "main": [
+        [
+          "Metadata Extraction"
+        ]
+      ]
+    },
+    "Metadata Extraction": {
+      "main": [
+        [
+          "Validate Required Fields"
+        ]
+      ]
+    },
+    "Validate Required Fields": {
+      "main": [
+        [
+          "Verifier Agent"
+        ]
+      ]
+    },
+    "Verifier Agent": {
+      "main": [
+        [
+          "Is Verification Passed?"
+        ]
+      ]
+    },
+    "Is Verification Passed?": {
+      "main": [
+        [
+          "Slack Verification Failed",
+          "false"
+        ],
+        [
+          "Slack Verification Passed",
+          "true"
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionTimeout": 300
+  },
+  "versionId": "2025-04-21T01:23:32.502004Z"
+}

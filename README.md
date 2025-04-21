@@ -31,29 +31,22 @@ Each version includes:
 3. Import workflows into n8n and run Python webhook handlers  
 4. Feed PDF/OCR samples and inspect structured JSON results
 
----
+Each pipeline version includes a ready-to-run n8n workflow as a `.json` file. To import and run one:
 
-## 📂 Repository Structure
+1. Open your n8n instance (self-hosted or cloud).
+2. Click the **menu icon** → `Import workflow`.
+3. Upload the corresponding JSON file from the table below.
+4. Ensure `.env.example` is copied to `.env`, and all environment variables are configured.
+5. Deploy and test with a sample PDF email.
 
-```
-.
-├── V1_Linear_Flow/
-├── V2_Modular_Expansion/
-├── V3_Intent_Driven_Minimalism/
-├── AGENT_PROMPT.txt (each version)
-├── n8n_workflow.json
-├── webhook_handler.py
-├── README.md (per version)
-├── GETTING_STARTED.txt
-├── PROJECT_VISION.txt
-├── CONTRIBUTING.txt
-├── LICENSE.txt
-├── PROMPT_DESIGN_GUIDELINES.txt
-├── PROMPT_STYLE_GUIDELINES.txt
-├── OBSERVER_ECHO.txt
-├── RELEASE_NOTES.txt
-├── REPOSITORY_METADATA.txt
-```
+| Pipeline Version              | Workflow Import File Path                                      |
+|------------------------------|----------------------------------------------------------------|
+| `V1_Linear_Flow`             | `V1_Linear_Flow/deployment/IMIS_V1_Linear_Flow.n8n.json`       |
+| `V2_Modular_Expansion`       | `V2_Modular_Expansion/deployment/workflows/workflow_Materials_Intake_FullFlow.json` |
+| `V3_Intent_Driven_Minimalism`| `V3_Intent_Driven_Minimalism/deployment/workflows/n8n_workflow.json` |
+
+💡 Each version includes its own `deployment/DEPLOYMENT.md` file with additional guidance.
+
 
 ---
 
