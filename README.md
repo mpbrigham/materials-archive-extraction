@@ -76,9 +76,9 @@ Each pipeline follows a composable flow:
 
 ---
 
-## 🌬️ Design Koan
+## 🌬️ Design Zen koan
 ```
-"A vendor PDF arrives.
+In a whisper, the scroll arrives.
 The apprentice reads it with eyes.
 The master reads it with silence.
 
