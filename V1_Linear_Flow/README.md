@@ -1,23 +1,21 @@
-# V1: Linear Flow
+# V1 Linear Flow – Intelligent Materials Intake
 
-## Description
-This version represents the simplest pipeline: a straight-line flow of agents that receive input, extract metadata, verify it, and return results.
+This version represents the first functional pipeline prototype with a simple, linear agent chain.
 
-## Workflow Logic
-1. Supervisor Agent receives and validates the PDF input.
-2. Metadata Extraction Agent uses the prompt to extract structured JSON.
-3. Verifier Agent checks for schema conformity and required fields.
-4. Supervisor Response Agent returns the metadata.
+## Flow Summary
 
-## Inputs
-- OCR or extracted text from a single supplier PDF.
-- Source file name.
+Supervisor → Metadata Extractor → Verifier → Response
 
-## Outputs
-- A JSON object conforming to the schema.
-- Optional debug log.
+Each agent operates in sequence and uses a tightly scoped prompt.
 
-## Run Instructions
-1. Import `n8n_workflow.json` into n8n.
-2. Start the `webhook_handler.py` with Flask to receive test data.
-3. Send a sample PDF or OCR data to the intake webhook.
+## Updates (Post-Patch)
+
+- ✅ ConfidenceEnvelope-based fallback to MVS
+- ✅ Prompt metadata (prompt_id, model_version) embedded in outputs
+- ✅ DocumentLifecycleLog for state traceability
+- ✅ Optional feedback handling via manual email routing
+
+## Limitations
+
+- Synchronous only
+- Minimal failure recovery

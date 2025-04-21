@@ -1,23 +1,20 @@
-# V3: Intent-Driven Minimalism
+# V3 – Intent-Driven Minimalism
 
-## Description
-A refined, state-aware system where agents react to document state and intent rather than a fixed order.
+This is the production-grade design for the IMIS pipeline, built on modular, stateless agent contracts with context-aware routing.
 
-## Workflow Logic
-1. Intake Agent determines file nature and initializes a state.
-2. Interpreter Agent handles layout recognition + LLM extraction.
-3. Verifier Agent inspects field-level logic and integrity.
-4. Outbound Agent dispatches output or raises flags.
+## Design Highlights
 
-## Inputs
-- `MaterialExtractionRequest`: includes language, filename, extracted text, and document metadata.
+- Stateless-by-default, state-aware-by-design
+- CE-driven fallback (ok | uncertain | fail)
+- All messages carry intent + context
+- Prompt routing based on layout signature
+- Versioned prompt metadata
 
-## Outputs
-- JSON metadata conforming to schema.
-- Confidence envelope (optional).
-- State marker (`interpreted`, `verified`, `flagged`, etc.)
+## Full Support Includes
 
-## Run Instructions
-1. Import `n8n_workflow.json` into your n8n instance.
-2. Start `webhook_handler.py`.
-3. Feed test materials and track document states through the pipeline.
+- `DocumentLifecycleLog_template.json`
+- `AGENT_INTERFACE_CONTRACTS_v3.txt`
+- `CONFIDENCE_POLICY_GUIDELINES_v3.txt`
+- `feedback_loop_spec.txt`
+
+This is the recommended base for scale deployment.

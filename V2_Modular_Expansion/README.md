@@ -1,11 +1,21 @@
-# V2_Linear_Flow Patch
+# V2 Modular Expansion – Intelligent Materials Intake System (IMIS)
 
-This archive contains the final components for the V2 version of the Materials Intake Pipeline.
-This includes all prompts, templates, wiring documentation, and n8n workflow for import.
+This version introduces modular, resilient agent design with observability and fallback logic.
 
-Pipeline Overview:
-- Intake via IMAP
-- Supervisor Agent performs initial checks and dispatches to Extraction Agent
-- Metadata Extraction Agent uses OCR and LLM to extract structured metadata
-- Verifier Agent checks for schema and semantic correctness
-- Results emailed back to sender (success/failure templates included)
+## Pipeline Overview
+
+- Intake Orchestrator
+- Preprocessing Agent
+- Metadata Extraction Agent
+- Verifier Agent
+- Supervisor Response Agent
+
+## Key Features
+
+- ✅ Asynchronous agent flow
+- ✅ ConfidenceEnvelope with fallback to MVS
+- ✅ Prompt metadata + version tracking
+- ✅ Lifecycle event logging
+- ✅ Feedback loop support
+
+See: STATE_ENGINE_SPEC_v2.txt, CONFIDENCE_POLICY_GUIDELINES_v2.txt
