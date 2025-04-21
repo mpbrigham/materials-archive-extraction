@@ -1,29 +1,29 @@
 # 🧠 Intelligent Materials Intake System (IMIS)
-
-> “Thousands of prompts, one breath.  
-> One prompt, a thousand shapes.”
-
+```
+“Thousands of prompts, one breath.  
+One prompt, a thousand shapes.”
+```
 IMIS is a standardized, agent-based PDF intake pipeline for extracting structured metadata from architectural materials.  
 It uses schema-first prompting, modular LLM agents, and n8n for orchestration.
 
 ---
 
 ## 🌬️ Design Koan
+```
+"A vendor PDF arrives.
+The apprentice reads it with eyes.
+The master reads it with silence.
 
-> "A vendor PDF arrives.
-> The apprentice reads it with eyes.
-> The master reads it with silence.
+The apprentice asks, “Which field is required?”
+The master replies, “The one that is present.”
 
-> The apprentice asks, “Which field is required?”
-> The master replies, “The one that is present.”
+“How shall I validate truth?”
+“Do not chase it. Let structure reveal it.”
 
-> “How shall I validate truth?”
-> “Do not chase it. Let structure reveal it.”
-
-> “And if it fails?”
-> The master smiles. “All systems do.
-> The wise one builds with grace in failure."
-
+“And if it fails?”
+The master smiles. “All systems do.
+The wise one builds with grace in failure."
+```
 ---
 
 ## 🌐 Core Concepts
