@@ -1,0 +1,18 @@
+# FEEDBACK LOOP SPECIFICATION
+
+Allow feedback via:
+- Inbox monitor
+- Feedback UI
+- Webhook
+
+Payload:
+{
+  "document_id": "...",
+  "corrections": {
+    "brand": "Corrected Brand",
+    "origin_country": "Germany"
+  },
+  "comment": "Certifications section missing CE logo."
+}
+
+Route back to Verifier Agent → emit flagged state + corrected JSON.

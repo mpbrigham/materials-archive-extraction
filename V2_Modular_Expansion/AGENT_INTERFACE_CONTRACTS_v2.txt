@@ -1,0 +1,50 @@
+# AGENT INTERFACE CONTRACTS (V2)
+
+1. Intake Orchestrator → Preprocessing Agent
+{
+  "document_id": "<uuid>",
+  "sender": "<email>",
+  "subject": "<string>",
+  "timestamp": "<iso8601>",
+  "file_path": "<string>",
+  "file_hash": "<sha256>"
+}
+
+2. Preprocessing → Metadata Extraction
+{
+  "document_id": "<uuid>",
+  "language": "<lang>",
+  "layout_type": "scanned" | "digital",
+  "quality": "good" | "poor",
+  "fallback_required": true | false
+}
+
+3. Metadata Extraction → Verifier
+{
+  "document_id": "...",
+  "metadata_json": { ... },
+  "_metadata": {
+    "prompt_version": "v2.3",
+    "model": "gemini-pro-vision",
+    "generated_ts": "<iso8601>"
+  },
+  "confidence_envelope": {
+    "confidence": 0.91,
+    "status": "ok"
+  }
+}
+
+4. Verifier → Supervisor Response Agent
+{
+  "document_id": "...",
+  "verification_passed": true | false,
+  "validated_json": { ... },
+  "validation_report": {
+    "summary": "...",
+    "fields": {
+      "fire_rating": "plausible",
+      "dimensions": "ok"
+    }
+  },
+  "verifier_version": "v2.1"
+}

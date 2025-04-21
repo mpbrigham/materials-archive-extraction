@@ -1,0 +1,13 @@
+# PROMPT VERSIONING POLICY
+
+Include in _metadata:
+{
+  "prompt_version": "v2.3",
+  "model": "gemini-pro",
+  "generated_ts": "2025-04-21T12:00:00Z"
+}
+
+Bump version when:
+- Schema changes
+- Prompt logic changes
+- Confidence logic or routing alters

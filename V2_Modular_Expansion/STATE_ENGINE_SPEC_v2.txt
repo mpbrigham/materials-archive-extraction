@@ -1,0 +1,19 @@
+# STATE ENGINE SPECIFICATION (V2)
+
+States:
+- RECEIVED
+- PREPROCESSED
+- EXTRACTED
+- VERIFIED
+- COMPLETED
+- FLAGGED
+
+Each agent must log:
+{
+  "document_id": "...",
+  "from_state": "...",
+  "to_state": "...",
+  "timestamp": "...",
+  "agent": "...",
+  "notes": "optional"
+}

@@ -1,0 +1,10 @@
+[
+  {
+    "document_id": "abc-123",
+    "from_state": "EXTRACTED",
+    "to_state": "VERIFIED",
+    "timestamp": "2025-04-21T08:00:00Z",
+    "agent": "verifier_agent_v2",
+    "notes": "CE status = ok"
+  }
+]

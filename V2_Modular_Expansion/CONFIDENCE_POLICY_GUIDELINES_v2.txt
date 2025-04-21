@@ -1,0 +1,15 @@
+# CONFIDENCE POLICY GUIDELINES (V2)
+
+- 0.9+ = trust, route to verifier
+- 0.7–0.89 = fallback to MVS
+- < 0.7 or status == "fail" = flag document
+
+Fallback output (MVS):
+{
+  "name": "...",
+  "brand": "...",
+  "dimensions": "...",
+  "summary": "..."
+}
+
+Emit CE as part of metadata extraction. Verifier may override CE per field.
