@@ -3,78 +3,44 @@
   "nodes": [
     {
       "parameters": {
-        "functionCode": "// Intake Agent logic placeholder\nreturn items;"
+        "protocol": "IMAP",
+        "host": "={{ $env.IMAP_HOST }}",
+        "port": "={{ $env.IMAP_PORT }}",
+        "secure": true,
+        "mailbox": "INBOX",
+        "downloadAttachments": true,
+        "attachmentPrefix": "attachment_",
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "ignoreTextEncoding": false
+        }
       },
-      "name": "Intake Agent",
-      "type": "n8n-nodes-base.function",
+      "id": "1",
+      "name": "IMAP Email Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
       "typeVersion": 1,
       "position": [
-        200,
-        300
-      ],
-      "notes": "This node simulates the behavior of the Intake Agent. Replace with actual logic or HTTP/API node as needed."
+        100,
+        100
+      ]
     },
     {
       "parameters": {
-        "functionCode": "// Interpreter Agent logic placeholder\nreturn items;"
+        "options": {
+          "extract": "text"
+        }
       },
-      "name": "Interpreter Agent",
-      "type": "n8n-nodes-base.function",
+      "id": "2",
+      "name": "Extract From PDF",
+      "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
       "position": [
-        450,
-        300
-      ],
-      "notes": "This node simulates the behavior of the Interpreter Agent. Replace with actual logic or HTTP/API node as needed."
+        300,
+        100
+      ]
     },
     {
       "parameters": {
-        "functionCode": "// Verifier Agent logic placeholder\nreturn items;"
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.intakeAgent(items, runIndex);"
       },
-      "name": "Verifier Agent",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        700,
-        300
-      ],
-      "notes": "This node simulates the behavior of the Verifier Agent. Replace with actual logic or HTTP/API node as needed."
-    },
-    {
-      "parameters": {
-        "functionCode": "// Outbound Agent logic placeholder\nreturn items;"
-      },
-      "name": "Outbound Agent",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        950,
-        300
-      ],
-      "notes": "This node simulates the behavior of the Outbound Agent. Replace with actual logic or HTTP/API node as needed."
-    }
-  ],
-  "connections": {
-    "Intake Agent": [
-      {
-        "node": "Interpreter Agent",
-        "type": "main",
-        "index": 0
-      }
-    ],
-    "Interpreter Agent": [
-      {
-        "node": "Verifier Agent",
-        "type": "main",
-        "index": 0
-      }
-    ],
-    "Verifier Agent": [
-      {
-        "node": "Outbound Agent",
-        "type": "main",
-        "index": 0
-      }
-    ]
-  }
-}
+      "id": "3",
