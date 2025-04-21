@@ -1,0 +1,28 @@
+# AGENT INTERFACE CONTRACTS (V1)
+
+1. Supervisor → Metadata Extraction Agent
+{
+  "file_path": "...",
+  "sender": "...",
+  "timestamp": "...",
+  "subject": "...",
+  "language": "en" | "nl" | "de"
+}
+
+2. Metadata Extraction Agent → Verifier Agent
+{
+  "metadata_json": { ... },
+  "_metadata": {
+    "prompt_id": "v1.0",
+    "model_version": "gemini-flash-1",
+    "generated_ts": "<iso8601>"
+  }
+}
+
+3. Verifier Agent → Supervisor
+{
+  "verification_passed": true | false,
+  "cleaned_json": { ... },
+  "reason": "...",
+  "verifier_version": "v1.0"
+}

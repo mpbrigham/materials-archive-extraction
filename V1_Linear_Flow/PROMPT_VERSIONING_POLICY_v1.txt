@@ -1,0 +1,10 @@
+# PROMPT VERSIONING POLICY (V1)
+
+Each prompt must include:
+{
+  "prompt_id": "v1.0",
+  "model_version": "...",
+  "generated_ts": "..."
+}
+
+Version updates must be tracked and included in all MMJ metadata outputs.

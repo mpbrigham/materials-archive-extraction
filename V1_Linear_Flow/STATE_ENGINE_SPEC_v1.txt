@@ -1,0 +1,15 @@
+# STATE ENGINE SPEC (V1)
+
+Valid Transitions:
+- RECEIVED → INTERPRETED → VERIFIED → COMPLETED
+- ↘ FLAGGED at INTERPRETED or VERIFIED
+
+Each agent emits:
+{
+  "document_id": "...",
+  "from_state": "...",
+  "to_state": "...",
+  "timestamp": "...",
+  "agent": "...",
+  "notes": "optional"
+}
