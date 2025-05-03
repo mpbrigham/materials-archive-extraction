@@ -71,7 +71,7 @@
           "parameters": [
             {
               "name": "prompt",
-              "value": "=The contents of file {{ $node[\"Document Validator\"].json[\"file_path\"] }} - Extract all available metadata according to the multimodal_extraction.txt prompt."
+              "value": "=The contents of file {{ $node[\"Document Validator\"].json[\"file_path\"] }} - Extract all available metadata according to the metadata_extraction.txt prompt."
             },
             {
               "name": "model",
@@ -116,12 +116,59 @@
     },
     {
       "parameters": {
-        "functionCode": "// Get code from functions_multimodal.js\nconst functions = require('./functions_multimodal.js');\nreturn functions.dataProcessor(items, runIndex);"
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "url": "={{ $env.LLM_TEXT_API_ENDPOINT }}",
+        "jsonParameters": true,
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "response": {
+            "response": {
+              "maxResponseSize": 10485760,
+              "responseFormat": "json",
+              "responseType": "json"
+            }
+          }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.LLM_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "=The content of the data_processor.txt prompt. You'll be analyzing the following extracted metadata: {{ $json.metadata_json }} with field confidences: {{ $json.field_confidences }}. Make a decision about how to proceed."
+            },
+            {
+              "name": "model",
+              "value": "={{ $env.LLM_TEXT_MODEL }}"
+            },
+            {
+              "name": "temperature",
+              "value": 0.1
+            },
+            {
+              "name": "max_tokens",
+              "value": 4000
+            }
+          ]
+        }
       },
       "id": "6",
-      "name": "Data Processor",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "name": "LLM Data Processor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
       "position": [
         900,
         100
@@ -129,12 +176,63 @@
     },
     {
       "parameters": {
-        "functionCode": "// Get code from functions_multimodal.js\nconst functions = require('./functions_multimodal.js');\nreturn functions.llmVerifier(items, runIndex);"
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "url": "={{ $env.LLM_VISION_API_ENDPOINT }}",
+        "jsonParameters": true,
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "response": {
+            "response": {
+              "maxResponseSize": 10485760,
+              "responseFormat": "json",
+              "responseType": "json"
+            }
+          }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.LLM_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "=The contents of the metadata_verification.txt prompt. You'll be verifying the following metadata: {{ $json.metadata_json }} against the document at {{ $node[\"Document Validator\"].json[\"file_path\"] }}. Use the field coordinates provided in {{ $json.field_locations }} to guide your verification."
+            },
+            {
+              "name": "model",
+              "value": "={{ $env.LLM_VISION_MODEL }}"
+            },
+            {
+              "name": "temperature",
+              "value": 0.1
+            },
+            {
+              "name": "max_tokens",
+              "value": 6000
+            },
+            {
+              "name": "include_pdf",
+              "value": true
+            }
+          ]
+        }
       },
       "id": "7",
       "name": "LLM Verifier",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
       "position": [
         1100,
         100
@@ -301,14 +399,14 @@
       "main": [
         [
           {
-            "node": "Data Processor",
+            "node": "LLM Data Processor",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Data Processor": {
+    "LLM Data Processor": {
       "main": [
         [
           {

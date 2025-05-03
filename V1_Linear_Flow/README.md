@@ -5,15 +5,15 @@ This version represents the enhanced implementation of the IMIS pipeline with mu
 ## Flow Summary
 
 ```
-Document Validator → Multimodal Extraction → LLM Data Processor → Multimodal Verifier → Response
+Document Validator → LLM Extraction → LLM Data Processor → LLM Verifier → Response
 ```
 
 ```mermaid
 flowchart TD
-    A[Document Validator] --> B[Multimodal LLM Extraction]
+    A[Document Validator] --> B[LLM Extraction]
     B --> C[Metadata Parser]
     C --> D[LLM Data Processor]
-    D -->|High Confidence| E[Multimodal LLM Verifier]
+    D -->|High Confidence| E[LLM Verifier]
     D -->|Mixed Confidence| F[Dynamic Optimized Schema]
     D -->|Low Confidence| H[Error Response]
     F --> E
@@ -89,18 +89,18 @@ The system implements a three-tier confidence policy with intelligent assessment
 2. **Fallback threshold** (0.7 ≤ confidence < 0.9): Dynamic selection of high-confidence fields
 3. **Failure threshold** (confidence < 0.7): Rejection with detailed reasons
 
-See [CONFIDENCE_POLICY_ENHANCED.txt](specs/CONFIDENCE_POLICY_ENHANCED.txt) for detailed implementation.
+See [CONFIDENCE_POLICY.txt](specs/CONFIDENCE_POLICY.txt) for detailed implementation.
 
 ## Agent Interface Contracts
 
 The enhanced multimodal implementation updates the interface contracts:
 
-1. **Document Validator → Multimodal Extraction**: Validates PDF and initiates processing
-2. **Multimodal Extraction → LLM Data Processor**: Provides extraction with visual coordinates and confidence
-3. **LLM Data Processor → Multimodal Verifier**: Routes optimized field set based on quality assessment
-4. **Multimodal Verifier → Response Formatter**: Reports verification status with visual evidence
+1. **Document Validator → LLM Extraction**: Validates PDF and initiates processing
+2. **LLM Extraction → LLM Data Processor**: Provides extraction with visual coordinates and confidence
+3. **LLM Data Processor → LLM Verifier**: Routes optimized field set based on quality assessment
+4. **LLM Verifier → Response Formatter**: Reports verification status with visual evidence
 
-See [AGENT_INTERFACE_CONTRACTS_ENHANCED.txt](specs/AGENT_INTERFACE_CONTRACTS_ENHANCED.txt) for detailed contract specifications.
+See [AGENT_INTERFACE_CONTRACTS.txt](specs/AGENT_INTERFACE_CONTRACTS.txt) for detailed contract specifications.
 
 ## Deployment Quick Start
 
@@ -148,12 +148,12 @@ The configuration includes enhanced settings:
    - Model selection options
 
 2. **LLM Prompts**:
-   - Multimodal extraction: [multimodal_extraction.txt](prompts/multimodal_extraction.txt)
-   - LLM data processor: [data_processor.txt](prompts/data_processor.txt)
-   - Verification: [metadata_verification.txt](prompts/metadata_verification.txt)
+   - LLM Extraction: [metadata_extraction.txt](prompts/metadata_extraction.txt)
+   - LLM Data Processor: [data_processor.txt](prompts/data_processor.txt)
+   - LLM Verifier: [metadata_verification.txt](prompts/metadata_verification.txt)
 
 3. **Implementation Files**:
-   - Enhanced functions: [functions_multimodal_enhanced.js](scripts/functions_multimodal_enhanced.js)
+   - Enhanced functions: [functions_multimodal.js](scripts/functions_multimodal.js)
    - Test script: [test_llm_processor.js](scripts/test_llm_processor.js)
 
 ## License
