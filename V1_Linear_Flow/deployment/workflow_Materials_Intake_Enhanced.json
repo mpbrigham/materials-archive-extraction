@@ -1,0 +1,567 @@
+{
+  "name": "Materials Intake with Visual Verification",
+  "nodes": [
+    {
+      "parameters": {
+        "protocol": "IMAP",
+        "host": "={{ $env.IMAP_HOST }}",
+        "port": "={{ $env.IMAP_PORT }}",
+        "secure": true,
+        "mailbox": "INBOX",
+        "downloadAttachments": true,
+        "attachmentPrefix": "attachment_",
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "ignoreTextEncoding": false
+        }
+      },
+      "id": "1",
+      "name": "IMAP Email Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "extract": "text"
+        }
+      },
+      "id": "2",
+      "name": "Extract From PDF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        300,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.supervisorAgent(items, runIndex);"
+      },
+      "id": "3",
+      "name": "Supervisor Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        500,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.pdfPaginator(items, runIndex);"
+      },
+      "id": "4",
+      "name": "PDF Paginator",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        700,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.LLM_API_ENDPOINT }}",
+        "options": {
+          "headers": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "Bearer={{ $env.LLM_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $node[\"Get Extraction Prompt\"].json.prompt }}"
+            },
+            {
+              "name": "model",
+              "value": "={{ $env.LLM_MODEL }}"
+            },
+            {
+              "name": "temperature",
+              "value": 0.2
+            },
+            {
+              "name": "max_tokens",
+              "value": 2000
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "Call Metadata Extractor LLM API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        900,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Parse LLM response and format for next step\nconst response = items[0].json;\nconst text = response.choices ? response.choices[0].text : response.content;\nconst extracted = JSON.parse(text);\n\n// Add pdfText to metadata for use in visual verification\nconst pdfText = items[0].json.pdfText || \"\";\n\n// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.metadataExtractor([{json: {...items[1].json, extracted, pdfText}}], runIndex);"
+      },
+      "id": "6",
+      "name": "Process LLM Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.imageCropper(items, runIndex);"
+      },
+      "id": "7",
+      "name": "Image Cropper",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.checkRequiredFields(items, runIndex);"
+      },
+      "id": "8",
+      "name": "Check Required Fields",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.LLM_VISION_API_ENDPOINT }}",
+        "options": {
+          "headers": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "Bearer={{ $env.LLM_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $node[\"Get Verifier Prompt\"].json.prompt }}"
+            },
+            {
+              "name": "model",
+              "value": "={{ $env.LLM_VISION_MODEL }}"
+            },
+            {
+              "name": "images",
+              "value": "={{ JSON.stringify(Object.values($json.field_crops).map(crop => ({ path: crop.crop_path }))) }}"
+            },
+            {
+              "name": "temperature",
+              "value": 0.2
+            },
+            {
+              "name": "max_tokens",
+              "value": 2000
+            }
+          ]
+        }
+      },
+      "id": "9",
+      "name": "Call Visual Verifier LLM API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1700,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.visualVerifierAgent(items, runIndex);"
+      },
+      "id": "10",
+      "name": "Visual Verifier Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.verification_passed }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "11",
+      "name": "IF Verification Passed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.formatSuccessEmail(items, runIndex);"
+      },
+      "id": "12",
+      "name": "Format Success Email",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2300,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.formatErrorEmail(items, runIndex);"
+      },
+      "id": "13",
+      "name": "Format Error Email",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2300,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.SMTP_FROM }}",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "text": "={{ $json.body }}",
+        "attachments": "={{ $json.attachments }}"
+      },
+      "id": "14",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        2500,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendFile",
+        "filePath": "={{ $env.LOGS_PATH }}/document_lifecycle.json",
+        "content": "={{ JSON.stringify($json._lifecycle_log, null, 2) }}"
+      },
+      "id": "15",
+      "name": "Log Document Lifecycle",
+      "type": "n8n-nodes-base.fileOperations",
+      "typeVersion": 1,
+      "position": [
+        2700,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "channel": "={{ $env.SLACK_CHANNEL_ID }}",
+        "text": "Document ID: {{ $json.document_id }}\nStatus: {{ $json.verification_passed ? 'Verified ✅' : 'Failed ❌' }}\nConfidence: {{ $json.confidence }}\n{{ $json.reason }}"
+      },
+      "id": "16",
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        2900,
+        100
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "1",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "readFile",
+        "filePath": "={{ $env.PROMPTS_PATH }}/metadata_extraction_enhanced.txt"
+      },
+      "id": "17",
+      "name": "Get Extraction Prompt",
+      "type": "n8n-nodes-base.fileOperations",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "readFile",
+        "filePath": "={{ $env.PROMPTS_PATH }}/verifier_enhanced.txt"
+      },
+      "id": "18",
+      "name": "Get Verifier Prompt",
+      "type": "n8n-nodes-base.fileOperations",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Generate evidence report from verification\nconst generateEvidenceReport = function(items, runIndex) {\n  if (!items || items.length === 0) {\n    throw new Error(\"No items received\");\n  }\n  \n  const item = items[0];\n  const verificationDetails = item.json.visual_verification || {};\n  const documentId = item.json.document_id;\n  \n  // Create HTML evidence report\n  const evidenceHtml = `\n  <html>\n  <head>\n    <style>\n      body { font-family: Arial, sans-serif; margin: 20px; }\n      table { border-collapse: collapse; width: 100%; }\n      th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }\n      th { background-color: #f2f2f2; }\n      tr:nth-child(even) { background-color: #f9f9f9; }\n      .verified { background-color: #d4edda; }\n      .failed { background-color: #f8d7da; }\n    </style>\n  </head>\n  <body>\n    <h1>Verification Evidence Report - ${documentId}</h1>\n    \n    <h2>Field Verification Summary</h2>\n    <table>\n      <tr>\n        <th>Field</th>\n        <th>Status</th>\n        <th>Page</th>\n        <th>Confidence</th>\n      </tr>\n      ${Object.entries(verificationDetails.evidence || {}).map(([field, data]) => {\n        const isVerified = data.verified;\n        const rowClass = isVerified ? 'verified' : 'failed';\n        const confidence = data.confidence?.toFixed(2) || 'N/A';\n        \n        return `\n        <tr class=\"${rowClass}\">\n          <td>${field}</td>\n          <td>${isVerified ? '✅ Verified' : '❌ Failed'}</td>\n          <td>${data.page || 'N/A'}</td>\n          <td>${confidence}</td>\n        </tr>\n        `;\n      }).join('')}\n    </table>\n    \n    <h2>Overall Verification Results</h2>\n    <p>Status: ${item.json.verification_passed ? '✅ Passed' : '❌ Failed'}</p>\n    <p>Confidence: ${item.json.confidence.toFixed(2)}</p>\n    <p>Reason: ${item.json.reason}</p>\n  </body>\n  </html>\n  `;\n  \n  // Create attachment with evidence report\n  return {\n    json: {\n      ...item.json,\n      evidence_report: evidenceHtml,\n      attachments: [\n        ...(item.json.attachments || []),\n        {\n          data: Buffer.from(evidenceHtml).toString('base64'),\n          name: `${documentId}_verification_report.html`,\n          type: 'text/html'\n        }\n      ]\n    }\n  };\n};\n\nreturn generateEvidenceReport(items, runIndex);"
+      },
+      "id": "19",
+      "name": "Generate Evidence Report",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2100,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "IMAP Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract From PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract From PDF": {
+      "main": [
+        [
+          {
+            "node": "Supervisor Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supervisor Agent": {
+      "main": [
+        [
+          {
+            "node": "PDF Paginator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PDF Paginator": {
+      "main": [
+        [
+          {
+            "node": "Call Metadata Extractor LLM API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Metadata Extractor LLM API": {
+      "main": [
+        [
+          {
+            "node": "Process LLM Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process LLM Response": {
+      "main": [
+        [
+          {
+            "node": "Image Cropper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Cropper": {
+      "main": [
+        [
+          {
+            "node": "Check Required Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Required Fields": {
+      "main": [
+        [
+          {
+            "node": "Call Visual Verifier LLM API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Visual Verifier LLM API": {
+      "main": [
+        [
+          {
+            "node": "Visual Verifier Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Visual Verifier Agent": {
+      "main": [
+        [
+          {
+            "node": "IF Verification Passed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Verification Passed": {
+      "main": [
+        [
+          {
+            "node": "Generate Evidence Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Error Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "Log Document Lifecycle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Document Lifecycle": {
+      "main": [
+        [
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Extraction Prompt": {
+      "main": [
+        [
+          {
+            "node": "Call Metadata Extractor LLM API",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Verifier Prompt": {
+      "main": [
+        [
+          {
+            "node": "Call Visual Verifier LLM API",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Generate Evidence Report": {
+      "main": [
+        [
+          {
+            "node": "Format Success Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

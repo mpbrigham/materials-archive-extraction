@@ -1,0 +1,45 @@
+# IMIS V1 Enhanced Environment Configuration Template
+
+# Server Configuration
+PORT=5000
+FLASK_ENV=production  # development, production
+LOG_PATH=./logs
+STORAGE_PATH=./storage
+PROMPTS_PATH=./prompts
+
+# Email Configuration
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=materials-intake@example.com
+SMTP_PASS=your-secure-password
+SMTP_FROM=materials-intake@example.com
+
+IMAP_HOST=imap.example.com
+IMAP_PORT=993
+IMAP_USER=materials-intake@example.com
+IMAP_PASS=your-secure-password
+
+# LLM API Configuration - Text Model
+LLM_PROVIDER=gemini  # openai, gemini, anthropic
+LLM_API_KEY=your-api-key
+LLM_API_ENDPOINT=https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent
+LLM_MODEL=gemini-pro
+
+# Vision Model for PDF Verification
+LLM_VISION_API_ENDPOINT=https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent
+LLM_VISION_MODEL=gemini-pro-vision
+
+# Image Processing Configuration
+PDF_DPI=300
+CROP_PADDING=20
+IMAGE_FORMAT=jpg
+IMAGE_QUALITY=85
+
+# Notification Configuration
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/your-slack-webhook
+SLACK_CHANNEL_ID=materials-intake-notifications
+
+# Security Configuration
+MAX_FILE_SIZE_MB=20
+RATE_LIMIT=60  # Requests per minute
+ALLOWED_DOMAINS=example.com,partner.com

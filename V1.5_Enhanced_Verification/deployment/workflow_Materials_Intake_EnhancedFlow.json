@@ -1,0 +1,605 @@
+{
+  "name": "Materials Intake Enhanced Flow V1.2",
+  "nodes": [
+    {
+      "parameters": {
+        "protocol": "IMAP",
+        "host": "={{ $env.IMAP_HOST }}",
+        "port": "={{ $env.IMAP_PORT }}",
+        "secure": true,
+        "mailbox": "INBOX",
+        "downloadAttachments": true,
+        "attachmentPrefix": "attachment_",
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "ignoreTextEncoding": false
+        }
+      },
+      "id": "1",
+      "name": "IMAP Email Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "extract": "text"
+        }
+      },
+      "id": "2",
+      "name": "Extract From PDF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        300,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.supervisorAgent(items, runIndex);"
+      },
+      "id": "3",
+      "name": "Supervisor Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        500,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.LLM_API_ENDPOINT }}",
+        "options": {
+          "headers": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "Bearer={{ $env.LLM_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ item.json.retry_count > 0 ? $node[\"Get Retry Prompt\"].json.prompt.replace('{{$error_summary}}', item.json.error_summary) : $node[\"Get Standard Prompt\"].json.prompt }}"
+            },
+            {
+              "name": "model",
+              "value": "={{ $env.LLM_MODEL }}"
+            },
+            {
+              "name": "temperature",
+              "value": 0.3
+            },
+            {
+              "name": "max_tokens",
+              "value": 2000
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "Call Metadata Extractor LLM API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        700,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Parse LLM response and format for next step\nconst response = items[0].json;\nconst text = response.choices ? response.choices[0].text : response.content;\nconst extracted = JSON.parse(text);\n\n// Add pdfText to metadata for use in visual verification\nconst pdfText = items[0].json.pdfText || \"\";\n\n// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.metadataExtractor([{json: {...items[1].json, pdfText}}], runIndex);"
+      },
+      "id": "5",
+      "name": "Process LLM Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        900,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from schema_validator.js\nconst validator = require('./schema_validator.js');\nreturn validator.validateMetadataSchema(items, runIndex);"
+      },
+      "id": "6",
+      "name": "Schema Validator",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.retry_extraction }}",
+              "operation": "exists"
+            }
+          ]
+        }
+      },
+      "id": "7",
+      "name": "Check for Retry",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.task_status }}",
+              "operation": "exists"
+            }
+          ]
+        }
+      },
+      "id": "8",
+      "name": "Check for Failure",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.LLM_VISION_API_ENDPOINT }}",
+        "options": {
+          "headers": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "Bearer={{ $env.LLM_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $node[\"Get Visual Prompt\"].json.prompt }}"
+            },
+            {
+              "name": "model",
+              "value": "={{ $env.LLM_VISION_MODEL }}"
+            },
+            {
+              "name": "pdf",
+              "value": "={{ $json.original_request.file_path }}"
+            },
+            {
+              "name": "metadata",
+              "value": "={{ $json.metadata_json }}"
+            },
+            {
+              "name": "temperature",
+              "value": 0.2
+            },
+            {
+              "name": "max_tokens",
+              "value": 2000
+            }
+          ]
+        }
+      },
+      "id": "9",
+      "name": "Call Visual Verifier LLM API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.visualVerifierAgent(items, runIndex);"
+      },
+      "id": "10",
+      "name": "Visual Verifier Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.verification_passed }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "11",
+      "name": "IF Verification Passed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.formatSuccessEmail(items, runIndex);"
+      },
+      "id": "12",
+      "name": "Format Success Email",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2100,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.formatErrorEmail(items, runIndex);"
+      },
+      "id": "13",
+      "name": "Format Error Email",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2100,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "readFile",
+        "filePath": "={{ $env.PROMPTS_PATH }}/metadata_extraction.txt"
+      },
+      "id": "14",
+      "name": "Get Standard Prompt",
+      "type": "n8n-nodes-base.fileOperations",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "readFile",
+        "filePath": "={{ $env.PROMPTS_PATH }}/metadata_extraction_retry.txt"
+      },
+      "id": "15",
+      "name": "Get Retry Prompt",
+      "type": "n8n-nodes-base.fileOperations",
+      "typeVersion": 1,
+      "position": [
+        500,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "readFile",
+        "filePath": "={{ $env.PROMPTS_PATH }}/verifier.txt"
+      },
+      "id": "16",
+      "name": "Get Visual Prompt",
+      "type": "n8n-nodes-base.fileOperations",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.SMTP_FROM }}",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "text": "={{ $json.body }}",
+        "attachments": "={{ $json.attachments }}"
+      },
+      "id": "17",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        2300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendFile",
+        "filePath": "={{ $env.LOGS_PATH }}/document_lifecycle.json",
+        "content": "={{ JSON.stringify($json._lifecycle_log, null, 2) }}"
+      },
+      "id": "18",
+      "name": "Log Document Lifecycle",
+      "type": "n8n-nodes-base.fileOperations",
+      "typeVersion": 1,
+      "position": [
+        2500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "channel": "={{ $env.SLACK_CHANNEL_ID }}",
+        "text": "Document ID: {{ $json.document_id }}\nStatus: {{ $json.verification_passed ? 'Verified ✅' : 'Failed ❌' }}\nConfidence: {{ $json.confidence }}\n{{ $json.reason }}"
+      },
+      "id": "19",
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        2700,
+        300
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "1",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "IMAP Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract From PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract From PDF": {
+      "main": [
+        [
+          {
+            "node": "Supervisor Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supervisor Agent": {
+      "main": [
+        [
+          {
+            "node": "Call Metadata Extractor LLM API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Metadata Extractor LLM API": {
+      "main": [
+        [
+          {
+            "node": "Process LLM Response",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Supervisor Agent",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Process LLM Response": {
+      "main": [
+        [
+          {
+            "node": "Schema Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schema Validator": {
+      "main": [
+        [
+          {
+            "node": "Check for Retry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Retry": {
+      "main": [
+        [
+          {
+            "node": "Supervisor Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check for Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Failure": {
+      "main": [
+        [
+          {
+            "node": "Format Error Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call Visual Verifier LLM API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Visual Verifier LLM API": {
+      "main": [
+        [
+          {
+            "node": "Visual Verifier Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Visual Verifier Agent": {
+      "main": [
+        [
+          {
+            "node": "IF Verification Passed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Verification Passed": {
+      "main": [
+        [
+          {
+            "node": "Format Success Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Error Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Standard Prompt": {
+      "main": [
+        [
+          {
+            "node": "Call Metadata Extractor LLM API",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Retry Prompt": {
+      "main": [
+        [
+          {
+            "node": "Call Metadata Extractor LLM API",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Get Visual Prompt": {
+      "main": [
+        [
+          {
+            "node": "Call Visual Verifier LLM API",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "Log Document Lifecycle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Document Lifecycle": {
+      "main": [
+        [
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

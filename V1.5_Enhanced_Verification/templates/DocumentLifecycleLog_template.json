@@ -1,0 +1,58 @@
+[
+  {
+    "document_id": "doc-001",
+    "from_state": "RECEIVED",
+    "to_state": "INTERPRETED",
+    "timestamp": "2025-04-21T10:00:00Z",
+    "agent": "supervisor_agent_v1",
+    "notes": "Document language = 'en'"
+  },
+  {
+    "document_id": "doc-001",
+    "from_state": "INTERPRETED",
+    "to_state": "PAGINATED",
+    "timestamp": "2025-04-21T10:00:05Z",
+    "agent": "pdf_paginator_v1.5",
+    "notes": "PDF converted to 4 page images"
+  },
+  {
+    "document_id": "doc-001",
+    "from_state": "PAGINATED",
+    "to_state": "EXTRACTION_INITIAL",
+    "timestamp": "2025-04-21T10:00:15Z", 
+    "agent": "enhanced_extractor_v1.5",
+    "notes": "Initial extraction complete with 8 fields"
+  },
+  {
+    "document_id": "doc-001",
+    "from_state": "EXTRACTION_INITIAL",
+    "to_state": "CROPS_GENERATED",
+    "timestamp": "2025-04-21T10:00:20Z",
+    "agent": "image_cropper_v1.5",
+    "notes": "Generated 8 field crops for verification"
+  },
+  {
+    "document_id": "doc-001",
+    "from_state": "CROPS_GENERATED",
+    "to_state": "EXTRACTED",
+    "timestamp": "2025-04-21T10:00:30Z",
+    "agent": "enhanced_extractor_v1.5",
+    "notes": "Visual verification complete. Overall confidence: 0.92"
+  },
+  {
+    "document_id": "doc-001",
+    "from_state": "EXTRACTED",
+    "to_state": "VALIDATED",
+    "timestamp": "2025-04-21T10:00:35Z",
+    "agent": "schema_validator_v1.5",
+    "notes": "Schema validation passed"
+  },
+  {
+    "document_id": "doc-001",
+    "from_state": "VALIDATED",
+    "to_state": "COMPLETED",
+    "timestamp": "2025-04-21T10:00:40Z",
+    "agent": "response_agent_v1.5",
+    "notes": "Extraction completed with evidence report generated"
+  }
+]

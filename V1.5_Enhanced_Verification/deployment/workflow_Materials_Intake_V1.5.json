@@ -1,0 +1,371 @@
+{
+  "name": "Materials Intake V1.5 - Enhanced Visual Verification",
+  "nodes": [
+    {
+      "parameters": {
+        "protocol": "IMAP",
+        "host": "={{ $env.IMAP_HOST }}",
+        "port": "={{ $env.IMAP_PORT }}",
+        "secure": true,
+        "mailbox": "INBOX",
+        "downloadAttachments": true,
+        "attachmentPrefix": "attachment_",
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "ignoreTextEncoding": false
+        }
+      },
+      "id": "1",
+      "name": "IMAP Email Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.supervisorAgent(items, runIndex);"
+      },
+      "id": "2",
+      "name": "Supervisor Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        300,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.pdfPaginator(items, runIndex);"
+      },
+      "id": "3",
+      "name": "PDF Paginator",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        500,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.enhancedExtractor(items, runIndex);"
+      },
+      "id": "4",
+      "name": "Initial Extractor",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        700,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.imageCropper(items, runIndex);"
+      },
+      "id": "5",
+      "name": "Image Cropper",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        900,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.enhancedExtractor(items, runIndex);"
+      },
+      "id": "6",
+      "name": "Verification Extractor",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.validateMetadataSchema(items, runIndex);"
+      },
+      "id": "7",
+      "name": "Schema Validator",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.task_status }}",
+              "operation": "exists"
+            }
+          ]
+        }
+      },
+      "id": "8",
+      "name": "Check for Failure",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.formatSuccessEmail(items, runIndex);"
+      },
+      "id": "9",
+      "name": "Format Success Email",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        50
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.formatErrorEmail(items, runIndex);"
+      },
+      "id": "10",
+      "name": "Format Error Email",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.SMTP_FROM }}",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "text": "={{ $json.body }}",
+        "attachments": "={{ $json.attachments }}"
+      },
+      "id": "11",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Create JSON summary of the extraction evidence\nconst createEvidenceSummary = function(items, runIndex) {\n  if (!items || items.length === 0) {\n    throw new Error(\"No items received\");\n  }\n  \n  const item = items[0];\n  const verifiedFields = item.json.verified_fields || {};\n  const documentId = item.json.document_id;\n  \n  // Generate paths to evidence images\n  const evidenceImages = [];\n  const cropsDir = item.json.crops_directory || '';\n  \n  // Add all crop images to the evidence\n  for (const [field, data] of Object.entries(verifiedFields)) {\n    if (data.verification && data.verification.crop_path) {\n      evidenceImages.push({\n        field: field,\n        path: data.verification.crop_path,\n        confidence: data.confidence,\n        verified: data.verification.verified,\n        matches_initial: data.verification.matches_initial,\n        value: data.value\n      });\n    }\n  }\n  \n  // Create HTML evidence report\n  const evidenceHtml = `\n  <html>\n  <head>\n    <style>\n      body { font-family: Arial, sans-serif; margin: 20px; }\n      table { border-collapse: collapse; width: 100%; }\n      th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }\n      th { background-color: #f2f2f2; }\n      tr:nth-child(even) { background-color: #f9f9f9; }\n      .correction { background-color: #fff3cd; }\n      .high-confidence { background-color: #d4edda; }\n      .low-confidence { background-color: #f8d7da; }\n      img { max-width: 300px; border: 1px solid #ddd; }\n    </style>\n  </head>\n  <body>\n    <h1>Extraction Evidence Report - ${documentId}</h1>\n    \n    <h2>Verified Field Summary</h2>\n    <table>\n      <tr>\n        <th>Field</th>\n        <th>Value</th>\n        <th>Confidence</th>\n        <th>Status</th>\n        <th>Evidence</th>\n      </tr>\n      ${Object.entries(verifiedFields).map(([field, data]) => {\n        const isCorrection = data.verification && !data.verification.matches_initial;\n        const isHighConfidence = data.confidence >= 0.9;\n        const isLowConfidence = data.confidence < 0.7;\n        const rowClass = isCorrection ? 'correction' : (isHighConfidence ? 'high-confidence' : (isLowConfidence ? 'low-confidence' : ''));\n        \n        return `\n        <tr class=\"${rowClass}\">\n          <td>${field}</td>\n          <td>${JSON.stringify(data.value)}</td>\n          <td>${(data.confidence * 100).toFixed(1)}%</td>\n          <td>${isCorrection ? 'CORRECTED' : (data.verification && data.verification.verified ? 'VERIFIED' : 'UNVERIFIED')}</td>\n          <td>${data.verification && data.verification.crop_path ? `<img src=\"${data.verification.crop_path}\" alt=\"${field} evidence\">` : 'No evidence available'}</td>\n        </tr>\n        `;\n      }).join('')}\n    </table>\n  </body>\n  </html>\n  `;\n  \n  // Create attachment with evidence report\n  return {\n    json: {\n      ...item.json,\n      evidence_summary: evidenceHtml,\n      evidence_images: evidenceImages,\n      attachments: [\n        ...(item.json.attachments || []),\n        {\n          data: Buffer.from(evidenceHtml).toString('base64'),\n          name: `${documentId}_evidence_report.html`,\n          type: 'text/html'\n        }\n      ]\n    }\n  };\n};\n\nreturn createEvidenceSummary(items, runIndex);"
+      },
+      "id": "12",
+      "name": "Generate Evidence Report",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendFile",
+        "filePath": "={{ $env.LOGS_PATH }}/document_lifecycle.json",
+        "content": "={{ JSON.stringify($json._lifecycle_log, null, 2) }}"
+      },
+      "id": "13",
+      "name": "Log Document Lifecycle",
+      "type": "n8n-nodes-base.fileOperations",
+      "typeVersion": 1,
+      "position": [
+        2100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "channel": "={{ $env.SLACK_CHANNEL_ID }}",
+        "text": "Document ID: {{ $json.document_id }}\nStatus: {{ $json.task_status ? 'Failed ❌' : 'Success ✅' }}\nConfidence: {{ $json.confidence }}\n{{ $json.task_status ? $json.error_summary : 'Metadata extracted and verified successfully' }}"
+      },
+      "id": "14",
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        2300,
+        100
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "1",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "IMAP Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Supervisor Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supervisor Agent": {
+      "main": [
+        [
+          {
+            "node": "PDF Paginator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PDF Paginator": {
+      "main": [
+        [
+          {
+            "node": "Initial Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initial Extractor": {
+      "main": [
+        [
+          {
+            "node": "Image Cropper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Cropper": {
+      "main": [
+        [
+          {
+            "node": "Verification Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verification Extractor": {
+      "main": [
+        [
+          {
+            "node": "Schema Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schema Validator": {
+      "main": [
+        [
+          {
+            "node": "Check for Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Failure": {
+      "main": [
+        [
+          {
+            "node": "Format Error Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Evidence Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Evidence Report": {
+      "main": [
+        [
+          {
+            "node": "Format Success Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "Log Document Lifecycle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Document Lifecycle": {
+      "main": [
+        [
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

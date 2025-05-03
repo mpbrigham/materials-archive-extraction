@@ -106,15 +106,11 @@ const metadataExtractor = async function(items, runIndex) {
   
   const item = items[0];
   
-  // Extract the PDF text and images from previous nodes
+  // Extract the PDF text from previous node
   const pdfText = item.json.pdfText || ""; 
   const isRetry = item.json.task === "retry_extraction";
   const retryCount = item.json.retry_count || 0;
   const errorSummary = item.json.error_summary || "";
-  
-  // Check if we're using the enhanced implementation with page images
-  const pageImages = item.json.page_images || [];
-  const useVisualExtraction = pageImages.length > 0;
   
   // Prepare prompt with the PDF text
   // Note: In a real implementation, you would make an API call to an LLM
@@ -122,156 +118,58 @@ const metadataExtractor = async function(items, runIndex) {
   
   try {
     // In production, replace this with actual API call to OpenAI/Claude/etc.
-    // The prompt would change based on whether this is a retry and if we have images
+    // The prompt would change based on whether this is a retry
     // For the patch, we'll simulate a successful extraction
     
-    // Build the appropriate prompt
+    // If this is a retry, we should use the retry-specific prompt that includes error info
     // const prompt = isRetry ? 
     //   getRetryPrompt(pdfText, errorSummary) : 
-    //   (useVisualExtraction ? getEnhancedPrompt(pdfText, pageImages) : getStandardPrompt(pdfText));
+    //   getStandardPrompt(pdfText);
     
-    // This simulates extraction with visual coordinate information
-    const extractedMetadata = useVisualExtraction ? 
-      {
-        name: {
-          value: "Example Material Name",
-          location: {
-            page: 1,
-            bbox: [120, 210, 285, 230]
-          }
-        }, 
-        brand: {
-          value: "Example Brand",
-          location: {
-            page: 1,
-            bbox: [140, 250, 300, 270]
-          }
-        },
-        category: {
-          value: "Wood",
-          location: {
-            page: 1,
-            bbox: [150, 290, 250, 310]
-          }
-        },
-        dimensions: {
-          value: "2400x1200 mm",
-          location: {
-            page: 2,
-            bbox: [210, 350, 310, 370]
-          }
-        },
-        certifications: {
-          value: ["ISO 14001", "FSC"],
-          location: {
-            page: 2,
-            bbox: [200, 400, 350, 440]
-          }
-        },
-        performance: {
-          value: {
-            thermal_resistance: "R-4.5",
-            fire_rating: "EN 13501-1",
-            acoustic_rating: "NRC 0.65"
-          },
-          location: {
-            page: 2,
-            bbox: [180, 450, 400, 520]
-          }
-        },
-        asset_urls: {
-          value: ["https://example.com/datasheet.pdf"],
-          location: {
-            page: 3,
-            bbox: [100, 100, 400, 120]
-          }
-        },
-        traceability: {
-          value: {
-            origin_country: "Sweden",
-            production_batch: "LOT-2025-04-123"
-          },
-          location: {
-            page: 3,
-            bbox: [100, 150, 350, 190]
-          }
-        },
-        summary: {
-          value: "High-performance sustainable wood panel for architectural applications",
-          location: {
-            page: 1,
-            bbox: [100, 320, 500, 380]
-          }
-        },
-        keywords: {
-          value: ["sustainable", "wood", "panel", "architectural"],
-          location: {
-            page: 3,
-            bbox: [150, 200, 450, 250]
-          }
-        }
-      }
-      : 
-      // Traditional flat format without coordinates for backward compatibility
-      {
-        name: "Example Material Name", 
-        brand: "Example Brand",
-        category: "Wood",
-        dimensions: "2400x1200 mm",
-        certifications: ["ISO 14001", "FSC"],
-        performance: {
-          thermal_resistance: "R-4.5",
-          fire_rating: "EN 13501-1",
-          acoustic_rating: "NRC 0.65"
-        },
-        asset_urls: ["https://example.com/datasheet.pdf"],
-        traceability: {
-          origin_country: "Sweden",
-          production_batch: "LOT-2025-04-123"
-        },
-        summary: "High-performance sustainable wood panel for architectural applications",
-        keywords: ["sustainable", "wood", "panel", "architectural"]
-      };
-    
-    // Convert to standard metadata_json format if using enhanced format
-    const standardMetadata = {};
-    if (useVisualExtraction) {
-      for (const [key, data] of Object.entries(extractedMetadata)) {
-        standardMetadata[key] = data.value;
-      }
-    } else {
-      Object.assign(standardMetadata, extractedMetadata);
-    }
+    const extractedMetadata = {
+      name: "Example Material Name", 
+      brand: "Example Brand",
+      category: "Wood",
+      dimensions: "2400x1200 mm",
+      certifications: ["ISO 14001", "FSC"],
+      performance: {
+        thermal_resistance: "R-4.5",
+        fire_rating: "EN 13501-1",
+        acoustic_rating: "NRC 0.65"
+      },
+      asset_urls: ["https://example.com/datasheet.pdf"],
+      traceability: {
+        origin_country: "Sweden",
+        production_batch: "LOT-2025-04-123"
+      },
+      summary: "High-performance sustainable wood panel for architectural applications",
+      keywords: ["sustainable", "wood", "panel", "architectural"]
+    };
     
     // Add metadata about the extraction
     const metadata_json = {
-      metadata_json: standardMetadata,
+      metadata_json: extractedMetadata,
       _metadata: {
-        prompt_id: isRetry ? "v1.0-retry" : (useVisualExtraction ? "v1.0-enhanced" : "v1.0"),
+        prompt_id: isRetry ? "v1.0-retry" : "v1.0",
         model_version: "gemini-flash-1",
         generated_ts: new Date().toISOString(),
         is_retry: isRetry,
-        retry_count: retryCount,
-        visual_extraction: useVisualExtraction
+        retry_count: retryCount
       },
-      field_locations: useVisualExtraction ? extractedMetadata : null,
       _lifecycle_log: item.json._lifecycle_log || [],
       document_id: item.json.document_id,
       retry_count: retryCount,
-      original_request: isRetry ? item.json.original_request : item.json,
-      page_images: useVisualExtraction ? pageImages : []
+      original_request: isRetry ? item.json.original_request : item.json
     };
     
     // Add lifecycle log entry
     metadata_json._lifecycle_log.push({
       document_id: item.json.document_id,
-      from_state: isRetry ? "RETRY_EXTRACTION" : (useVisualExtraction ? "PAGINATED" : "INTERPRETED"),
+      from_state: isRetry ? "RETRY_EXTRACTION" : "INTERPRETED",
       to_state: "EXTRACTED",
       timestamp: new Date().toISOString(),
-      agent: useVisualExtraction ? "metadata_extraction_agent_v1_enhanced" : "metadata_extraction_agent_v1",
-      notes: isRetry ? 
-        `Retry extraction attempt ${retryCount} completed` : 
-        (useVisualExtraction ? "Enhanced extraction with visual coordinates completed" : "Extraction successful")
+      agent: "metadata_extraction_agent_v1",
+      notes: isRetry ? `Retry extraction attempt ${retryCount} completed` : "Extraction successful"
     });
     
     return { json: metadata_json };
@@ -279,10 +177,10 @@ const metadataExtractor = async function(items, runIndex) {
     // Proper error handling with fallback
     const errorEntry = {
       document_id: item.json.document_id,
-      from_state: isRetry ? "RETRY_EXTRACTION" : (useVisualExtraction ? "PAGINATED" : "INTERPRETED"),
+      from_state: isRetry ? "RETRY_EXTRACTION" : "INTERPRETED",
       to_state: "FAILED",
       timestamp: new Date().toISOString(),
-      agent: useVisualExtraction ? "metadata_extraction_agent_v1_enhanced" : "metadata_extraction_agent_v1",
+      agent: "metadata_extraction_agent_v1",
       notes: `Extraction failed: ${error.message}`
     };
     
@@ -631,74 +529,29 @@ const visualVerifierAgent = function(items, runIndex) {
   }
   
   const metadata = item.json.metadata_json;
-  const filePath = item.json.original_request?.file_path;
+  const filePath = item.json.original_request.file_path;
   const confidence = item.json.confidence || 0.9;
   
-  // Check if we have field coordinates and crops for enhanced verification
-  const fieldLocations = item.json.field_locations || {};
-  const fieldCrops = item.json.field_crops || {};
-  const hasVisualData = Object.keys(fieldLocations).length > 0 || Object.keys(fieldCrops).length > 0;
-  
-  // In a real implementation, this would call a multimodal LLM with the crops or PDF regions
+  // In a real implementation, this would call a multimodal LLM with the PDF
   // For this demonstration, we'll simulate a successful verification
   
   // Simulate visual verification findings
   const verificationResults = {
     verification_passed: true,
-    verified_fields: [],
+    verified_fields: ["name", "brand", "dimensions", "category", "certifications"],
     unverified_fields: [],
     confidence_adjustment: 0,
-    evidence: {}
-  };
-  
-  // Process each field with location data
-  if (hasVisualData) {
-    for (const [fieldName, fieldData] of Object.entries(metadata)) {
-      // Get location data
-      const location = fieldLocations[fieldName]?.location;
-      const cropInfo = fieldCrops[fieldName];
-      
-      if (location || cropInfo) {
-        // Field has visual location data, simulate verification
-        // In real implementation, this would check the crop or region
-        
-        // Simulate 90% of fields pass verification
-        const isVerified = Math.random() < 0.9;
-        
-        if (isVerified) {
-          verificationResults.verified_fields.push(fieldName);
-          verificationResults.evidence[fieldName] = {
-            page: location?.page || 1,
-            bbox: location?.bbox || [0, 0, 100, 100],
-            verified: true,
-            confidence: 0.9 + (Math.random() * 0.1) // 0.9-1.0
-          };
-        } else {
-          verificationResults.unverified_fields.push(fieldName);
-          verificationResults.confidence_adjustment += 0.05;
-          verificationResults.evidence[fieldName] = {
-            page: location?.page || 1,
-            bbox: location?.bbox || [0, 0, 100, 100],
-            verified: false,
-            confidence: 0.6 + (Math.random() * 0.2) // 0.6-0.8
-          };
-        }
-      }
-    }
-    
-    // If we found any fields to verify
-    verificationResults.verification_passed = verificationResults.unverified_fields.length <= 1; // Allow one unverified field
-  } else {
-    // No visual data, use simpler verification
-    verificationResults.verified_fields = ["name", "brand", "dimensions", "category", "certifications"];
-    verificationResults.evidence = {
+    evidence: {
       name: { page: 1, location: "header", verified: true },
       brand: { page: 1, location: "logo section", verified: true },
       dimensions: { page: 2, location: "specifications table", verified: true },
       category: { page: 1, location: "product description", verified: true },
       certifications: { page: 3, location: "footer", verified: true }
-    };
-  }
+    }
+  };
+  
+  // In a real implementation, we might have some unverified fields
+  // For demonstration, let's pretend that all fields were verified
   
   // Apply any confidence adjustment
   const adjustedConfidence = Math.max(0, Math.min(1, confidence - verificationResults.confidence_adjustment));
@@ -724,19 +577,21 @@ const visualVerifierAgent = function(items, runIndex) {
       document_id: item.json.document_id,
       confidence: adjustedConfidence,
       _lifecycle_log: [...(item.json._lifecycle_log || []), logEntry],
-      verifier_version: hasVisualData ? "v1.0-visual-enhanced" : "v1.0-visual",
+      verifier_version: "v1.0-visual",
       original_request: item.json.original_request,
       visual_verification: verificationResults
     }
   };
 };
 
-// Import enhanced components
+// Import V1.5 enhanced components
 const pdfPaginatorModule = require('./pdf_paginator');
 const imageCropperModule = require('./image_cropper');
+const enhancedExtractorModule = require('./enhanced_extractor');
+const schemaValidatorModule = require('./schema_validator');
 
 module.exports = {
-  // Core components
+  // Original V1 components
   supervisorAgent,
   metadataExtractor,
   checkRequiredFields,
@@ -746,7 +601,9 @@ module.exports = {
   formatErrorEmail,
   productionConfig,
   
-  // Enhanced visual components
+  // Enhanced V1.5 components
   pdfPaginator: pdfPaginatorModule.pdfPaginator,
-  imageCropper: imageCropperModule.imageCropper
+  imageCropper: imageCropperModule.imageCropper,
+  enhancedExtractor: enhancedExtractorModule.enhancedExtractor,
+  validateMetadataSchema: schemaValidatorModule.validateMetadataSchema
 };

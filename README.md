@@ -22,6 +22,7 @@ It uses schema-first prompting, modular LLM agents, and n8n for orchestration.
 | Version | Strategy                  | Ideal For                            |
 |---------|---------------------------|--------------------------------------|
 | [`V1_Linear_Flow`](./V1_Linear_Flow) | Linear simplicity           | Quickstart, minimal setups           |
+| [`V1.5_Enhanced_Verification`](./V1.5_Enhanced_Verification) | Multi-turn visual verification | High accuracy, evidence collection    |
 | [`V2_Modular_Expansion`](./V2_Modular_Expansion) | Modular agents with explicit flow | Complex intake, scalable deployments |
 | [`V3_Intent_Driven_Minimalism`](./V3_Intent_Driven_Minimalism) | Stateless intent-based dispatch | Adaptive pipelines, future extensibility |
 
