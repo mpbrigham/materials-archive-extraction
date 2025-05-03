@@ -75,6 +75,19 @@ Each pipeline follows a composable flow:
 [Notification or Response Agent]
 ```
 
+## 📊 Materials Schema
+
+The system extracts metadata according to a standardized [materials schema](./materials_schema.json) that includes:
+
+- Basic identification (name, brand, category)
+- Physical properties (dimensions, weight, texture)
+- Performance characteristics (fire rating, acoustic properties)
+- Sustainability information (recycled content, EPD)
+- Technical resources (BIM, CAD files)
+- Application details (indoor/outdoor, project types)
+
+Each pipeline implements confidence policies that may fall back to reduced schema sets when full extraction isn't possible.
+
 ---
 
 ## 🌬️ Design Zen koan

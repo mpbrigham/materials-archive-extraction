@@ -1,205 +1,160 @@
-# V1 Linear Flow – Intelligent Materials Intake System
+# V1 Linear Flow – Enhanced Multimodal Intelligent Materials Intake System
 
-This version represents the production-ready implementation of the IMIS pipeline with enhanced verification capabilities.
+This version represents the enhanced implementation of the IMIS pipeline with multimodal extraction and intelligent LLM-based data processing capabilities.
 
 ## Flow Summary
 
 ```
-Supervisor → PDF Paginator → Metadata Extractor (with coordinates) → Image Cropper → Schema Validator → Visual Verifier → Response
+Document Validator → Multimodal Extraction → LLM Data Processor → Multimodal Verifier → Response
 ```
 
 ```mermaid
 flowchart TD
-    A[Supervisor Agent] --> B[PDF Paginator]
-    B --> C[Metadata Extraction Agent]
-    C --> D[Image Cropper]
-    D --> E[Schema Validator]
-    E -->|Valid| F[Visual Verifier Agent]
-    E -->|Invalid| G{Max Retries?}
-    G -->|No| A
-    G -->|Yes| H{Has MVS?}
-    H -->|Yes| I[Fallback to MVS]
-    H -->|No| J[Error Response]
-    F --> K{Verification Passed?}
-    K -->|Yes| L[Generate Evidence Report]
-    L --> M[Success Response]
-    K -->|No| N[Error Response]
-    I --> M
-    M --> O[Document Lifecycle Log]
-    J --> O
-    N --> O
-    O --> P[Notifications]
+    A[Document Validator] --> B[Multimodal LLM Extraction]
+    B --> C[Metadata Parser]
+    C --> D[LLM Data Processor]
+    D -->|High Confidence| E[Multimodal LLM Verifier]
+    D -->|Mixed Confidence| F[Dynamic Optimized Schema]
+    D -->|Low Confidence| H[Error Response]
+    F --> E
+    E --> I{Verification Passed?}
+    I -->|Yes| J[Success Response]
+    I -->|No| K[Error Response]
+    J --> L[Document Lifecycle Log]
+    H --> L
+    K --> L
+    L --> M[Notifications]
 ```
 
-## Production-Ready Features
+## Multimodal Features
 
-- ✅ **Complete n8n workflow** with error handling and monitoring
-- ✅ **Two-stage verification** with JSON schema and visual PDF checks
-- ✅ **Visual coordinate extraction** for precise field location
-- ✅ **PDF pagination and image cropping** for targeted verification
-- ✅ **Evidence report generation** with verification details
-- ✅ **Retry logic** for extraction failures with guided prompts
-- ✅ **Confidence-based fallback** to Minimum Viable Schema (MVS)
-- ✅ **Enhanced webhook handler** with proper error handling and security
-- ✅ **Comprehensive logging** with document lifecycle tracking
-- ✅ **Environment configuration** for deployment flexibility
-- ✅ **Testing script** for validation and quality assurance
-- ✅ **Deployment documentation** for production environments
+- ✅ **Direct PDF processing** with multimodal LLM capabilities
+- ✅ **Visual extraction** with field locations and confidence
+- ✅ **Intelligent LLM-based data processing** with dynamic field selection
+- ✅ **Multimodal verification** against original document
+- ✅ **Enhanced confidence scoring** with field-level metrics
+- ✅ **Dynamic MVS optimization** prioritizing high-quality fields
+- ✅ **Full comprehensive schema support** with [materials_schema.json](../materials_schema.json)
 
-## Enhanced Verification Features
+## Key Enhancements
 
-The verification process uses a visual-aware approach with coordinates and image crops:
+1. **Streamlined Processing**:
+   - Eliminates separate text extraction step
+   - Processes PDFs directly using multimodal LLM
+   - Maintains the same workflow structure with fewer components
 
-1. **PDF Pagination and Coordinate Extraction**:
-   - Converts PDFs to individual page images
-   - Extracts metadata with precise coordinates [x1, y1, x2, y2]
-   - Records page numbers for each extracted field
-   - Enables targeted verification of specific regions
+2. **Improved Visual Context**:
+   - Extracts field locations with page numbers and coordinates
+   - Uses visual context for enhanced verification
+   - Preserves layout and design information from documents
 
-2. **Image Cropping**:
-   - Generates crops of each extracted field
-   - Creates visual evidence for verification
-   - Enables field-by-field visual confirmation
-   - Preserves context for later review
+3. **Dynamic MVS Approach**:
+   - Core MVS fields: `name`, `brand`, `summary`
+   - LLM-based quality assessment of all extracted fields
+   - Intelligent selection of optimal high-confidence field subset
+   - Semantic understanding of field relationships and dependencies
 
-3. **Schema Validation**:
-   - Validates structure and format of extracted metadata
-   - Checks required fields, array formats, and value patterns
-   - Provides specific error information for retry requests
-   - Implements retry logic for extraction failures
-   - Falls back to MVS only after multiple failed attempts
+4. **Enhanced Confidence Assessment**:
+   - Field-level confidence metrics
+   - Weighted scoring that prioritizes important fields
+   - Semantic coherence evaluation
+   - Quality-driven decision making
 
-4. **Visual Verification**:
-   - Verifies extracted data against crops of specific regions
-   - Uses multimodal LLM capabilities to confirm extracted text
-   - Provides confidence adjustments based on verification results
-   - Identifies hallucinated or incorrect data
-   - Produces evidence of verification with page and location information
+## Intelligent Data Processing
 
-5. **Evidence Reporting**:
-   - Generates HTML evidence report with verification details
-   - Shows verification status for each field
-   - Includes confidence scores and page numbers
-   - Provides audit trail of verification process
+The system uses an LLM-based data processor that implements a sophisticated field selection strategy:
+
+1. **Comprehensive Schema**:
+   - Extracts metadata according to the standardized comprehensive [materials schema](../materials_schema.json)
+   - Preserves field-level confidence scores and locations
+   - Processes all available fields from the document
+
+2. **LLM-Based Assessment**:
+   - Evaluates extracted fields based on confidence, relationships, and utility
+   - Makes context-aware decisions based on document quality
+   - Implements confidence policy with adaptive thresholds
+   - Provides explanatory notes about assessment decisions
+
+3. **Dynamic Field Selection**:
+   - When confidence is mixed (0.7-0.9), selects optimal field subset
+   - Retains all fields with confidence ≥ 0.7
+   - Prioritizes semantically coherent combinations
+   - Preserves field relationships and dependencies
 
 ## Confidence Policy Implementation
 
-The system implements a three-tier confidence policy:
+The system implements a three-tier confidence policy with intelligent assessment:
 
-1. **Trust threshold** (confidence ≥ 0.9): Full schema extraction
-2. **Fallback threshold** (0.7 ≤ confidence < 0.9): Minimum Viable Schema (MVS)
+1. **Trust threshold** (confidence ≥ 0.9): Proceed with full schema extraction
+2. **Fallback threshold** (0.7 ≤ confidence < 0.9): Dynamic selection of high-confidence fields
 3. **Failure threshold** (confidence < 0.7): Rejection with detailed reasons
 
-When falling back to MVS, the system preserves the following essential fields:
-- `name`: Material name
-- `dimensions`: Material dimensions
-- `brand`: Brand name
-- `summary`: Brief description
-
-## Retry Logic
-
-When JSON schema validation fails:
-1. The system logs specific validation errors
-2. Metadata extraction is retried with error context
-3. The retry prompt includes guidance on previous failures
-4. After a maximum of 3 attempts, the system either:
-   - Falls back to MVS if available
-   - Fails the process completely if MVS is not available
+See [CONFIDENCE_POLICY_ENHANCED.txt](specs/CONFIDENCE_POLICY_ENHANCED.txt) for detailed implementation.
 
 ## Agent Interface Contracts
 
-All agents follow strict interface contracts for reliable communication:
+The enhanced multimodal implementation updates the interface contracts:
 
-1. **Supervisor → Metadata Extraction Agent**: Initiates extraction with document context
-2. **Metadata Extraction Agent → Schema Validator**: Provides extracted metadata
-3. **Schema Validator → Visual Verifier/Supervisor**: Routes based on validation results
-4. **Visual Verifier → Supervisor**: Reports verification with evidence and confidence adjustment
+1. **Document Validator → Multimodal Extraction**: Validates PDF and initiates processing
+2. **Multimodal Extraction → LLM Data Processor**: Provides extraction with visual coordinates and confidence
+3. **LLM Data Processor → Multimodal Verifier**: Routes optimized field set based on quality assessment
+4. **Multimodal Verifier → Response Formatter**: Reports verification status with visual evidence
+
+See [AGENT_INTERFACE_CONTRACTS_ENHANCED.txt](specs/AGENT_INTERFACE_CONTRACTS_ENHANCED.txt) for detailed contract specifications.
 
 ## Deployment Quick Start
 
-1. Install dependencies (including image processing libraries):
+1. Set up multimodal LLM API access in your environment file:
    ```
-   pip install flask requests python-dotenv werkzeug pdf2image pillow
-   apt-get install poppler-utils  # Required for PDF processing
-   ```
-
-2. Configure environment settings in `.env` file (copy from env-template.txt)
-   ```
-   cp deployment/env-template.txt .env
-   nano .env  # edit as needed
+   LLM_VISION_API_ENDPOINT=https://api.provider.com/v1/models/vision-model
+   LLM_VISION_MODEL=provider-vision-model
+   LLM_TEXT_API_ENDPOINT=https://api.provider.com/v1/models/text-model
+   LLM_TEXT_MODEL=provider-text-model
    ```
 
-3. Create required directories:
+2. Import the workflow into n8n:
    ```
-   mkdir -p storage/pages storage/crops logs
-   chmod 755 storage logs storage/pages storage/crops
-   ```
-
-4. Start the webhook handler:
-   ```
-   python webhook_handler.py
+   n8n import:workflow --input=deployment/workflow_Materials_Intake_V1.json
    ```
 
-5. Import the enhanced workflow into n8n:
+3. Test the implementation:
    ```
-   n8n import:workflow --input=deployment/workflow_Materials_Intake_Enhanced.json
-   ```
-
-6. Test the deployment:
-   ```
-   python testing_script.py
+   node scripts/test_llm_processor.js
    ```
 
-For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
+4. Process a sample PDF:
+   ```
+   python scripts/testing_script.py --samples /path/to/pdf/file.pdf
+   ```
 
-> Note: The legacy workflow (`workflow_Materials_Intake_FullFlow.json`) is still available but lacks the enhanced visual verification features.
+For detailed deployment instructions, see [DEPLOYMENT.md](deployment/DEPLOYMENT.md).
 
 ## System Requirements
 
 - Python 3.8+
-- poppler-utils (for PDF processing)
+- Node.js 14+
 - n8n instance
 - SMTP/IMAP server access
-- Vision-capable LLM API access (OpenAI, Gemini Vision, or Claude 3)
-
-## Logging and Monitoring
-
-The system provides comprehensive logging and monitoring:
-
-- Document lifecycle tracking in JSON format
-- Structured logs with rotation
-- Health check endpoint (`/health`)
-- Document status tracking (`/status/<document_id>`)
-- Slack notifications for processing status
+- Multimodal LLM API access (Gemini Vision, GPT-4V, or Claude 3)
+- Text LLM API access (Gemini, GPT-4, or Claude)
 
 ## Configuration
 
-The configuration is managed through:
+The configuration includes enhanced settings:
 
 1. **Environment Variables**:
-   - Email settings (SMTP/IMAP)
-   - LLM API configuration
-   - Storage paths 
-   - Logging options
+   - Standard email and logging settings
+   - Multimodal and text LLM API configuration
+   - Model selection options
 
-2. **Schema Validator** (`schema_validator.js`):
-   - Required fields: `name`, `brand`, `category`, `dimensions`
-   - MVS fields: `name`, `dimensions`, `brand`, `summary`
-   - Maximum retry attempts: 2
-   - Fallback confidence threshold: 0.7
+2. **LLM Prompts**:
+   - Multimodal extraction: [multimodal_extraction.txt](prompts/multimodal_extraction.txt)
+   - LLM data processor: [data_processor.txt](prompts/data_processor.txt)
+   - Verification: [metadata_verification.txt](prompts/metadata_verification.txt)
 
-3. **Visual Verifier** (in prompts and functions):
-   - Fields to verify: `name`, `brand`, `dimensions`, `category`, `certifications`
-   - Confidence adjustment mechanism
-   - Evidence collection with page numbers and locations
-
-## Security Considerations
-
-- All inputs are validated and sanitized
-- File uploads are restricted to PDFs
-- Secure filename handling to prevent path traversal
-- Rate limiting for API endpoints
-- Environment variables for sensitive credentials
+3. **Implementation Files**:
+   - Enhanced functions: [functions_multimodal_enhanced.js](scripts/functions_multimodal_enhanced.js)
+   - Test script: [test_llm_processor.js](scripts/test_llm_processor.js)
 
 ## License
 

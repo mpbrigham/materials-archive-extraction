@@ -24,3 +24,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Security**: Use secure_filename, validate inputs, sanitize paths
 - **Configuration**: Environment variables via dotenv
 - **Testing**: Document IDs use "doc-{timestamp}-{sanitized_sender}" format
+
+## Collaboration Guidelines
+
+- **Action validation**: Always present action plans for user validation before implementation
+- **Code changes**: Get user approval before making significant modifications
+- **Complex tasks**: Break down into clear steps for user review

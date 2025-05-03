@@ -1,5 +1,5 @@
 {
-  "name": "Materials Intake Full Flow",
+  "name": "Materials Intake Pipeline V1 Multimodal",
   "nodes": [
     {
       "parameters": {
@@ -16,7 +16,7 @@
         }
       },
       "id": "1",
-      "name": "IMAP Email Trigger",
+      "name": "Email Trigger",
       "type": "n8n-nodes-base.emailReadImap",
       "typeVersion": 1,
       "position": [
@@ -26,13 +26,11 @@
     },
     {
       "parameters": {
-        "options": {
-          "extract": "text"
-        }
+        "functionCode": "// Get code from functions_multimodal.js\nconst functions = require('./functions_multimodal.js');\nreturn functions.documentValidator(items, runIndex);"
       },
-      "id": "2",
-      "name": "Extract From PDF",
-      "type": "n8n-nodes-base.extractFromFile",
+      "id": "3",
+      "name": "Document Validator",
+      "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
         300,
@@ -41,22 +39,9 @@
     },
     {
       "parameters": {
-        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.supervisorAgent(items, runIndex);"
-      },
-      "id": "3",
-      "name": "Supervisor Agent",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        500,
-        100
-      ]
-    },
-    {
-      "parameters": {
         "authentication": "headerAuth",
         "httpMethod": "POST",
-        "url": "={{ $env.LLM_API_ENDPOINT }}",
+        "url": "={{ $env.LLM_VISION_API_ENDPOINT }}",
         "jsonParameters": true,
         "options": {
           "allowUnauthorizedCerts": false,
@@ -86,11 +71,11 @@
           "parameters": [
             {
               "name": "prompt",
-              "value": "={{ $node[\"Extract From PDF\"].json[\"text\"] }}"
+              "value": "=The contents of file {{ $node[\"Document Validator\"].json[\"file_path\"] }} - Extract all available metadata according to the multimodal_extraction.txt prompt."
             },
             {
               "name": "model",
-              "value": "={{ $env.LLM_MODEL }}"
+              "value": "={{ $env.LLM_VISION_MODEL }}"
             },
             {
               "name": "temperature",
@@ -98,39 +83,43 @@
             },
             {
               "name": "max_tokens",
-              "value": 4000
+              "value": 8000
+            },
+            {
+              "name": "include_pdf",
+              "value": true
             }
           ]
         }
       },
       "id": "4",
-      "name": "Call Metadata Extractor LLM API",
+      "name": "LLM Extraction",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
         500,
-        250
+        100
       ]
     },
     {
       "parameters": {
-        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.metadataExtractor(items, runIndex);"
+        "functionCode": "// Get code from functions_multimodal.js\nconst functions = require('./functions_multimodal.js');\nreturn functions.multimodalMetadataExtractor(items, runIndex);"
       },
       "id": "5",
-      "name": "Process LLM Response",
+      "name": "Metadata Parser",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
         700,
-        250
+        100
       ]
     },
     {
       "parameters": {
-        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.checkRequiredFields(items, runIndex);"
+        "functionCode": "// Get code from functions_multimodal.js\nconst functions = require('./functions_multimodal.js');\nreturn functions.dataProcessor(items, runIndex);"
       },
       "id": "6",
-      "name": "Check Required Fields",
+      "name": "Data Processor",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
@@ -140,10 +129,10 @@
     },
     {
       "parameters": {
-        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.verifierAgent(items, runIndex);"
+        "functionCode": "// Get code from functions_multimodal.js\nconst functions = require('./functions_multimodal.js');\nreturn functions.llmVerifier(items, runIndex);"
       },
       "id": "7",
-      "name": "Verifier Agent",
+      "name": "LLM Verifier",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
@@ -164,7 +153,7 @@
         }
       },
       "id": "8",
-      "name": "IF Verification Passed",
+      "name": "Validation Router",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
@@ -174,10 +163,10 @@
     },
     {
       "parameters": {
-        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.formatSuccessEmail(items, runIndex);"
+        "functionCode": "// Get code from functions_multimodal.js\nconst functions = require('./functions_multimodal.js');\nreturn functions.formatSuccessEmail(items, runIndex);"
       },
       "id": "9",
-      "name": "Format Success Email",
+      "name": "Success Notifier",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
@@ -187,10 +176,10 @@
     },
     {
       "parameters": {
-        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.formatErrorEmail(items, runIndex);"
+        "functionCode": "// Get code from functions_multimodal.js\nconst functions = require('./functions_multimodal.js');\nreturn functions.formatErrorEmail(items, runIndex);"
       },
       "id": "10",
-      "name": "Format Error Email",
+      "name": "Error Notifier",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
@@ -209,7 +198,7 @@
         }
       },
       "id": "11",
-      "name": "Send Email",
+      "name": "Send Notification",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 1,
       "position": [
@@ -222,34 +211,13 @@
         "functionCode": "// Log all document lifecycle stages to a file\n\nconst fs = require('fs');\nconst path = require('path');\n\nconst logPath = process.env.LOG_PATH || './logs';\nconst logFile = path.join(logPath, 'document_lifecycle.json');\n\n// Ensure log directory exists\nif (!fs.existsSync(logPath)) {\n  fs.mkdirSync(logPath, { recursive: true });\n}\n\n// Get existing logs or create new array\nlet logs = [];\nif (fs.existsSync(logFile)) {\n  try {\n    const data = fs.readFileSync(logFile, 'utf8');\n    logs = JSON.parse(data);\n  } catch (err) {\n    console.error('Error reading logs file:', err);\n  }\n}\n\n// Add new log entries\nif (items[0].json._lifecycle_log && Array.isArray(items[0].json._lifecycle_log)) {\n  logs = logs.concat(items[0].json._lifecycle_log);\n  \n  // Write updated logs\n  try {\n    fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));\n  } catch (err) {\n    console.error('Error writing logs file:', err);\n  }\n}\n\n// Pass through the original items\nreturn items;"
       },
       "id": "12",
-      "name": "Log Document Lifecycle",
+      "name": "Activity Logger",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
         1900,
         100
       ]
-    },
-    {
-      "parameters": {
-        "resource": "message",
-        "channel": "={{ $env.SLACK_CHANNEL_ID }}",
-        "text": "=Document processed: {{ $json.document_id }}\nStatus: {{ $json.verification_passed ? 'Success ✅' : 'Failed ❌' }}\nReason: {{ $json.reason }}"
-      },
-      "id": "13",
-      "name": "Slack Notification",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 1,
-      "position": [
-        1900,
-        250
-      ],
-      "credentials": {
-        "slackApi": {
-          "id": "1",
-          "name": "Slack account"
-        }
-      }
     },
     {
       "parameters": {
@@ -286,7 +254,7 @@
         "options": {}
       },
       "id": "15",
-      "name": "Format Error",
+      "name": "Error Formatter",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
@@ -296,146 +264,117 @@
     }
   ],
   "connections": {
-    "IMAP Email Trigger": {
+    "Email Trigger": {
       "main": [
         [
           {
-            "node": "Extract From PDF",
+            "node": "Document Validator",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Extract From PDF": {
+    "Document Validator": {
       "main": [
         [
           {
-            "node": "Supervisor Agent",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Call Metadata Extractor LLM API",
+            "node": "LLM Extraction",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Supervisor Agent": {
+    "LLM Extraction": {
       "main": [
         [
           {
-            "node": "Process LLM Response",
+            "node": "Metadata Parser",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Call Metadata Extractor LLM API": {
+    "Metadata Parser": {
       "main": [
         [
           {
-            "node": "Process LLM Response",
+            "node": "Data Processor",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Process LLM Response": {
+    "Data Processor": {
       "main": [
         [
           {
-            "node": "Check Required Fields",
+            "node": "LLM Verifier",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Required Fields": {
+    "LLM Verifier": {
       "main": [
         [
           {
-            "node": "Verifier Agent",
+            "node": "Validation Router",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Verifier Agent": {
+    "Validation Router": {
       "main": [
         [
           {
-            "node": "IF Verification Passed",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF Verification Passed": {
-      "main": [
-        [
-          {
-            "node": "Format Success Email",
+            "node": "Success Notifier",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Format Error Email",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  }
-}
+            "node": "Error Notifier",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Format Success Email": {
+    "Success Notifier": {
       "main": [
         [
           {
-            "node": "Send Email",
+            "node": "Send Notification",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Format Error Email": {
+    "Error Notifier": {
       "main": [
         [
           {
-            "node": "Send Email",
+            "node": "Send Notification",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Send Email": {
+    "Send Notification": {
       "main": [
         [
           {
-            "node": "Log Document Lifecycle",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Slack Notification",
+            "node": "Activity Logger",
             "type": "main",
             "index": 0
           }
@@ -446,15 +385,23 @@
       "main": [
         [
           {
-            "node": "Format Error",
+            "node": "Error Formatter",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Format Error": {
+    "Error Formatter": {
       "main": [
         [
           {
-            "node": "Format Error Email",
+            "node": "Error Notifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
