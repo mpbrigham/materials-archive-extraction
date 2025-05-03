@@ -51,16 +51,6 @@ Where:
 - Visual verification of problematic fields
 - Field-specific correction opportunities
 
-## Performance Improvements
-
-| Metric | V1 Linear Flow | V1.5 Enhanced Visual Verification |
-|--------|---------------|----------------------------------|
-| Extraction Accuracy | Good (85-90%) | Excellent (92-97%) |
-| Hallucination Rate | Moderate (5-8%) | Very Low (<2%) |
-| Processing Time | Faster (30-60 sec) | Moderate (45-90 sec) |
-| Storage Requirements | Lower (5-10MB per doc) | Higher (15-30MB per doc) |
-| Confidence Precision | Standard | High (field-specific) |
-
 ## Migration Considerations
 
 ### System Requirements
