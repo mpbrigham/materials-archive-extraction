@@ -1,0 +1,47 @@
+==================================================================
+        EVALUATION OF DOCUMENT METADATA EXTRACTION
+==================================================================
+
+OBJECTIVE:
+Evaluate the effectiveness of the Document Metadata Extraction prompt in 
+producing structured, layout-anchored metadata and contextual summaries from 
+segmented documents.
+
+------------------------------------------------------------------
+AS YOU REVIEW EACH DOCUMENT, COMMENT ON:
+
+✅ WHAT WORKED WELL
+- Was the summary concise and layout-anchored with key metadata highlighted?
+- Were keywords deduplicated and drawn from high-confidence visual sources?
+- Were structured fields (e.g., Drawing Number, Supplier, AKZ) extracted with correct formatting?
+- Were values properly normalized (e.g., date formats, suffixes, serials)?
+- Did the output follow all formatting and casing standards?
+
+⚠️ CHALLENGES
+- Were any fields overpopulated from dense tables or footnotes?
+- Did visual ambiguity or scan degradation cause missed metadata?
+- Was there any evidence of hallucinated or inferred values?
+- Were compound fields (e.g., grouped AKZs, multiple serials) misinterpreted?
+
+🌀 PROMPT AMBIGUITIES
+- Was it clear when to rely on segment metadata versus layout cues?
+- Were criteria for including items in Keywords sufficiently strict?
+- Was handling of optional fields (e.g., KWU Type, Serial Number) consistent?
+- Was it obvious how to treat multilingual or partial field labels?
+
+🛠 SUGGESTIONS
+- Could keyword selection be made stricter to avoid table spillover?
+- Recommend clarifying regex/format rules for Serial Number and AKZ normalization.
+- Should fallback Summary support from segment metadata be expanded?
+- Suggest any additions to the Document Type list if gaps were observed.
+
+📎 (OPTIONAL) INCLUDE EXAMPLES
+Cite document indices or metadata patterns that were extracted well or incorrectly.
+
+------------------------------------------------------------------
+NOTES:
+- This task evaluates document metadata accuracy, structure, and anchoring.
+- TOC-level summaries are reviewed separately.
+- Emphasize layout-anchored metadata over inferred content.
+
+==================================================================

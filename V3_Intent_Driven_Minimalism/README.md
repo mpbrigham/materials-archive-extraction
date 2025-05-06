@@ -90,7 +90,7 @@ The system includes a comprehensive feedback mechanism:
    ```
 3. Import the workflow into n8n:
    ```
-   n8n import:workflow --input=workflow_intent_driven.json
+   n8n import:workflow --input=deployment/workflow_Materials_Intake_V3.json
    ```
 4. Test the deployment:
    ```

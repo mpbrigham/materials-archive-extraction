@@ -90,6 +90,13 @@
               "value": true
             }
           ]
+        },
+        "postReceive": {
+          "enabled": true,
+          "type": "jsonTranform",
+          "jsonTranform": {
+            "transformationInstructions": "// Transform extraction response to needed format\nconst filePath = $node[\"Document Validator\"].json.file_path || \"\";\nconst isRetry = $node[\"Document Validator\"].json.task === \"retry_extraction\";\nconst retryCount = $node[\"Document Validator\"].json.retry_count || 0;\nconst documentId = $node[\"Document Validator\"].json.document_id;\n\n// Parse the LLM extraction result\ntry {\n  const extractedData = $input.all();\n  \n  // Get just the extraction data, not the wrapper\n  const extractedMetadata = extractedData.body;\n  \n  // Convert to standard metadata_json format\n  const standardMetadata = {};\n  for (const [key, data] of Object.entries(extractedMetadata)) {\n    standardMetadata[key] = data.value;\n  }\n  \n  // Create field confidence mapping\n  const fieldConfidences = {};\n  for (const [key, data] of Object.entries(extractedMetadata)) {\n    fieldConfidences[key] = data.confidence;\n  }\n  \n  // Prepare response with the same format that Metadata Parser produced\n  const result = {\n    metadata_json: standardMetadata,\n    field_extractions: extractedMetadata,\n    _metadata: {\n      prompt_id: isRetry ? \"multimodal-v1.0-retry\" : \"multimodal-v1.0\",\n      model_version: \"gemini-pro-vision\",\n      generated_ts: new Date().toISOString(),\n      is_retry: isRetry,\n      retry_count: retryCount,\n      multimodal_extraction: true,\n      source_file_name: filePath.split('/').pop() || \"unknown\"\n    },\n    // field_locations removed (duplication of field_extractions)\n    field_confidences: fieldConfidences,\n    _lifecycle_log: $node[\"Document Validator\"].json._lifecycle_log || [],\n    document_id: documentId,\n    retry_count: retryCount,\n    original_request: isRetry ? $node[\"Document Validator\"].json.original_request : $node[\"Document Validator\"].json\n  };\n  \n  // Add lifecycle log entry\n  result._lifecycle_log.push({\n    document_id: documentId,\n    from_state: isRetry ? \"RETRY_EXTRACTION\" : \"INTERPRETED\",\n    to_state: \"EXTRACTED\",\n    timestamp: new Date().toISOString(),\n    agent: \"multimodal_metadata_extractor_v1\",\n    notes: isRetry ? \n      `Retry extraction attempt ${retryCount} completed` : \n      \"Multimodal extraction with visual coordinates completed\"\n  });\n  \n  return { json: result };\n} catch (error) {\n  // Error handling similar to the one in multimodalMetadataExtractor\n  const errorEntry = {\n    document_id: documentId,\n    from_state: isRetry ? \"RETRY_EXTRACTION\" : \"INTERPRETED\",\n    to_state: \"FAILED\",\n    timestamp: new Date().toISOString(),\n    agent: \"multimodal_metadata_extractor_v1\",\n    notes: `Multimodal extraction failed: ${error.message}`\n  };\n  \n  return {\n    json: {\n      task_status: \"failed\",\n      error_summary: `Multimodal metadata extraction failed: ${error.message}`,\n      document_id: documentId,\n      retry_count: retryCount,\n      _lifecycle_log: [...($node[\"Document Validator\"].json._lifecycle_log || []), errorEntry]\n    }\n  };\n}"
+          }
         }
       },
       "id": "4",
@@ -98,19 +105,6 @@
       "typeVersion": 3,
       "position": [
         500,
-        100
-      ]
-    },
-    {
-      "parameters": {
-        "functionCode": "// Get code from functions_multimodal.js\nconst functions = require('./functions_multimodal.js');\nreturn functions.multimodalMetadataExtractor(items, runIndex);"
-      },
-      "id": "5",
-      "name": "Metadata Parser",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        700,
         100
       ]
     },
@@ -208,7 +202,7 @@
           "parameters": [
             {
               "name": "prompt",
-              "value": "=The contents of the metadata_verification.txt prompt. You'll be verifying the following metadata: {{ $json.metadata_json }} against the document at {{ $node[\"Document Validator\"].json[\"file_path\"] }}. Use the field coordinates provided in {{ $json.field_locations }} to guide your verification."
+              "value": "=The contents of the metadata_verification.txt prompt. You'll be verifying the following metadata: {{ $json.metadata_json }} against the document at {{ $node[\"Document Validator\"].json[\"file_path\"] }}. Use the field coordinates provided in {{ $json.field_extractions }} to guide your verification."
             },
             {
               "name": "model",
@@ -385,17 +379,6 @@
       ]
     },
     "LLM Extraction": {
-      "main": [
-        [
-          {
-            "node": "Metadata Parser",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Metadata Parser": {
       "main": [
         [
           {

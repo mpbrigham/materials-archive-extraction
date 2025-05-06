@@ -151,6 +151,9 @@ IMPORTANT GUIDELINES:
 - If you can't find information for optional fields, omit them entirely.
 - Always prioritize ACCURACY over COMPLETENESS for non-MVS fields.
 - Format dimensions as numbers without units in the structured data.
-- When dealing with multiple product variants in one document, focus on the primary/highlighted product.
+- When dealing with multiple product variants in one document:
+  * Focus on the most prominently displayed or featured product
+  * If products have equal prominence, select the first one appearing in the document
+  * Add a "contains_multiple_products" field set to true to indicate when others were present but not extracted
 - Convertible measurements should use standard units (mm, kg, etc.) as specified in the schema.
 - Response must be valid JSON with properly nested objects and arrays.

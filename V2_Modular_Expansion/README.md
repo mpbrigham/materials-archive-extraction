@@ -63,7 +63,7 @@ V2 implements strict interface contracts between agents:
    ```
 3. Import the workflow into n8n:
    ```
-   n8n import:workflow --input=workflow_Materials_Intake_FullFlow.json
+   n8n import:workflow --input=deployment/workflow_Materials_Intake_V2.json
    ```
 4. Test the deployment:
    ```

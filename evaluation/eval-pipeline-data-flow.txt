@@ -1,0 +1,198 @@
+==================================================================
+        EVALUATION OF PIPELINE DATA FLOW
+==================================================================
+
+PURPOSE:
+To ensure robust, scalable, and traceable data flow across dynamically 
+structured, multi-agent LLM pipelines processing high-volume, high-variance input.
+
+APPLICABILITY:
+- Works for any pipeline topology (linear, tree, DAG)
+- Does not assume fixed input/output schemas
+- Supports ongoing refactors and evolving agent responsibilities
+
+==================================================================
+
+🧹 PHASE 1 — PIPELINE TOPOLOGY MAPPING
+------------------------------------------------------------------
+
+GOAL:
+Establish and validate the agent topology and high-level responsibilities.
+
+CHECKLIST:
+- [ ] List all pipeline agents/modules in execution order (e.g., A → B → C)
+- [ ] Define each agent’s task in 1–2 purpose-focused sentences
+- [ ] Draw or encode flow as a DAG if branches/joins exist
+- [ ] Identify pipeline entry points, terminal nodes, and fallback branches
+- [ ] Note optional stages or conditionally triggered paths
+
+OUTPUT:
+✓ Agent Map (ASCII, JSON, or DOT)
+✓ Execution Path Types (linear / branching / hybrid)
+✓ Summary of Task Purposes per Agent
+
+==================================================================
+
+🔁 PHASE 2 — AGENT I/O CONTRACT INSPECTION
+------------------------------------------------------------------
+
+GOAL:
+Check if data passed between agents is well-defined, minimal, and sufficient.
+
+FOR EACH AGENT:
+1. INPUT CONTRACT
+   - [ ] What fields, signals, or data structures does this agent *consume*?
+   - [ ] Are all required inputs guaranteed by upstream agents?
+   - [ ] Are optional inputs handled gracefully if missing?
+   - [ ] Are null, empty, or degraded values explicitly allowed?
+
+2. OUTPUT CONTRACT
+   - [ ] What fields does this agent *produce*?
+   - [ ] Are they always emitted (with null/empty if unavailable)?
+   - [ ] Are the output values properly deduplicated, validated, and scoped?
+   - [ ] Are internal-only fields filtered out?
+
+3. INTERFACE CLEANLINESS
+   - [ ] Are outputs narrowly scoped to what downstream needs?
+   - [ ] Are upstream labels or metadata leaked into semantic layers?
+   - [ ] Are field names and types consistent across the pipeline?
+
+OUTPUT:
+✓ I/O Contract Table per agent:
+  | Agent | Input Fields | Output Fields | Optional | Notes |
+
+------------------------------------------------------------------
+
+📄 PROMPT-DEFINED CONTRACT INTEGRITY (EXTENSION)
+------------------------------------------------------------------
+
+GOAL:
+Ensure that each LLM prompt's declared INPUT and OUTPUT FORMAT sections are structurally compatible across stages.
+
+CHECKLIST:
+- [ ] For each prompt in the pipeline, extract the INPUT and OUTPUT FORMAT sections
+- [ ] Match the OUTPUT fields of Stage N to the INPUT fields of Stage N+1
+- [ ] Validate:
+    - Field names are consistent
+    - Field types are compatible (e.g., <string>, [<int>], etc.)
+    - Required fields are preserved across stages
+    - No critical fields are dropped, renamed, or retyped
+    - Confidence scores, fallback logic, or optionality are declared in both places
+
+OUTPUT:
+✓ Prompt Contract Consistency Table:
+  | From Prompt           | To Prompt             | Field                  | Status  | Notes                   |
+  |-----------------------|------------------------|------------------------|---------|-------------------------|
+  | page-classification   | document-segmentation | boundary_recommendation | pass    |                         |
+  | document-segmentation | document-metadata     | is_archive_metadata     | fail    | Type changed to <str>   |
+  | document-metadata     | toc-consolidation     | Summary                 | pass    |                         |
+
+==================================================================
+
+🧬 PHASE 3 — DATA FLOW CONSISTENCY & REDUNDANCY CHECK
+------------------------------------------------------------------
+
+GOAL:
+Verify that all data needed for downstream processing flows predictably, and nothing
+is over-supplied, leaked, or mutated midstream.
+
+CHECKLIST:
+- [ ] All required data fields are produced *before* they are needed
+- [ ] No agent assumes data that hasn’t yet been introduced
+- [ ] Data required in multiple locations is emitted once and reused, not re-derived
+- [ ] Aggregated metadata is never confused with per-instance metadata
+- [ ] No transformation step introduces semantic drift or uncontrolled renaming
+- [ ] Optional branches still produce required signals for later stages
+
+OUTPUT:
+✓ Upstream Dependency Chain Diagram
+✓ Redundancy Summary:
+  - Recomputed: [field_a, field_b]
+  - Duplicated: [field_x in A and C]
+  - Missing: [field_z required by E but not emitted by D]
+
+==================================================================
+
+🛡 PHASE 4 — ERROR HANDLING AND ROBUSTNESS SURFACING
+------------------------------------------------------------------
+
+GOAL:
+Assess how the pipeline responds to degraded input, malformed intermediate data,
+or ambiguous output.
+
+CHECKLIST:
+- [ ] Are nulls, empty lists, and missing fields explicitly supported?
+- [ ] Do all agents preserve degradation indicators (e.g., low confidence, scan quality)?
+- [ ] Are fallback strategies (e.g., partial outputs, archive-only flags) clearly passed along?
+- [ ] Can downstream stages distinguish between “unavailable” and “not applicable”?
+- [ ] Is there a mechanism to skip or quarantine corrupted segments?
+
+OUTPUT:
+✓ Robustness Field Map (which fields propagate warnings, confidence, or fallback states)
+✓ Null/Empty Propagation Table:
+  | Field | Source Agent | Nullable? | Null Behavior in Downstream |
+
+==================================================================
+
+📡 PHASE 5 — TRACEABILITY AND EXPLAINABILITY
+------------------------------------------------------------------
+
+GOAL:
+Ensure that outputs can be traced back to their source agents and that each
+metadata decision is inspectable and reversible.
+
+CHECKLIST:
+- [ ] Are structured outputs tagged with source segment/page/document IDs?
+- [ ] Can each output field be traced to layout anchors or upstream logic?
+- [ ] Are confidence scores or reasoning breadcrumbs preserved where applicable?
+- [ ] Can a QA agent reproduce any final field value from the flow trace?
+
+OUTPUT:
+✓ Field-to-Source Traceability Table
+✓ Flagged Untraceable Fields (for review)
+
+==================================================================
+
+⚙ PHASE 6 — FUTURE COMPATIBILITY AND CONTRACT EVOLUTION
+------------------------------------------------------------------
+
+GOAL:
+Prepare for prompt, model, or topology changes without disrupting data flow.
+
+CHECKLIST:
+- [ ] Can agents tolerate unknown extra fields in their inputs?
+- [ ] Are input fields versioned, namespaced, or self-documenting?
+- [ ] Can pipeline components be swapped without altering downstream format expectations?
+- [ ] Do fallback formats (e.g., JSON, tabular, flat dicts) conform to schema standards?
+
+OUTPUT:
+✓ Field Stability Map:
+  | Field | Stable | Aliases | Schema ID |
+✓ Contract Change Log / Diff View
+
+==================================================================
+
+🚦 PIPELINE HEALTH SCORECARD
+------------------------------------------------------------------
+
+| Metric                        | Rating (✓ / ⚠️ / ❌) | Notes                              |
+|------------------------------|----------------------|-------------------------------------|
+| Topology Clarity             |                      |                                     |
+| Input/Output Sufficiency     |                      |                                     |
+| Prompt Contract Compatibility|                      | Prompt I/O match across stages      |
+| Data Redundancy              |                      |                                     |
+| Null/Fallback Handling       |                      |                                     |
+| Traceability                 |                      |                                     |
+| Contract Stability           |                      |                                     |
+| Cross-Agent Isolation        |                      |                                     |
+
+→ Final Verdict: [ PRODUCTION-READY / NEEDS REFACTOR / INCOMPLETE CONTRACTS ]
+
+==================================================================
+
+📝 NOTES FOR AGENTS:
+- NEVER assume downstream logic will "understand" field semantics — only pass what is explicitly defined.
+- ALWAYS reject or flag unknown field combinations unless documented.
+- REMEMBER: Good pipelines are not just accurate — they are **predictable, inspectable, and fail-safe**.
+
+==================================================================

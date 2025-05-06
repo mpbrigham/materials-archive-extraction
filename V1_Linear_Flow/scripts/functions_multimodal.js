@@ -603,7 +603,7 @@ Materials Library Bot`;
 module.exports = {
   // Core multimodal functions
   documentValidator,
-  multimodalMetadataExtractor,
+  // multimodalMetadataExtractor removed (integrated into LLM Extraction node)
   llmDataProcessor,
   multimodalVerifier,
   

@@ -11,8 +11,7 @@ Document Validator → LLM Extraction → LLM Data Processor → LLM Verifier �
 ```mermaid
 flowchart TD
     A[Document Validator] --> B[LLM Extraction]
-    B --> C[Metadata Parser]
-    C --> D[LLM Data Processor]
+    B --> D[LLM Data Processor]
     D -->|High Confidence| E[LLM Verifier]
     D -->|Mixed Confidence| F[Dynamic Optimized Schema]
     D -->|Low Confidence| H[Error Response]
@@ -42,6 +41,7 @@ flowchart TD
    - Eliminates separate text extraction step
    - Processes PDFs directly using multimodal LLM
    - Maintains the same workflow structure with fewer components
+   - Direct integration between LLM Extraction and Data Processing
 
 2. **Improved Visual Context**:
    - Extracts field locations with page numbers and coordinates
@@ -116,6 +116,8 @@ See [AGENT_INTERFACE_CONTRACTS.txt](specs/AGENT_INTERFACE_CONTRACTS.txt) for det
    ```
    n8n import:workflow --input=deployment/workflow_Materials_Intake_V1.json
    ```
+   
+   Note: The workflow file is named `workflow_Materials_Intake_V1.json` in this implementation.
 
 3. Test the implementation:
    ```
@@ -147,15 +149,34 @@ The configuration includes enhanced settings:
    - Multimodal and text LLM API configuration
    - Model selection options
 
-2. **LLM Prompts**:
-   - LLM Extraction: [metadata_extraction.txt](prompts/metadata_extraction.txt)
-   - LLM Data Processor: [data_processor.txt](prompts/data_processor.txt)
-   - LLM Verifier: [metadata_verification.txt](prompts/metadata_verification.txt)
+2. **V1 LLM Prompts**:
+   - LLM Extraction: [metadata_extraction.txt](prompts/metadata_extraction.txt) - Multimodal extraction with visual coordinates
+   - LLM Data Processor: [data_processor.txt](prompts/data_processor.txt) - Confidence-based field selection
+   - LLM Verifier: [metadata_verification.txt](prompts/metadata_verification.txt) - Visual verification against original document
 
 3. **Implementation Files**:
    - Enhanced functions: [functions_multimodal.js](scripts/functions_multimodal.js)
    - Test script: [test_llm_processor.js](scripts/test_llm_processor.js)
 
-## License
+## Pipeline Optimizations
 
-MIT License — see [`LICENSE.txt`](LICENSE.txt)
+The V1 Linear Flow has been optimized to remove the redundant Metadata Parser component:
+- Transformation logic integrated directly into LLM Extraction node
+- Direct connection between extraction and data processing
+- Simplified pipeline with fewer components
+- Preserved all functionality including lifecycle management and error handling
+
+Additional improvements:
+- Enhanced guidance for handling multiple products in a single document
+- Eliminated duplicate storage of field location data (DRY principle)
+- Added "contains_multiple_products" flag to indicate when secondary products are present
+
+## V1-Specific Implementation Files
+
+- Core processing logic: [functions_multimodal.js](scripts/functions_multimodal.js)
+- Main test script: [test_llm_processor.js](scripts/test_llm_processor.js)
+- Webhook handler: [webhook_handler.py](scripts/webhook_handler.py)
+- Agent prompts:
+  - [metadata_extraction.txt](prompts/metadata_extraction.txt)
+  - [data_processor.txt](prompts/data_processor.txt)
+  - [metadata_verification.txt](prompts/metadata_verification.txt)

@@ -1,0 +1,46 @@
+{
+  "name": "V3 Intent-Driven Minimalism",
+  "nodes": [
+    {
+      "parameters": {
+        "protocol": "IMAP",
+        "host": "={{ $env.IMAP_HOST }}",
+        "port": "={{ $env.IMAP_PORT }}",
+        "secure": true,
+        "mailbox": "INBOX",
+        "downloadAttachments": true,
+        "attachmentPrefix": "attachment_",
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "ignoreTextEncoding": false
+        }
+      },
+      "id": "1",
+      "name": "IMAP Email Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "extract": "text"
+        }
+      },
+      "id": "2",
+      "name": "Extract From PDF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        300,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get code from functions.js\nconst functions = require('./functions.js');\nreturn functions.intakeAgent(items, runIndex);"
+      },
+      "id": "3",
