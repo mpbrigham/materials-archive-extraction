@@ -1,0 +1,117 @@
+# MULTIPLE PRODUCT HANDLING SPECIFICATION (V1)
+
+## Overview
+
+This specification defines a consistent approach for handling documents that contain multiple products, enhancing the V1 Linear Flow pipeline to better represent and manage multiple products from a single source document.
+
+## Core Principles
+
+1. **Primary Product Focus**: Maintain focus on extracting one primary product with high confidence
+2. **Secondary Product Awareness**: Add metadata about secondary products when present
+3. **Product Relationships**: Capture relationships between products in the same document
+4. **DRY Implementation**: Reuse existing extraction/verification without duplicating logic
+
+## Implementation Components
+
+### 1. Enhanced Detection
+
+The LLM Extraction stage will be enhanced to detect multiple products by looking for:
+- Multiple distinct product names/codes
+- Sections with different materials that aren't variations
+- Tabular data with multiple product entries
+- Visual separation between different products
+
+### 2. Extended Schema
+
+The metadata schema will be extended with:
+
+```json
+{
+  // Existing fields remain unchanged...
+  
+  "contains_multiple_products": boolean,
+  "secondary_products": [
+    {
+      "name": "string",
+      "product_code": "string",
+      "relationship": "variant|accessory|complementary|collection",
+      "location": {
+        "page": number,
+        "bbox": [x1, y1, x2, y2]
+      }
+    }
+  ],
+  "product_family": "string",
+  "total_products_count": number
+}
+```
+
+### 3. Enhanced Extraction Process
+
+1. **Initial Detection**:
+   - During extraction, detect if document contains multiple products
+   - Set `contains_multiple_products` flag appropriately with confidence score
+
+2. **Primary Product Selection**:
+   - Apply existing rules (most prominent or first product)
+   - Extract complete metadata for primary product
+   - Include reason for primary product selection
+
+3. **Secondary Product Metadata**:
+   - Extract minimal metadata (name, code, relationship) for up to 5 secondary products
+   - Record visual coordinates for each secondary product
+   - Categorize relationship to primary product
+
+### 4. LLM Data Processor Extensions
+
+The LLM Data Processor will be updated to:
+- Validate both primary and secondary product metadata
+- Apply confidence assessment to secondary product information
+- Ensure relationships between products are semantically consistent
+- Adjust confidence scores based on product boundary clarity
+
+### 5. Verifier Enhancements
+
+The Multimodal Verifier will:
+- Verify the primary product as currently implemented
+- Validate existence of secondary products when `contains_multiple_products` is true
+- Provide confidence assessment of product boundaries and relationships
+- Include secondary products in verification evidence
+
+## State Transitions
+
+No changes to state transitions are required. Multiple product handling fits within the existing state model:
+- `EXTRACTED` state includes secondary product metadata
+- `VALIDATED` includes validation of secondary product relationships
+- `VERIFIED` includes verification of secondary products existence
+
+## Usage Scenarios
+
+### Scenario 1: Product Variants (Same Material, Different Specifications)
+Example: A single material document showing multiple size/color options
+- Primary product: The main/representative variant
+- Secondary products: Alternate size/color configurations with "variant" relationship
+
+### Scenario 2: Product Collections
+Example: A catalog page showing products in the same design collection
+- Primary product: The focal product of the collection
+- Secondary products: Other products in same collection with "collection" relationship
+
+### Scenario 3: Complementary Products
+Example: A document showing a main product and its accessories
+- Primary product: The main product
+- Secondary products: Accessories with "accessory" or "complementary" relationship
+
+## Benefits
+
+1. **Enhanced Data Richness**: Captures relationships between related products
+2. **Improved Context**: Provides awareness of document completeness
+3. **Future Extraction Options**: Enables targeted extraction of secondary products
+4. **Consistent Processing**: Maintains existing flow while adding valuable metadata
+
+## Implementation Notes
+
+1. Minimal changes to existing code structure required
+2. Secondary product information is optional and won't impact core extraction
+3. Performance impact is minimal as core LLM prompts remain focused on primary product
+4. Existing MVS requirements and confidence policy remain unchanged for primary product

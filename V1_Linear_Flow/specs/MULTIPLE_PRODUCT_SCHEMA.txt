@@ -1,0 +1,115 @@
+# MULTIPLE PRODUCT SCHEMA (V1)
+
+## Overview
+
+This specification defines how multiple products are represented when extracted from a single document in the V1 Linear Flow pipeline.
+
+## Schema Structure
+
+When a document contains multiple distinct products, they are represented as an array of product objects:
+
+```json
+{
+  // Document-level metadata
+  "document_id": "doc-123456",
+  "source_file_name": "example_catalog.pdf",
+  
+  // Array of products (1 or more)
+  "products": [
+    {
+      // First product - uses existing schema
+      "name": "EcoBoard Pro X-340",
+      "brand": "GreenMaterials",
+      "summary": "High-performance sustainable wood panel",
+      "category": "Wall Panels",
+      // ... all other standard schema fields
+    },
+    // Additional products if present
+    {
+      "name": "EcoBoard Pro X-350",
+      "brand": "GreenMaterials",
+      "summary": "High-performance sustainable wood panel",
+      // ...
+    }
+  ]
+}
+```
+
+## Product Identification Rules
+
+Products are considered distinct when they have:
+1. Different product names
+2. Different product codes
+3. Different material compositions
+4. Separate specification sections in the document
+
+Products are NOT distinct when they only differ in:
+1. Color/finish options
+2. Size/dimension options
+3. Minor variations mentioned as options
+
+## Schema Requirements
+
+1. **MVS Fields**: Each product in the array MUST have its own complete set of MVS fields (name, brand, summary)
+2. **Field Locations**: Each field of each product must include its own location coordinates
+3. **Confidence Scores**: Each field of each product must have its own confidence score
+4. **Field Extraction**: All fields follow the exact same extraction format as in the single-product schema
+
+## Processing Requirements
+
+1. Each product is processed and validated independently
+2. The confidence policy is applied to each product separately
+3. Verification is performed for each product
+4. Document success requires at least one fully validated product
+
+## Backward Compatibility
+
+For documents containing only one product, the structure remains backward compatible:
+- The products array contains a single product object
+- All existing code that expects a single product can access it at index 0
+
+## Example Representation
+
+Minimal example with two products:
+
+```json
+{
+  "document_id": "doc-123456",
+  "products": [
+    {
+      "name": {
+        "value": "EcoBoard Pro X-340",
+        "location": { "page": 1, "bbox": [120, 210, 285, 230] },
+        "confidence": 0.98
+      },
+      "brand": {
+        "value": "GreenMaterials Inc.",
+        "location": { "page": 1, "bbox": [140, 250, 300, 270] },
+        "confidence": 0.97
+      },
+      "summary": {
+        "value": "High-performance sustainable wood panel for architectural applications",
+        "location": { "page": 1, "bbox": [100, 320, 500, 380] },
+        "confidence": 0.96
+      }
+    },
+    {
+      "name": {
+        "value": "EcoBoard Pro X-350",
+        "location": { "page": 2, "bbox": [120, 210, 285, 230] },
+        "confidence": 0.98
+      },
+      "brand": {
+        "value": "GreenMaterials Inc.",
+        "location": { "page": 2, "bbox": [140, 250, 300, 270] },
+        "confidence": 0.97
+      },
+      "summary": {
+        "value": "Premium sustainable wood panel with enhanced durability",
+        "location": { "page": 2, "bbox": [100, 320, 500, 380] },
+        "confidence": 0.96
+      }
+    }
+  ]
+}
+```

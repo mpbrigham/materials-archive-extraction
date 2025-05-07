@@ -1,0 +1,73 @@
+# Suggestions for V1.5 from V1 Implementation
+
+## 1. Enhanced Multiple Product Handling
+- **V1 Implementation**: Line 154-157 of metadata_extraction.txt provides clear guidance for handling multiple products
+- **Suggestion for V1.5**: Add more sophisticated multiple product detection in the initial extractor with:
+  - Product boundary detection with coordinate mapping
+  - Explicit "contains_multiple_products" flag with confidence scoring
+  - Option to extract basic metadata for secondary products with references
+  - Metadata relationship mapping between primary and secondary products
+
+## 2. Dynamic Schema Optimization
+- **V1 Implementation**: Implements dynamic MVS (Minimum Viable Schema) approach in V1's README.md lines 51-55
+- **Suggestion for V1.5**: Add dynamic field selection functionality to Schema Validator:
+  - Weight fields by confidence and importance during verification
+  - Implement adaptive thresholds based on document quality
+  - Create a quality-driven decision system for field inclusion/exclusion
+  - Add semantic relationship preservation between related fields
+
+## 3. Confidence-based Field Selection
+- **V1 Implementation**: Three-tier confidence policy (lines 86-90 in V1 README)
+- **Suggestion for V1.5**: Enhance existing confidence formula with:
+  - Document quality factor: `field_confidence *= document_quality_factor`
+  - Field importance weighting: Higher weights for critical fields
+  - Semantic coherence bonus: Boost confidence when multiple related fields have high confidence
+  - Source credibility factor: Higher confidence for official manufacturer documents
+
+## 4. Lifecycle Logging Improvements
+- **V1 Implementation**: Comprehensive lifecycle logging with detailed state transitions
+- **Suggestion for V1.5**: Enhance evidence report with:
+  - Full state transition timeline with all agents
+  - Visual flow diagram showing extraction and verification path
+  - Comparison view showing initial vs. verified fields
+  - Confidence evolution tracking from initial to verification stages
+
+## 5. Interface Contract Standardization
+- **V1 Implementation**: Clear agent interface contracts (line 94-103 in V1 README)
+- **Suggestion for V1.5**: Formalize interface contracts between components:
+  - JSON schema validation between pipeline stages
+  - Explicit contract documentation for each component
+  - Type checking on critical fields between stages
+  - Versioned field schema with compatibility checks
+
+## 6. LLM Abstraction Layer
+- **V1 Implementation**: Uses abstract LLM endpoints in environment settings (line 107-113 in V1 README)
+- **Suggestion for V1.5**: Create a unified LLM interface layer:
+  - Model-agnostic prompt templates with consistent input/output
+  - Standardized confidence interpretation across models
+  - Fallback model support for different extraction needs
+  - Configuration-driven model selection based on document type
+
+## 7. Improved Error Handling
+- **V1 Implementation**: Strong error handling with detailed error messages (visible in workflow JSON)
+- **Suggestion for V1.5**: Enhance error recovery capabilities:
+  - Field-specific retry mechanisms for low-confidence fields
+  - Partial success paths that maximize extracted information
+  - Degradation-aware processing with adaptive field requirements
+  - Error correlation across extraction and verification stages
+
+## 8. Layout Quality Assessment
+- **V1 Implementation**: Simple coordination-based extraction in V1
+- **Suggestion for V1.5**: Add explicit layout quality assessment:
+  - Document quality scoring based on resolution, clarity, and structure
+  - Per-region quality assessment affecting confidence calculations
+  - Layout degradation detection and handling
+  - Adaptive confidence thresholds based on document source quality
+
+## 9. Streamlined Prompt Architecture
+- **V1 Implementation**: Well-organized prompt structure with clear sections (metadata_extraction.txt)
+- **Suggestion for V1.5**: Create a modular prompt system:
+  - Base prompts with specialized extensions for document types
+  - Field-specific extraction modules that can be composed
+  - Consistent instructions format across extraction and verification
+  - Clear documentation of prompt sections and their purpose

@@ -1,0 +1,23 @@
+{
+  "products": [
+    {
+      "name": "EcoBoard Pro X-340",
+      "brand": "GreenMaterials Inc.",
+      "summary": "High-performance sustainable wood panel for architectural applications",
+      "category": "Wood",
+      "dimensions": {
+        "width_mm": 2400,
+        "height_mm": 1200,
+        "length_mm": null
+      },
+      "product_code": "X-340",
+      "material_composition": "FSC-certified engineered wood with low-VOC finish",
+      "certifications": ["ISO 14001", "FSC"]
+    }
+  ],
+  "metadata": {
+    "source_file": "single_product.pdf",
+    "product_count": 1,
+    "extraction_time": "2023-10-15T14:30:00Z"
+  }
+}

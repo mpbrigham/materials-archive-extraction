@@ -13,20 +13,22 @@
 
 2. Multimodal Extraction Agent → LLM Data Processor
 {
-  "metadata_json": { ... },
-  "field_extractions": {
-    "field1": {
-      "value": "...",
-      "location": { "page": 1, "bbox": [x1, y1, x2, y2] },
-      "confidence": 0.95
+  "products": [  // Array of products (can be 1 or more)
+    {
+      "field_extractions": {     // Product field data with values, locations, and confidence
+        "field1": {
+          "value": "...",
+          "location": { "page": 1, "bbox": [x1, y1, x2, y2] },
+          "confidence": 0.95
+        },
+        ...
+      }
     },
-    ...
-  },
-  "field_confidences": {
-    "field1": 0.95,
-    "field2": 0.87,
-    ...
-  },
+    // Additional products if present
+    {
+      "field_extractions": { ... }
+    }
+  ],
   "_metadata": {
     "prompt_id": "multimodal-v1.5",
     "model_version": "gemini-pro-vision",
@@ -34,19 +36,39 @@
     "is_retry": true | false,
     "retry_count": 0 | 1 | 2,
     "multimodal_extraction": true,
-    "source_file_name": "..."
+    "source_file_name": "...",
+    "product_count": 1 | 2 | ...
   }
 }
 
 3. LLM Data Processor → Multimodal Verifier (PROCEED/FALLBACK paths)
 {
-  "metadata_json": { ... },
-  "llm_decision": "PROCEED" | "FALLBACK",
-  "confidence": 0.0-1.0,
-  "fallback_applied": true | false,
-  "processor_notes": "Notes about the processing decision",
-  "field_locations": { ... },
-  "field_confidences": { ... }
+  "products": [  // Array of processed products
+    {
+      "field_extractions": { ... },  // Product field data with values, locations, and confidence
+      "llm_decision": "PROCEED" | "FALLBACK",
+      "confidence": 0.0-1.0,
+      "fallback_applied": true | false,
+      "processor_notes": "Notes about the processing decision"
+    },
+    // Additional products if present
+    {
+      "field_extractions": { ... },
+      "llm_decision": "PROCEED" | "FALLBACK",
+      "confidence": 0.0-1.0,
+      "fallback_applied": true | false,
+      "processor_notes": "Notes about the processing decision"
+    }
+  ],
+  "product_count": 1 | 2 | ...,
+  "failed_products": [  // Optional array of failed products
+    {
+      "error": "Error message",
+      "confidence": 0.0-1.0,
+      "data": { ... }
+    },
+    ...
+  ]
 }
 
 4. LLM Data Processor → Supervisor (FAIL path)
@@ -54,32 +76,67 @@
   "task_status": "failed",
   "error_summary": "...",
   "document_id": "...",
+  "failed_products": [  // Optional array of failed products
+    {
+      "error": "Error message",
+      "confidence": 0.0-1.0,
+      "data": { ... }
+    },
+    ...
+  ],
   "_lifecycle_log": [ ... ]
 }
 
 5. Multimodal Verifier → Response Formatter
 {
   "verification_passed": true | false,
-  "cleaned_json": { ... },
   "reason": "...",
-  "verification_results": {
-    "verified_fields": ["name", "brand", ...],
-    "unverified_fields": ["certifications", ...],
-    "evidence": {
-      "name": { 
-        "page": 1, 
-        "location": "header", 
-        "verified": true,
-        "confidence": 0.98
+  "products": [  // Array of verified products
+    {
+      "extracted_values": { ... },  // Clean product values (transformed from field_extractions)
+      "verification_passed": true,
+      "reason": "Verification successful",
+      "verification_results": {
+        "verified_fields": ["name", "brand", ...],
+        "unverified_fields": [],
+        "evidence": {
+          "name": { 
+            "page": 1, 
+            "location": "header", 
+            "verified": true,
+            "confidence": 0.98
+          },
+          ...
+        },
+        "mvs_verification": {
+          "passed": true,
+          "confidence": 0.97,
+          "notes": "..."
+        }
       },
-      ...
+      "fallback_applied": true | false
     },
-    "mvs_verification": {
-      "passed": true | false,
-      "confidence": 0.97,
-      "notes": "..."
+    // Additional products if present
+    {
+      "extracted_values": { ... },
+      "verification_passed": true,
+      "reason": "Verification successful",
+      "verification_results": { ... },
+      "fallback_applied": true | false
     }
-  },
+  ],
+  "failed_products": [  // Optional array of verification failures
+    {
+      "extracted_values": { ... },
+      "verification_passed": false,
+      "reason": "Failed to verify: field1, field2",
+      "verification_results": { ... },
+      "fallback_applied": true | false
+    },
+    ...
+  ],
   "verifier_version": "multimodal-v1.5",
-  "fallback_applied": true | false
+  "partial_success": true | false,  // Indicates some products verified but others failed
+  "document_id": "...",
+  "_lifecycle_log": [ ... ]
 }

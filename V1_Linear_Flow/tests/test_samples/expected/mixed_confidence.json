@@ -1,0 +1,29 @@
+{
+  "products": [
+    {
+      "name": "EcoBoard Pro X-340",
+      "brand": "GreenMaterials Inc.",
+      "summary": "High-performance sustainable wood panel for architectural applications",
+      "category": "Wood",
+      "product_code": "X-340"
+    },
+    {
+      "name": "EcoBoard Pro X-350",
+      "brand": "GreenMaterials Inc.",
+      "summary": "Premium sustainable wood panel with enhanced durability"
+    }
+  ],
+  "metadata": {
+    "source_file": "mixed_confidence.pdf",
+    "product_count": 2,
+    "extraction_time": "2023-10-15T14:40:00Z",
+    "notes": "Second product has fallback applied due to lower confidence fields"
+  },
+  "failed_products": [
+    {
+      "name": "EcoBoard Commercial",
+      "error": "Insufficient confidence for MVS fields",
+      "confidence": 0.65
+    }
+  ]
+}

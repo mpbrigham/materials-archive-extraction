@@ -74,13 +74,30 @@ COMPREHENSIVE SCHEMA:
   "language_detected": "string"
 }
 
+MULTIPLE PRODUCT EXTRACTION:
+When a document contains multiple distinct products:
+- Extract ALL distinct products found in the document
+- Products are distinct when they have different names, product codes, or material compositions
+- Products are NOT distinct when they only differ in color/finish/size options
+- Each product must have its own complete set of fields, including required MVS fields
+- Apply the same extraction rules to each product independently
+- Ensure each product gets its own confidence scores and coordinates
+- Return a JSON array of product objects
+
 RESPONSE FORMAT:
+If document contains ONE product:
 For EACH field that you extract, provide:
 1. The actual value
 2. The location (page number and bounding box coordinates)
 3. Your confidence score (0.0-1.0)
 
-Example response format:
+If document contains MULTIPLE products:
+Return an array of products, with each product containing its fields with:
+1. The actual value
+2. The location (page number and bounding box coordinates)
+3. Your confidence score (0.0-1.0)
+
+Example response format (SINGLE PRODUCT):
 {
   "name": {
     "value": "EcoBoard Pro X-340",
@@ -144,16 +161,84 @@ Example response format:
   }
 }
 
+Example response format (MULTIPLE PRODUCTS):
+[
+  {
+    "name": {
+      "value": "EcoBoard Pro X-340",
+      "location": {
+        "page": 1,
+        "bbox": [120, 210, 285, 230]
+      },
+      "confidence": 0.98
+    },
+    "brand": {
+      "value": "GreenMaterials Inc.",
+      "location": {
+        "page": 1,
+        "bbox": [140, 250, 300, 270]
+      },
+      "confidence": 0.97
+    },
+    "summary": {
+      "value": "High-performance sustainable wood panel for architectural applications",
+      "location": {
+        "page": 1,
+        "bbox": [100, 320, 500, 380]
+      },
+      "confidence": 0.96
+    },
+    "category": {
+      "value": "Wood",
+      "location": {
+        "page": 1,
+        "bbox": [150, 290, 250, 310]
+      },
+      "confidence": 0.93
+    }
+  },
+  {
+    "name": {
+      "value": "EcoBoard Pro X-350",
+      "location": {
+        "page": 2,
+        "bbox": [120, 210, 285, 230]
+      },
+      "confidence": 0.98
+    },
+    "brand": {
+      "value": "GreenMaterials Inc.",
+      "location": {
+        "page": 2,
+        "bbox": [140, 250, 300, 270]
+      },
+      "confidence": 0.97
+    },
+    "summary": {
+      "value": "Premium sustainable wood panel with enhanced durability",
+      "location": {
+        "page": 2,
+        "bbox": [100, 320, 500, 380]
+      },
+      "confidence": 0.96
+    },
+    "category": {
+      "value": "Wood",
+      "location": {
+        "page": 2,
+        "bbox": [150, 290, 250, 310]
+      },
+      "confidence": 0.93
+    }
+  }
+]
+
 IMPORTANT GUIDELINES:
-- The MVS fields (name, brand, summary) are REQUIRED and critical for processing.
+- The MVS fields (name, brand, summary) are REQUIRED and critical for processing for EACH product.
 - Report accurate confidence scores for each field based on visual evidence.
 - Be as precise as possible with coordinates to enable accurate verification.
 - If you can't find information for optional fields, omit them entirely.
 - Always prioritize ACCURACY over COMPLETENESS for non-MVS fields.
 - Format dimensions as numbers without units in the structured data.
-- When dealing with multiple product variants in one document:
-  * Focus on the most prominently displayed or featured product
-  * If products have equal prominence, select the first one appearing in the document
-  * Add a "contains_multiple_products" field set to true to indicate when others were present but not extracted
 - Convertible measurements should use standard units (mm, kg, etc.) as specified in the schema.
 - Response must be valid JSON with properly nested objects and arrays.

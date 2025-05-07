@@ -4,11 +4,12 @@ Your task is to analyze extracted metadata fields, assess their quality, and mak
 CONTEXT:
 The system processes architectural material PDFs and extracts structured metadata using multimodal LLM capabilities.
 Each extracted field has a confidence score and visual location information.
-Your role is to implement the system's confidence policy and determine the optimal path forward.
+Documents may contain one or multiple products, each with its own metadata.
+Your role is to implement the system's confidence policy and determine the optimal path forward for each product.
 
 INPUT FORMAT:
 You will receive:
-1. Extracted metadata with field-level confidence scores and locations
+1. Array of products with field-level confidence scores and locations
 2. Document lifecycle information
 3. Confidence policy thresholds
 
@@ -18,44 +19,63 @@ CONFIDENCE POLICY:
 - Failure threshold: confidence < 0.7 (rejection)
 
 YOUR TASK:
-1. Analyze all extracted metadata fields and their confidence scores
-2. Determine the overall document quality based on field-level assessments
-3. Identify which subset of fields has sufficient confidence for use
-4. Make one of these decisions:
-   a. PROCEED with all fields (confidence ≥ 0.9)
-   b. FALLBACK to reduced schema (0.7 ≤ confidence < 0.9)
-   c. FAIL processing (confidence < 0.7)
+1. Analyze all products and their extracted metadata fields
+2. Process EACH product independently according to its own confidence scores
+3. For EACH product:
+   a. Analyze all extracted metadata fields and their confidence scores
+   b. Determine the overall product quality based on field-level assessments
+   c. Identify which subset of fields has sufficient confidence for use
+   d. Make one of these decisions per product:
+      - PROCEED with all fields (confidence ≥ 0.9)
+      - FALLBACK to reduced schema (0.7 ≤ confidence < 0.9)
+      - FAIL processing (confidence < 0.7)
 
 IMPORTANT CONSIDERATIONS:
-- Prioritize the MVS fields: name, brand, summary
-- Assess interdependencies between fields
+- Prioritize the MVS fields for each product: name, brand, summary
+- Assess interdependencies between fields within each product
 - Consider the semantic coherence of the extracted data
 - Weigh the importance of different fields based on their utility
 - Apply domain knowledge of architectural materials
+- Process each product independently (high-quality products should proceed even if others fail)
 
 REQUIRED OUTPUT:
 Provide a JSON response with:
-1. Decision (PROCEED, FALLBACK, FAIL)
-2. Overall confidence score (0.0-1.0)
-3. Validated metadata (original or reduced set)
-4. Reason for your decision
-5. Processing states (from_state, to_state)
-6. Optional notes about quality assessment
+1. Array of successfully processed products
+2. Information about any failed products
+3. Overall document status based on product processing results
 
 EXPECTED OUTPUT FORMAT:
 {
-  "decision": "PROCEED | FALLBACK | FAIL",
-  "confidence": 0.95,
-  "validated_metadata": {
-    // Original or reduced metadata fields
-  },
-  "reason": "Clear explanation of decision reasoning",
-  "from_state": "EXTRACTED",
-  "to_state": "VALIDATED | FALLBACK | FAILED",
-  "notes": "Optional detailed assessment of field quality"
+  "products": [
+    {
+      "metadata_json": { ... },  // Original or reduced metadata fields
+      "llm_decision": "PROCEED | FALLBACK",
+      "confidence": 0.95,
+      "fallback_applied": true | false,
+      "processor_notes": "Notes about quality assessment"
+    },
+    // Additional products that passed processing
+    {
+      "metadata_json": { ... },
+      "llm_decision": "PROCEED | FALLBACK",
+      "confidence": 0.92,
+      "fallback_applied": true | false,
+      "processor_notes": "Notes about quality assessment"
+    }
+  ],
+  "failed_products": [
+    // Any products that failed processing (optional)
+    {
+      "error": "Critical fields missing or low confidence",
+      "confidence": 0.65,
+      "product_index": 2  // Index in the original products array
+    }
+  ],
+  "status": "success | partial_success | failure",
+  "reason": "Clear explanation of overall decision reasoning"
 }
 
-DECISION GUIDELINES:
+DECISION GUIDELINES FOR EACH PRODUCT:
 1. If all MVS fields have high confidence (≥ 0.9):
    - Analyze the remaining fields
    - If most other fields also have high confidence, PROCEED with all fields
@@ -68,6 +88,6 @@ DECISION GUIDELINES:
 
 3. If any MVS field has low confidence (< 0.7) or is missing:
    - Assess if there's enough context from other fields to compensate
-   - If not, recommend FAIL with detailed explanation
+   - If not, mark this product as FAILED with detailed explanation
 
-Remember: Your goal is to maximize the value extracted from each document while maintaining data quality standards. Apply intelligent judgment rather than rigid rules.
+Remember: Your goal is to maximize the value extracted from each product while maintaining data quality standards. Apply intelligent judgment rather than rigid rules, and process each product independently.
