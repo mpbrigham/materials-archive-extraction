@@ -36,8 +36,8 @@ nano .env  # or use any text editor
 ```
 
 Required environment variables:
-- Email: `IMAP_*` and `SMTP_*` settings for email ingestion
-- LLM: `LLM_API_KEY`, `LLM_TEXT_*` and `LLM_VISION_*` endpoints
+- Email: `IMAP_HOST`, `IMAP_PORT`, `SMTP_HOST`, `SMTP_PORT`, `EMAIL_USER`, `EMAIL_PASS`
+- LLM: `LLM_API_KEY` and `LLM_API_ENDPOINT` (Gemini 2.0 Flash for both text and vision)
 
 ### 3. Deploy with Docker Compose
 
@@ -58,14 +58,9 @@ docker-compose logs -f n8n
 2. Import the workflow:
    - Click "Import from File"
    - Select `workflow_Materials_Intake_V1.json`
-3. Update email nodes:
-   - Edit "Email Trigger" node
-   - Configure IMAP credentials using values from your .env
-   - Edit "Send Notification" node
-   - Configure SMTP credentials
-4. Activate the workflow
+3. Activate the workflow
 
-Note: The workflow uses LLM API credentials directly from environment variables. You don't need to configure separate n8n credentials for the LLM API.
+Note: The workflow uses environment variables directly for email and LLM credentials, so you don't need to manually configure credentials in the n8n interface.
 
 ### 5. Verify Deployment
 
@@ -133,13 +128,13 @@ Regular backups recommended for:
 ### Common Issues
 
 1. **Email trigger not working**:
-   - Check IMAP credentials
+   - Check IMAP credentials (EMAIL_USER/EMAIL_PASS)
    - Verify firewall allows IMAP connections
    - Check n8n logs: `docker-compose logs n8n`
 
 2. **LLM API errors**:
    - Verify API key format in .env (see env-template.txt for provider-specific formats)
-   - Check API endpoint URLs in .env
+   - Check API endpoint URL in .env
    - Monitor API quota/limits
 
 3. **Functions not found**:

@@ -114,20 +114,14 @@ Configure these in your `.env` file:
 # Email Settings
 IMAP_HOST=imap.example.com
 IMAP_PORT=993
-IMAP_USER=materials@example.com
-IMAP_PASS=your-password
-
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
-SMTP_USER=materials@example.com
-SMTP_PASS=your-password
+EMAIL_USER=materials@example.com
+EMAIL_PASS=your-password
 
 # LLM API Settings
 LLM_API_KEY=your-api-key
-LLM_TEXT_API_ENDPOINT=https://api.example.com/text
-LLM_TEXT_MODEL=model-name
-LLM_VISION_API_ENDPOINT=https://api.example.com/vision
-LLM_VISION_MODEL=vision-model-name
+LLM_API_ENDPOINT=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
 ```
 
 ### Volume Mounts

@@ -1,34 +1,21 @@
-# Environment configuration
+# Ignore n8n data directory and all contents
+/data/
+/data/logs/
+/data/.cache/
+/data/.n8n/
+
+# Ignore environment file with credentials
 .env
-.env.*
-!.env.example
 
-# n8n data directory - auto-created by Docker
-data/
-
-# Temporary files
+# Ignore backup files
 *.bak
-*.tmp
-*.log
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS files
+# Operating system files
 .DS_Store
 Thumbs.db
 
-# Python (if any scripts are added later)
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-
-# Node (for potential future use)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo

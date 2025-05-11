@@ -41,7 +41,7 @@ const documentValidator = function(items, runIndex) {
   
   // Normal first-time processing
   // Validate that we have PDF content
-  if (!item.binary || !item.binary.attachment_1 || !item.binary.attachment_1.mimeType !== 'application/pdf') {
+  if (!item.binary || !item.binary.attachment_1 || item.binary.attachment_1.mimeType !== 'application/pdf') {
     return {
       json: {
         task_status: "failed",
