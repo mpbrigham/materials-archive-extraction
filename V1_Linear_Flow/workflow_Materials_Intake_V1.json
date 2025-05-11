@@ -335,7 +335,7 @@
           "string": [
             {
               "name": "error_message",
-              "value": "={{ $json.error }}"
+              "value": "={{ $json.error || 'Unknown error' }}"
             },
             {
               "name": "document_id",
@@ -343,7 +343,7 @@
             },
             {
               "name": "timestamp",
-              "value": "={{ $now.toISOString() }}"
+              "value": "={{ new Date().toISOString() }}"
             }
           ]
         },

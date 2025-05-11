@@ -1,4 +1,4 @@
-# IMIS V1 Environment Configuration Template - IMAP Email Ingestion Only
+# IMIS V1 Environment Configuration Template - IMAP Email Ingestion
 
 # Email Configuration
 IMAP_HOST=imap.example.com
@@ -8,9 +8,6 @@ SMTP_PORT=587
 EMAIL_USER=materials-intake@example.com
 EMAIL_PASS=your-secure-password
 
-# LLM API Configuration - Using Gemini 2.0 Flash for both text and vision processing
-# For OpenAI: Use format "Bearer sk-..." (include "Bearer " prefix)
-# For Gemini: Use API key directly without prefix
-# For Anthropic: Use format "x-api-key:sk-..." 
+# LLM API Configuration
 LLM_API_KEY=your-api-key
 LLM_API_ENDPOINT=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent

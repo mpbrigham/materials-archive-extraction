@@ -1,5 +1,5 @@
 services:
-  n8n-editor:
+  n8n:
     image: n8nio/n8n
     restart: unless-stopped
     ports:
@@ -8,15 +8,10 @@ services:
       - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
       - N8N_EDITOR_BASE_URL=http://localhost:5678
-      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
-      - N8N_RUNNERS_ENABLED=true
-      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
       - N8N_USER_FOLDER=/home/node/data
       - NODE_FUNCTION_ALLOW_BUILTIN=*
       - NODE_FUNCTION_ALLOW_EXTERNAL=*
-      - GENERIC_TIMEZONE=UTC      
-      - QUEUE_MODE=redis
-      - QUEUE_REDIS_HOST=redis
+      - GENERIC_TIMEZONE=UTC
       - DB_TYPE=sqlite
       - DB_SQLITE_DATABASE=/home/node/data/database.sqlite
     volumes:
@@ -26,42 +21,3 @@ services:
       - ./email_templates:/home/node/email_templates:ro
     env_file:
       - .env
-    networks:
-      - n8n-network
-
-  n8n-runner:
-    image: n8nio/n8n
-    restart: unless-stopped
-    depends_on:
-      - n8n-editor
-      - redis
-    environment:
-      - N8N_HOST=localhost
-      - N8N_RUNNERS_ENABLED=true
-      - N8N_USER_FOLDER=/home/node/data
-      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
-      - QUEUE_MODE=redis
-      - QUEUE_REDIS_HOST=redis
-      - DB_TYPE=sqlite
-      - DB_SQLITE_DATABASE=/home/node/data/database.sqlite
-    volumes:
-      - ./data:/home/node/data
-      - ./scripts:/home/node/scripts:ro
-      - ./prompts:/home/node/prompts:ro
-      - ./email_templates:/home/node/email_templates:ro
-    env_file:
-      - .env
-    entrypoint: "n8n worker"
-    networks:
-      - n8n-network
-
-  redis:
-    image: redis:6-alpine
-    restart: unless-stopped
-    networks:
-      - n8n-network
-
-networks:
-  n8n-network:
-    driver: bridge
-

@@ -49,7 +49,7 @@ docker-compose up -d
 docker-compose ps
 
 # View logs
-docker-compose logs -f n8n
+docker-compose logs -f
 ```
 
 ### 4. Import and Configure n8n Workflow
@@ -58,9 +58,11 @@ docker-compose logs -f n8n
 2. Import the workflow:
    - Click "Import from File"
    - Select `workflow_Materials_Intake_V1.json`
-3. Activate the workflow
-
-Note: The workflow uses environment variables directly for email and LLM credentials, so you don't need to manually configure credentials in the n8n interface.
+3. Configure Email credentials:
+   - Click on the Email Trigger node
+   - Create new IMAP Email credentials with your .env values
+   - Enter these manually (not as expressions for the first setup)
+4. Activate the workflow
 
 ### 5. Verify Deployment
 
@@ -130,23 +132,29 @@ Regular backups recommended for:
 1. **Email trigger not working**:
    - Check IMAP credentials (EMAIL_USER/EMAIL_PASS)
    - Verify firewall allows IMAP connections
-   - Check n8n logs: `docker-compose logs n8n`
+   - Check n8n logs: `docker-compose logs -f`
 
 2. **LLM API errors**:
    - Verify API key format in .env (see env-template.txt for provider-specific formats)
    - Check API endpoint URL in .env
    - Monitor API quota/limits
 
-3. **Functions not found**:
-   - Verify volume mounts in docker-compose.yml
-   - Check file permissions on mounted directories
-   - Ensure NODE_FUNCTION_ALLOW_BUILTIN=* is set
+3. **"Cannot read properties of undefined" errors**:
+   - These typically occur during testing when data is missing
+   - Use actual email inputs rather than manual testing
+
+4. **Docker-compose configuration issues**:
+   - If you encounter Redis connection errors with the default docker-compose.yml
+   - Try using the simplified configuration in docker-compose-simple.yml:
+     ```
+     docker-compose -f docker-compose-simple.yml up -d
+     ```
 
 ### Debugging
 
 ```bash
 # View n8n logs
-docker-compose logs -f n8n
+docker-compose logs -f
 
 # Access n8n container
 docker-compose exec n8n sh
