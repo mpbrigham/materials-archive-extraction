@@ -1,0 +1,502 @@
+{
+  "name": "Materials Intake Pipeline V1 Multimodal",
+  "nodes": [
+    {
+      "parameters": {
+        "protocol": "IMAP",
+        "host": "={{ $env.IMAP_HOST }}",
+        "port": "={{ $env.IMAP_PORT }}",
+        "secure": true,
+        "mailbox": "INBOX",
+        "downloadAttachments": true,
+        "attachmentPrefix": "attachment_",
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "ignoreTextEncoding": false
+        }
+      },
+      "id": "1",
+      "name": "Email Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Load functions from mounted file system\nconst fs = require('fs');\nconst vm = require('vm');\n\n// Read and execute the function file\nconst functionCode = fs.readFileSync('/home/node/scripts/document_validator.js', 'utf8');\nconst context = { module: { exports: {} }, require, console };\nvm.runInNewContext(functionCode, context);\nconst functions = context.module.exports;\n\n// Use the documentValidator function\nreturn functions.documentValidator($input.all(), $runIndex);"
+      },
+      "id": "3",
+      "name": "Document Validator",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        300,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "url": "={{ $env.LLM_VISION_API_ENDPOINT }}",
+        "jsonParameters": true,
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "response": {
+            "response": {
+              "maxResponseSize": 10485760,
+              "responseFormat": "json",
+              "responseType": "json"
+            }
+          }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.LLM_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ (() => { const fs = require('fs'); const promptContent = fs.readFileSync('/home/node/prompts/llm_extraction.txt', 'utf8'); const filePath = $node[\"Document Validator\"].json[\"file_path\"]; return `${promptContent}\\n\\nNow analyze the document at: ${filePath}`; })() }}"
+            },
+            {
+              "name": "model",
+              "value": "={{ $env.LLM_VISION_MODEL }}"
+            },
+            {
+              "name": "temperature",
+              "value": 0.2
+            },
+            {
+              "name": "max_tokens",
+              "value": 8000
+            },
+            {
+              "name": "include_pdf",
+              "value": true
+            }
+          ]
+        },
+        "postReceive": {
+          "enabled": true,
+          "type": "jsonTranform",
+          "jsonTranform": {
+            "transformationInstructions": "// Transform extraction response to array format according to AGENT_INTERFACE_CONTRACTS\nconst filePath = $node[\"Document Validator\"].json.file_path || \"\";\nconst isRetry = $node[\"Document Validator\"].json.task === \"retry_extraction\";\nconst retryCount = $node[\"Document Validator\"].json.retry_count || 0;\nconst documentId = $node[\"Document Validator\"].json.document_id;\n\n// Parse the LLM extraction result\ntry {\n  const extractedData = $input.all()[0].body;\n  \n  // Handle response based on whether it's an array or single object\n  let products = [];\n  if (Array.isArray(extractedData)) {\n    // Multiple products returned\n    products = extractedData;\n  } else {\n    // Single product returned, wrap in array\n    products = [extractedData];\n  }\n  \n  // Transform products to match interface contract\n  const transformedProducts = products.map(product => ({\n    field_extractions: product\n  }));\n  \n  // Prepare response according to AGENT_INTERFACE_CONTRACTS\n  const result = {\n    products: transformedProducts,\n    _metadata: {\n      prompt_id: isRetry ? \"multimodal-v1.5-retry\" : \"multimodal-v1.5\",\n      model_version: $env.LLM_VISION_MODEL || \"gemini-pro-vision\",\n      generated_ts: new Date().toISOString(),\n      is_retry: isRetry,\n      retry_count: retryCount,\n      multimodal_extraction: true,\n      source_file_name: filePath.split('/').pop() || \"unknown\",\n      product_count: transformedProducts.length\n    },\n    _lifecycle_log: $node[\"Document Validator\"].json._lifecycle_log || [],\n    document_id: documentId,\n    retry_count: retryCount,\n    original_request: isRetry ? $node[\"Document Validator\"].json.original_request : $node[\"Document Validator\"].json\n  };\n  \n  // Add lifecycle log entry\n  result._lifecycle_log.push({\n    document_id: documentId,\n    from_state: isRetry ? \"RETRY_EXTRACTION\" : \"INTERPRETED\",\n    to_state: \"EXTRACTED\",\n    timestamp: new Date().toISOString(),\n    agent: \"multimodal_metadata_extractor_v1\",\n    notes: isRetry ? \n      `Retry extraction attempt ${retryCount} completed - ${transformedProducts.length} product(s) extracted` : \n      `Multimodal extraction completed - ${transformedProducts.length} product(s) extracted`\n  });\n  \n  return { json: result };\n} catch (error) {\n  // Error handling\n  const errorEntry = {\n    document_id: documentId,\n    from_state: isRetry ? \"RETRY_EXTRACTION\" : \"INTERPRETED\",\n    to_state: \"FAILED\",\n    timestamp: new Date().toISOString(),\n    agent: \"multimodal_metadata_extractor_v1\",\n    notes: `Multimodal extraction failed: ${error.message}`\n  };\n  \n  return {\n    json: {\n      task_status: \"failed\",\n      error_summary: `Multimodal metadata extraction failed: ${error.message}`,\n      document_id: documentId,\n      retry_count: retryCount,\n      _lifecycle_log: [...($node[\"Document Validator\"].json._lifecycle_log || []), errorEntry]\n    }\n  };\n}"
+          }
+        }
+      },
+      "id": "4",
+      "name": "LLM Extraction",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        500,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "url": "={{ $env.LLM_TEXT_API_ENDPOINT }}",
+        "jsonParameters": true,
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "response": {
+            "response": {
+              "maxResponseSize": 10485760,
+              "responseFormat": "json",
+              "responseType": "json"
+            }
+          }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.LLM_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ (() => { const fs = require('fs'); const promptContent = fs.readFileSync('/home/node/prompts/llm_data_processor.txt', 'utf8'); const products = JSON.stringify($json.products); const metadata = JSON.stringify($json._metadata); return `${promptContent}\\n\\nExtracted products: ${products}\\n\\nMetadata: ${metadata}\\n\\nMake a decision about how to proceed with each product.`; })() }}"
+            },
+            {
+              "name": "model",
+              "value": "={{ $env.LLM_TEXT_MODEL }}"
+            },
+            {
+              "name": "temperature",
+              "value": 0.1
+            },
+            {
+              "name": "max_tokens",
+              "value": 6000
+            }
+          ]
+        },
+        "postReceive": {
+          "enabled": true,
+          "type": "jsonTranform",
+          "jsonTranform": {
+            "transformationInstructions": "// Transform data processor response\ntry {\n  const response = $input.all()[0].body;\n  const documentId = $json.document_id;\n  \n  // Extract success and failed products from response\n  const successProducts = response.products || [];\n  const failedProducts = response.failed_products || [];\n  const status = response.status || 'success';\n  const reason = response.reason || '';\n  \n  // Create lifecycle log entry\n  const logEntry = {\n    document_id: documentId,\n    from_state: \"EXTRACTED\",\n    to_state: status === 'failure' ? \"FAILED\" : \"PROCESSED\",\n    timestamp: new Date().toISOString(),\n    agent: \"llm_data_processor_v1\",\n    notes: `${successProducts.length} products processed successfully, ${failedProducts.length} failed. ${reason}`\n  };\n  \n  const result = {\n    // Pass through successful products\n    products: successProducts,\n    failed_products: failedProducts,\n    status: status,\n    reason: reason,\n    product_count: successProducts.length,\n    partial_success: status === 'partial_success',\n    document_id: documentId,\n    original_request: $json.original_request,\n    _lifecycle_log: [...($json._lifecycle_log || []), logEntry]\n  };\n  \n  return { json: result };\n} catch (error) {\n  return {\n    json: {\n      task_status: \"failed\",\n      error_summary: `Data processing failed: ${error.message}`,\n      document_id: $json.document_id,\n      _lifecycle_log: $json._lifecycle_log || []\n    }\n  };\n}"
+          }
+        }
+      },
+      "id": "6",
+      "name": "LLM Data Processor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        900,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "url": "={{ $env.LLM_VISION_API_ENDPOINT }}",
+        "jsonParameters": true,
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "response": {
+            "response": {
+              "maxResponseSize": 10485760,
+              "responseFormat": "json",
+              "responseType": "json"
+            }
+          }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.LLM_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ (() => { const fs = require('fs'); const promptContent = fs.readFileSync('/home/node/prompts/llm_verifier.txt', 'utf8'); const products = JSON.stringify($json.products); const filePath = $node[\"Document Validator\"].json[\"file_path\"]; return `${promptContent}\\n\\nDocument path: ${filePath}\\n\\nProducts to verify: ${products}`; })() }}"
+            },
+            {
+              "name": "model",
+              "value": "={{ $env.LLM_VISION_MODEL }}"
+            },
+            {
+              "name": "temperature",
+              "value": 0.1
+            },
+            {
+              "name": "max_tokens",
+              "value": 8000
+            },
+            {
+              "name": "include_pdf",
+              "value": true
+            }
+          ]
+        },
+        "postReceive": {
+          "enabled": true,
+          "type": "jsonTranform",
+          "jsonTranform": {
+            "transformationInstructions": "// Transform verifier response according to interface contracts\ntry {\n  const response = $input.all()[0].body;\n  const documentId = $json.document_id;\n  \n  // Extract verification results\n  const verificationPassed = response.overall_verification?.passed || response.verification_passed || false;\n  const verifiedProducts = response.products || [];\n  const partialSuccess = response.overall_verification?.passed_count > 0 && \n                        response.overall_verification?.passed_count < response.overall_verification?.product_count;\n  \n  // Transform verified products to include extracted_values\n  const transformedProducts = verifiedProducts.map(product => {\n    // Extract values from field_extractions for final format\n    const extractedValues = {};\n    if (product.field_extractions) {\n      for (const [field, data] of Object.entries(product.field_extractions)) {\n        extractedValues[field] = data.value;\n      }\n    }\n    \n    return {\n      ...product,\n      extracted_values: extractedValues\n    };\n  });\n  \n  // Separate verified and failed products\n  const successProducts = transformedProducts.filter(p => p.verification_passed);\n  const failedProducts = transformedProducts.filter(p => !p.verification_passed);\n  \n  // Create lifecycle log entry\n  const logEntry = {\n    document_id: documentId,\n    from_state: \"PROCESSED\",\n    to_state: verificationPassed ? \"VERIFIED\" : \"FAILED\",\n    timestamp: new Date().toISOString(),\n    agent: \"multimodal_verifier_v1\",\n    notes: `${successProducts.length} products verified, ${failedProducts.length} failed verification`\n  };\n  \n  const result = {\n    verification_passed: verificationPassed,\n    reason: response.overall_verification?.notes || response.reason || '',\n    products: successProducts,\n    failed_products: failedProducts,\n    verifier_version: \"multimodal-v1.5\",\n    partial_success: partialSuccess,\n    document_id: documentId,\n    original_request: $json.original_request,\n    _lifecycle_log: [...($json._lifecycle_log || []), logEntry]\n  };\n  \n  return { json: result };\n} catch (error) {\n  return {\n    json: {\n      verification_passed: false,\n      reason: `Verification failed: ${error.message}`,\n      products: [],\n      failed_products: $json.products || [],\n      document_id: $json.document_id,\n      _lifecycle_log: $json._lifecycle_log || []\n    }\n  };\n}"
+          }
+        }
+      },
+      "id": "7",
+      "name": "LLM Verifier",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.verification_passed }}",
+              "operation": "equals",
+              "value2": "true"
+            }
+          ]
+        }
+      },
+      "id": "8",
+      "name": "Validation Router",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Load functions from mounted file system\nconst fs = require('fs');\nconst vm = require('vm');\n\n// Read and execute the function file\nconst functionCode = fs.readFileSync('/home/node/scripts/success_notifier.js', 'utf8');\nconst context = { module: { exports: {} }, require, console };\nvm.runInNewContext(functionCode, context);\nconst functions = context.module.exports;\n\n// Use the formatSuccessEmail function\nreturn functions.formatSuccessEmail($input.all(), $runIndex);"
+      },
+      "id": "9",
+      "name": "Success Notifier",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        50
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Load functions from mounted file system\nconst fs = require('fs');\nconst vm = require('vm');\n\n// Read and execute the function file\nconst functionCode = fs.readFileSync('/home/node/scripts/error_notifier.js', 'utf8');\nconst context = { module: { exports: {} }, require, console };\nvm.runInNewContext(functionCode, context);\nconst functions = context.module.exports;\n\n// Use the formatErrorEmail function\nreturn functions.formatErrorEmail($input.all(), $runIndex);"
+      },
+      "id": "10",
+      "name": "Error Notifier",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.SMTP_USER }}",
+        "toEmail": "={{ $json[\"to\"] }}",
+        "subject": "={{ $json[\"subject\"] }}",
+        "text": "={{ $json[\"body\"] }}",
+        "options": {
+          "attachments": "={{ $json[\"attachments\"] }}"
+        }
+      },
+      "id": "11",
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Log all document lifecycle stages to a file\n\nconst fs = require('fs');\nconst path = require('path');\n\nconst logPath = '/home/node/data/logs';\nconst logFile = path.join(logPath, 'document_lifecycle.json');\n\n// Ensure log directory exists\nif (!fs.existsSync(logPath)) {\n  fs.mkdirSync(logPath, { recursive: true });\n}\n\n// Get existing logs or create new array\nlet logs = [];\nif (fs.existsSync(logFile)) {\n  try {\n    const data = fs.readFileSync(logFile, 'utf8');\n    logs = JSON.parse(data);\n  } catch (err) {\n    console.error('Error reading logs file:', err);\n  }\n}\n\n// Add new log entries\nif ($input.all()[0].json._lifecycle_log && Array.isArray($input.all()[0].json._lifecycle_log)) {\n  logs = logs.concat($input.all()[0].json._lifecycle_log);\n  \n  // Write updated logs\n  try {\n    fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));\n  } catch (err) {\n    console.error('Error writing logs file:', err);\n  }\n}\n\n// Pass through the original items\nreturn $input.all();"
+      },
+      "id": "12",
+      "name": "Activity Logger",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "dataPropertyName": "error",
+        "errorMessage": "=Document Processor Error: {{ $json.error_message || 'Unknown error' }}"
+      },
+      "id": "14",
+      "name": "Global Error Handler",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "error_message",
+              "value": "={{ $json.error }}"
+            },
+            {
+              "name": "document_id",
+              "value": "={{ $json.document_id || 'unknown-doc' }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $now.toISOString() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "15",
+      "name": "Error Formatter",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        300,
+        250
+      ]
+    }
+  ],
+  "connections": {
+    "Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Document Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document Validator": {
+      "main": [
+        [
+          {
+            "node": "LLM Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Extraction": {
+      "main": [
+        [
+          {
+            "node": "LLM Data Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Data Processor": {
+      "main": [
+        [
+          {
+            "node": "LLM Verifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Verifier": {
+      "main": [
+        [
+          {
+            "node": "Validation Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Router": {
+      "main": [
+        [
+          {
+            "node": "Success Notifier",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Notifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success Notifier": {
+      "main": [
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Notifier": {
+      "main": [
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Notification": {
+      "main": [
+        [
+          {
+            "node": "Activity Logger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Global Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Error Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Formatter": {
+      "main": [
+        [
+          {
+            "node": "Error Notifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

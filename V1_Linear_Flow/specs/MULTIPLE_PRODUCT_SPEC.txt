@@ -2,116 +2,124 @@
 
 ## Overview
 
-This specification defines a consistent approach for handling documents that contain multiple products, enhancing the V1 Linear Flow pipeline to better represent and manage multiple products from a single source document.
+This specification defines a consistent approach for handling documents that contain multiple products, enhancing the V1 Linear Flow pipeline to extract and process multiple products from a single source document with equal treatment for all products.
 
 ## Core Principles
 
-1. **Primary Product Focus**: Maintain focus on extracting one primary product with high confidence
-2. **Secondary Product Awareness**: Add metadata about secondary products when present
-3. **Product Relationships**: Capture relationships between products in the same document
-4. **DRY Implementation**: Reuse existing extraction/verification without duplicating logic
+1. **Equal Product Treatment**: All products in a document are treated equally with full extraction
+2. **Independent Processing**: Each product is processed and validated independently
+3. **Array-First Design**: Products are always represented as arrays, even for single products
+4. **Complete Extraction**: Extract full metadata for all distinct products found
+5. **DRY Implementation**: Reuse existing extraction/verification logic across all products
 
 ## Implementation Components
 
-### 1. Enhanced Detection
+### 1. Product Detection
 
-The LLM Extraction stage will be enhanced to detect multiple products by looking for:
+The LLM Extraction stage detects multiple products by identifying:
 - Multiple distinct product names/codes
-- Sections with different materials that aren't variations
+- Sections with different materials that aren't just variations
 - Tabular data with multiple product entries
 - Visual separation between different products
 
-### 2. Extended Schema
+### 2. Product Identification Rules
 
-The metadata schema will be extended with:
+Products are considered distinct when they have:
+- Different product names
+- Different product codes
+- Different material compositions
+- Separate specification sections in the document
+
+Products are NOT distinct when they only differ in:
+- Color/finish options
+- Size/dimension options
+- Minor variations mentioned as options
+
+### 3. Extraction Process
+
+1. **Document Analysis**:
+   - Analyze entire document to identify all distinct products
+   - Apply product identification rules consistently
+
+2. **Complete Extraction**:
+   - Extract full metadata for every distinct product found
+   - Each product gets complete schema fields with locations and confidence scores
+   - No arbitrary limits on number of products extracted
+
+3. **Array Output**:
+   - Always return products as an array
+   - Single product documents return array with one element
+   - Multiple product documents return array with all products
+
+### 4. Data Processing
+
+The LLM Data Processor:
+- Receives array of products from extraction
+- Processes each product independently
+- Applies confidence policy to each product separately
+- Returns arrays of successful and failed products
+
+### 5. Verification Process
+
+The Multimodal Verifier:
+- Verifies each product in the array independently
+- Applies same verification standards to all products
+- Returns verification results for each product
+- Supports partial success (some products verified, others not)
+
+## Schema Structure
+
+Products are always represented as arrays following MULTIPLE_PRODUCT_SCHEMA.txt:
 
 ```json
 {
-  // Existing fields remain unchanged...
-  
-  "contains_multiple_products": boolean,
-  "secondary_products": [
+  "document_id": "doc-123456",
+  "source_file_name": "example_catalog.pdf",
+  "products": [
     {
-      "name": "string",
-      "product_code": "string",
-      "relationship": "variant|accessory|complementary|collection",
-      "location": {
-        "page": number,
-        "bbox": [x1, y1, x2, y2]
-      }
+      // Complete product schema with all fields
+      "name": "Product 1",
+      "brand": "Brand Name",
+      "summary": "Description",
+      // ... all other fields
+    },
+    {
+      // Another complete product
+      "name": "Product 2",
+      "brand": "Brand Name",
+      "summary": "Description",
+      // ... all other fields
     }
-  ],
-  "product_family": "string",
-  "total_products_count": number
+  ]
 }
 ```
 
-### 3. Enhanced Extraction Process
-
-1. **Initial Detection**:
-   - During extraction, detect if document contains multiple products
-   - Set `contains_multiple_products` flag appropriately with confidence score
-
-2. **Primary Product Selection**:
-   - Apply existing rules (most prominent or first product)
-   - Extract complete metadata for primary product
-   - Include reason for primary product selection
-
-3. **Secondary Product Metadata**:
-   - Extract minimal metadata (name, code, relationship) for up to 5 secondary products
-   - Record visual coordinates for each secondary product
-   - Categorize relationship to primary product
-
-### 4. LLM Data Processor Extensions
-
-The LLM Data Processor will be updated to:
-- Validate both primary and secondary product metadata
-- Apply confidence assessment to secondary product information
-- Ensure relationships between products are semantically consistent
-- Adjust confidence scores based on product boundary clarity
-
-### 5. Verifier Enhancements
-
-The Multimodal Verifier will:
-- Verify the primary product as currently implemented
-- Validate existence of secondary products when `contains_multiple_products` is true
-- Provide confidence assessment of product boundaries and relationships
-- Include secondary products in verification evidence
-
 ## State Transitions
 
-No changes to state transitions are required. Multiple product handling fits within the existing state model:
-- `EXTRACTED` state includes secondary product metadata
-- `VALIDATED` includes validation of secondary product relationships
-- `VERIFIED` includes verification of secondary products existence
+State transitions remain unchanged but apply to the document level:
+- `EXTRACTED`: All products extracted successfully
+- `PROCESSED`: Products processed with success/failure determination
+- `VERIFIED`: Verification completed for all products
+- `COMPLETED`: At least one product successfully processed
 
-## Usage Scenarios
+## Processing Policy
 
-### Scenario 1: Product Variants (Same Material, Different Specifications)
-Example: A single material document showing multiple size/color options
-- Primary product: The main/representative variant
-- Secondary products: Alternate size/color configurations with "variant" relationship
-
-### Scenario 2: Product Collections
-Example: A catalog page showing products in the same design collection
-- Primary product: The focal product of the collection
-- Secondary products: Other products in same collection with "collection" relationship
-
-### Scenario 3: Complementary Products
-Example: A document showing a main product and its accessories
-- Primary product: The main product
-- Secondary products: Accessories with "accessory" or "complementary" relationship
+1. **Extraction Success**: Document succeeds if any products are extracted
+2. **Processing Success**: Document succeeds if at least one product passes confidence thresholds
+3. **Verification Success**: Document succeeds if at least one product is verified
+4. **Partial Success**: Supported throughout the pipeline
 
 ## Benefits
 
-1. **Enhanced Data Richness**: Captures relationships between related products
-2. **Improved Context**: Provides awareness of document completeness
-3. **Future Extraction Options**: Enables targeted extraction of secondary products
-4. **Consistent Processing**: Maintains existing flow while adding valuable metadata
+1. **Complete Information**: Captures all products in multi-product documents
+2. **Consistent Processing**: Same logic applies to all products
+3. **Flexible Output**: Supports variable number of products
+4. **Backward Compatible**: Single products work with array structure
 
 ## Implementation Notes
 
-1. Minimal changes to existing code structure required
-2. Secondary product information is optional and won't impact core extraction
-3. Performance impact is minimal as core LLM prompts remain focused on primary product
-4. Existing MVS requirements and confidence policy remain unchanged for primary product
+1. Products are always in array format for consistency
+2. Each product is processed independently with its own confidence scores
+3. Existing MVS requirements apply to each product individually
+4. No hierarchical relationships between products - all are equal
+5. No limits on number of products that can be extracted

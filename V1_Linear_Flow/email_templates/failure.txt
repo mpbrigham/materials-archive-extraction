@@ -1,11 +1,12 @@
 Subject: ❌ Metadata Extraction Failed
 
-Dear Sender,
+Dear {{sender}},
 
 The attached PDF could not be processed due to the following issue:
 
-[Insert dynamic failure reason here]
+{{errorReason}}
 
+{{failedProductDetails}}
 Please check the document and try again.
 
 Best regards,

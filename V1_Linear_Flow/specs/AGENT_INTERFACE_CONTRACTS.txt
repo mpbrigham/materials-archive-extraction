@@ -1,6 +1,12 @@
 # AGENT INTERFACE CONTRACTS (V1)
 
-1. Supervisor → Multimodal Extraction Agent
+## Overview
+All product data is passed between agents as arrays, ensuring consistent handling of both single and multiple product documents. Even single-product documents use the array format with one element.
+
+## Contract Definitions
+
+### 1. Supervisor → Multimodal Extraction Agent
+```json
 {
   "file_path": "...",
   "sender": "...",
@@ -10,10 +16,12 @@
   "retry_count": 0 | 1 | 2,
   "multimodal_processing": true
 }
+```
 
-2. Multimodal Extraction Agent → LLM Data Processor
+### 2. Multimodal Extraction Agent → LLM Data Processor
+```json
 {
-  "products": [  // Array of products (can be 1 or more)
+  "products": [  // ALWAYS an array, even for single products
     {
       "field_extractions": {     // Product field data with values, locations, and confidence
         "field1": {
@@ -40,10 +48,12 @@
     "product_count": 1 | 2 | ...
   }
 }
+```
 
-3. LLM Data Processor → Multimodal Verifier (PROCEED/FALLBACK paths)
+### 3. LLM Data Processor → Multimodal Verifier (PROCEED/FALLBACK paths)
+```json
 {
-  "products": [  // Array of processed products
+  "products": [  // Array of successfully processed products
     {
       "field_extractions": { ... },  // Product field data with values, locations, and confidence
       "llm_decision": "PROCEED" | "FALLBACK",
@@ -65,33 +75,41 @@
     {
       "error": "Error message",
       "confidence": 0.0-1.0,
-      "data": { ... }
+      "product_index": 0 | 1 | ...,  // Original index in extraction array
+      "data": { ... }  // Original extraction data
     },
     ...
-  ]
+  ],
+  "status": "success" | "partial_success" | "failure",
+  "_lifecycle_log": [ ... ]
 }
+```
 
-4. LLM Data Processor → Supervisor (FAIL path)
+### 4. LLM Data Processor → Supervisor (FAIL path)
+```json
 {
   "task_status": "failed",
-  "error_summary": "...",
+  "error_summary": "All products failed confidence thresholds",
   "document_id": "...",
-  "failed_products": [  // Optional array of failed products
+  "failed_products": [  // Array of all failed products
     {
       "error": "Error message",
       "confidence": 0.0-1.0,
+      "product_index": 0 | 1 | ...,
       "data": { ... }
     },
     ...
   ],
   "_lifecycle_log": [ ... ]
 }
+```
 
-5. Multimodal Verifier → Response Formatter
+### 5. Multimodal Verifier → Response Formatter
+```json
 {
-  "verification_passed": true | false,
+  "verification_passed": true | false,  // Document-level success
   "reason": "...",
-  "products": [  // Array of verified products
+  "products": [  // Array of all products (verified and failed)
     {
       "extracted_values": { ... },  // Clean product values (transformed from field_extractions)
       "verification_passed": true,
@@ -116,27 +134,32 @@
       },
       "fallback_applied": true | false
     },
-    // Additional products if present
-    {
-      "extracted_values": { ... },
-      "verification_passed": true,
-      "reason": "Verification successful",
-      "verification_results": { ... },
-      "fallback_applied": true | false
-    }
-  ],
-  "failed_products": [  // Optional array of verification failures
+    // Additional products
     {
       "extracted_values": { ... },
       "verification_passed": false,
       "reason": "Failed to verify: field1, field2",
       "verification_results": { ... },
       "fallback_applied": true | false
-    },
-    ...
+    }
   ],
   "verifier_version": "multimodal-v1.5",
-  "partial_success": true | false,  // Indicates some products verified but others failed
+  "partial_success": true | false,  // Some products verified, others failed
   "document_id": "...",
   "_lifecycle_log": [ ... ]
 }
+```
+
+## Key Contract Principles
+
+1. **Always Use Arrays**: Products are always passed as arrays, even for single products
+2. **Independent Processing**: Each product in array is processed/verified independently
+3. **Partial Success**: Contracts support partial success scenarios
+4. **Document vs Product Status**: Distinguish between document-level and product-level status
+5. **Consistent Structure**: All agents expect and return products in array format
+
+## Status Definitions
+
+- **Document Success**: At least one product successfully processed/verified
+- **Partial Success**: Some products succeed, others fail
+- **Document Failure**: All products fail processing/verification

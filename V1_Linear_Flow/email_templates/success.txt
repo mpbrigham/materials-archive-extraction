@@ -1,0 +1,10 @@
+Subject: ✅ Material Metadata Extracted{{productCountSuffix}}
+
+Dear {{sender}},
+
+The attached PDF has been successfully processed. {{productDescription}}
+
+{{productList}}
+{{notes}}
+Best regards,
+Materials Library Bot

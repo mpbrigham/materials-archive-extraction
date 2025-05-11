@@ -6,33 +6,41 @@
 3. Failure threshold: confidence < 0.7
 
 ## Enhanced MVS Approach
-The system now implements a dynamic Minimum Viable Schema (MVS) approach:
+The system implements a dynamic Minimum Viable Schema (MVS) approach for each product in the products array:
 
-1. Core MVS requirements:
+1. Core MVS requirements per product:
    - name, brand, and summary must have confidence ≥ 0.7
    
-2. Adaptive field selection:
+2. Adaptive field selection per product:
    - When full extraction confidence is below the trust threshold (0.9)
-   - LLM data processor evaluates all extracted fields
+   - LLM data processor evaluates all extracted fields for each product
    - Dynamically selects optimal subset of high-confidence fields
    - Retains all fields with confidence ≥ 0.7
    - Prioritizes semantically coherent and interdependent fields
 
-3. Decision logic:
+3. Decision logic for each product:
    - If MVS fields all have high confidence (≥ 0.9): PROCEED with all fields
    - If MVS fields have mixed confidence (≥ 0.7): FALLBACK to optimized subset
    - If any MVS field has low confidence (< 0.7): FAIL
 
+## Product Array Processing
+- Documents may contain multiple products as an array
+- Each product in the array is evaluated independently
+- Confidence policy applies separately to each product
+- Document succeeds if at least one product passes validation
+
 ## Benefits of Dynamic MVS
-- Maximizes information extraction from each document
-- Adapts to the specific content quality in each document
+- Maximizes information extraction from each product
+- Adapts to the specific content quality in each product
 - Preserves field relationships and dependencies
 - Avoids arbitrary field exclusions
 - Provides higher quality data for downstream use
 
 ## Implementation Notes
 - Implemented in the LLM Data Processor agent
+- Processes product arrays with independent evaluation
 - Uses prompt-based processing rather than hard-coded rules
 - Maintains the same state transitions and confidence thresholds
-- Provides detailed explanations for decisions
+- Provides detailed explanations for decisions per product
 - Works seamlessly with existing verifier pipeline
+- Supports partial success when processing multiple products

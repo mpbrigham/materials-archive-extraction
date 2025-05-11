@@ -1,182 +1,230 @@
-# V1 Linear Flow – Enhanced Multimodal Intelligent Materials Intake System
+# V1 Linear Flow – Email-based Multimodal Materials Intake System
 
-This version represents the enhanced implementation of the IMIS pipeline with multimodal extraction and intelligent LLM-based data processing capabilities.
+This implementation provides an email-based document processing pipeline using n8n workflow automation and multimodal LLM capabilities for extracting materials metadata from PDF attachments, supporting both single and multiple products per document.
 
-## Flow Summary
+## Architecture Overview
 
 ```
-Document Validator → LLM Extraction → LLM Data Processor → LLM Verifier → Response
+Email (IMAP) → Document Validation → LLM Extraction → Data Processing → Verification → Email Response
 ```
 
 ```mermaid
 flowchart TD
-    A[Document Validator] --> B[LLM Extraction]
-    B --> D[LLM Data Processor]
+    A[Email Trigger - IMAP] --> B[Document Validator]
+    B --> C[LLM Extraction]
+    C --> D[LLM Data Processor]
     D -->|High Confidence| E[LLM Verifier]
-    D -->|Mixed Confidence| F[Dynamic Optimized Schema]
-    D -->|Low Confidence| H[Error Response]
+    D -->|Mixed Confidence| F[Dynamic Field Selection]
+    D -->|Low Confidence| G[Error Response]
     F --> E
-    E --> I{Verification Passed?}
-    I -->|Yes| J[Success Response]
-    I -->|No| K[Error Response]
-    J --> L[Document Lifecycle Log]
-    H --> L
-    K --> L
-    L --> M[Notifications]
+    E --> H{Verification Passed?}
+    H -->|Yes| I[Success Email]
+    H -->|No| J[Error Email]
+    G --> J
+    I --> K[Activity Logger]
+    J --> K
+    K --> L[Document Lifecycle Log]
 ```
 
-## Multimodal Features
+## Key Features
 
-- ✅ **Direct PDF processing** with multimodal LLM capabilities
-- ✅ **Visual extraction** with field locations and confidence
-- ✅ **Intelligent LLM-based data processing** with dynamic field selection
+- ✅ **Email-based ingestion** via IMAP monitoring
+- ✅ **Direct PDF processing** with multimodal LLM
+- ✅ **Multiple product extraction** from single documents
+- ✅ **Visual extraction** with confidence scores and coordinates
+- ✅ **Intelligent data processing** with dynamic field selection
 - ✅ **Multimodal verification** against original document
-- ✅ **Enhanced confidence scoring** with field-level metrics
-- ✅ **Dynamic MVS optimization** prioritizing high-quality fields
-- ✅ **Full comprehensive schema support** with [materials_schema.json](../materials_schema.json)
+- ✅ **Partial success support** for multi-product documents
+- ✅ **Automated email responses** with extracted metadata
+- ✅ **Comprehensive logging** of document lifecycle
 
-## Key Enhancements
+## Deployment Architecture
 
-1. **Streamlined Processing**:
-   - Eliminates separate text extraction step
-   - Processes PDFs directly using multimodal LLM
-   - Maintains the same workflow structure with fewer components
-   - Direct integration between LLM Extraction and Data Processing
+The system runs as a single n8n container with volume-mounted functions and prompts:
 
-2. **Improved Visual Context**:
-   - Extracts field locations with page numbers and coordinates
-   - Uses visual context for enhanced verification
-   - Preserves layout and design information from documents
+1. **n8n Workflow Engine**: Orchestrates the entire pipeline
+2. **Volume Mounts**: Provides access to functions and prompts
+3. **Email Integration**: IMAP for ingestion, SMTP for responses
+4. **LLM APIs**: External services for extraction and verification
 
-3. **Dynamic MVS Approach**:
-   - Core MVS fields: `name`, `brand`, `summary`
-   - LLM-based quality assessment of all extracted fields
-   - Intelligent selection of optimal high-confidence field subset
-   - Semantic understanding of field relationships and dependencies
+## Quick Start
 
-4. **Enhanced Confidence Assessment**:
-   - Field-level confidence metrics
-   - Weighted scoring that prioritizes important fields
-   - Semantic coherence evaluation
-   - Quality-driven decision making
-
-## Intelligent Data Processing
-
-The system uses an LLM-based data processor that implements a sophisticated field selection strategy:
-
-1. **Comprehensive Schema**:
-   - Extracts metadata according to the standardized comprehensive [materials schema](../materials_schema.json)
-   - Preserves field-level confidence scores and locations
-   - Processes all available fields from the document
-
-2. **LLM-Based Assessment**:
-   - Evaluates extracted fields based on confidence, relationships, and utility
-   - Makes context-aware decisions based on document quality
-   - Implements confidence policy with adaptive thresholds
-   - Provides explanatory notes about assessment decisions
-
-3. **Dynamic Field Selection**:
-   - When confidence is mixed (0.7-0.9), selects optimal field subset
-   - Retains all fields with confidence ≥ 0.7
-   - Prioritizes semantically coherent combinations
-   - Preserves field relationships and dependencies
-
-## Confidence Policy Implementation
-
-The system implements a three-tier confidence policy with intelligent assessment:
-
-1. **Trust threshold** (confidence ≥ 0.9): Proceed with full schema extraction
-2. **Fallback threshold** (0.7 ≤ confidence < 0.9): Dynamic selection of high-confidence fields
-3. **Failure threshold** (confidence < 0.7): Rejection with detailed reasons
-
-See [CONFIDENCE_POLICY.txt](specs/CONFIDENCE_POLICY.txt) for detailed implementation.
-
-## Agent Interface Contracts
-
-The enhanced multimodal implementation updates the interface contracts:
-
-1. **Document Validator → LLM Extraction**: Validates PDF and initiates processing
-2. **LLM Extraction → LLM Data Processor**: Provides extraction with visual coordinates and confidence
-3. **LLM Data Processor → LLM Verifier**: Routes optimized field set based on quality assessment
-4. **LLM Verifier → Response Formatter**: Reports verification status with visual evidence
-
-See [AGENT_INTERFACE_CONTRACTS.txt](specs/AGENT_INTERFACE_CONTRACTS.txt) for detailed contract specifications.
-
-## Deployment Quick Start
-
-1. Set up multimodal LLM API access in your environment file:
-   ```
-   LLM_VISION_API_ENDPOINT=https://api.provider.com/v1/models/vision-model
-   LLM_VISION_MODEL=provider-vision-model
-   LLM_TEXT_API_ENDPOINT=https://api.provider.com/v1/models/text-model
-   LLM_TEXT_MODEL=provider-text-model
+1. **Configure Environment**:
+   ```bash
+   cp env-template.txt .env
+   # Edit .env with your email and LLM API credentials
    ```
 
-2. Import the workflow into n8n:
-   ```
-   n8n import:workflow --input=deployment/workflow_Materials_Intake_V1.json
-   ```
-   
-   Note: The workflow file is named `workflow_Materials_Intake_V1.json` in this implementation.
-
-3. Test the implementation:
-   ```
-   node scripts/test_llm_processor.js
+2. **Deploy with Docker**:
+   ```bash
+   docker-compose up -d
    ```
 
-4. Process a sample PDF:
-   ```
-   python scripts/testing_script.py --samples /path/to/pdf/file.pdf
-   ```
+3. **Import Workflow**:
+   - Access n8n at http://localhost:5678
+   - Import `workflow_Materials_Intake_V1.json`
+   - Configure email credentials
+   - Activate the workflow
 
-For detailed deployment instructions, see [DEPLOYMENT.md](deployment/DEPLOYMENT.md).
+4. **Test the System**:
+   - Send an email with PDF attachment to your IMAP inbox
+   - System processes and responds with extracted metadata
 
-## System Requirements
+For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
 
-- Python 3.8+
-- Node.js 14+
-- n8n instance
-- SMTP/IMAP server access
-- Multimodal LLM API access (Gemini Vision, GPT-4V, or Claude 3)
-- Text LLM API access (Gemini, GPT-4, or Claude)
+## System Components
+
+### Core Files
+- `docker-compose.yml`: n8n deployment configuration
+- `workflow_Materials_Intake_V1.json`: n8n workflow definition
+- `scripts/document_validator.js`: Document validation function
+- `scripts/success_notifier.js`: Success email formatting function
+- `scripts/error_notifier.js`: Error email formatting function  
+- `prompts/llm_*.txt`: LLM prompt templates for each node
+
+### Directory Structure
+```
+V1_Linear_Flow/
+├── docker-compose.yml          # Docker deployment
+├── .env                        # Environment configuration (created from env-template.txt)
+├── data/                       # n8n data directory (auto-created by Docker)
+│   └── logs/                   # Activity logs (auto-created)
+├── scripts/                    # Core functions (mounted read-only)
+│   ├── document_validator.js   # Document validation function
+│   ├── success_notifier.js     # Success email formatter
+│   └── error_notifier.js       # Error email formatter
+├── prompts/                    # LLM prompts (mounted read-only)
+│   ├── llm_extraction.txt      # Prompt for LLM Extraction node
+│   ├── llm_data_processor.txt  # Prompt for LLM Data Processor node
+│   └── llm_verifier.txt        # Prompt for LLM Verifier node
+├── email_templates/            # Email templates (mounted read-only)
+│   ├── success.txt             # Success email template
+│   └── failure.txt             # Failure email template
+├── workflow_Materials_Intake_V1.json
+├── DEPLOYMENT.md
+└── env-template.txt
+```
 
 ## Configuration
 
-The configuration includes enhanced settings:
+### Environment Variables
+Configure these in your `.env` file:
 
-1. **Environment Variables**:
-   - Standard email and logging settings
-   - Multimodal and text LLM API configuration
-   - Model selection options
+```env
+# Email Settings
+IMAP_HOST=imap.example.com
+IMAP_PORT=993
+IMAP_USER=materials@example.com
+IMAP_PASS=your-password
 
-2. **V1 LLM Prompts**:
-   - LLM Extraction: [metadata_extraction.txt](prompts/metadata_extraction.txt) - Multimodal extraction with visual coordinates
-   - LLM Data Processor: [data_processor.txt](prompts/data_processor.txt) - Confidence-based field selection
-   - LLM Verifier: [metadata_verification.txt](prompts/metadata_verification.txt) - Visual verification against original document
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=materials@example.com
+SMTP_PASS=your-password
 
-3. **Implementation Files**:
-   - Enhanced functions: [functions_multimodal.js](scripts/functions_multimodal.js)
-   - Test script: [test_llm_processor.js](scripts/test_llm_processor.js)
+# LLM API Settings
+LLM_API_KEY=your-api-key
+LLM_TEXT_API_ENDPOINT=https://api.example.com/text
+LLM_TEXT_MODEL=model-name
+LLM_VISION_API_ENDPOINT=https://api.example.com/vision
+LLM_VISION_MODEL=vision-model-name
+```
 
-## Pipeline Optimizations
+### Volume Mounts
+The Docker setup mounts these directories into n8n:
+- `./scripts:/home/node/scripts:ro` - Processing functions
+- `./prompts:/home/node/prompts:ro` - LLM prompts
+- `./email_templates:/home/node/email_templates:ro` - Email templates
+- `./data:/home/node/data` - n8n data and logs (directory auto-created by Docker)
 
-The V1 Linear Flow has been optimized to remove the redundant Metadata Parser component:
-- Transformation logic integrated directly into LLM Extraction node
-- Direct connection between extraction and data processing
-- Simplified pipeline with fewer components
-- Preserved all functionality including lifecycle management and error handling
+## Processing Pipeline
 
-Additional improvements:
-- Enhanced guidance for handling multiple products in a single document
-- Eliminated duplicate storage of field location data (DRY principle)
-- Added "contains_multiple_products" flag to indicate when secondary products are present
+1. **Email Trigger**: Monitors IMAP inbox for new emails
+2. **Document Validator**: Validates PDF attachments
+3. **LLM Extraction**: Extracts metadata using vision model
+4. **Data Processor**: Assesses quality and confidence
+5. **LLM Verifier**: Verifies extracted data
+6. **Email Response**: Sends results back to sender
+7. **Activity Logger**: Records lifecycle events
 
-## V1-Specific Implementation Files
+## Confidence Policy
 
-- Core processing logic: [functions_multimodal.js](scripts/functions_multimodal.js)
-- Main test script: [test_llm_processor.js](scripts/test_llm_processor.js)
-- Webhook handler: [webhook_handler.py](scripts/webhook_handler.py)
-- Agent prompts:
-  - [metadata_extraction.txt](prompts/metadata_extraction.txt)
-  - [data_processor.txt](prompts/data_processor.txt)
-  - [metadata_verification.txt](prompts/metadata_verification.txt)
+The system implements a three-tier confidence policy per product:
+- **High (≥0.9)**: Full schema extraction
+- **Mixed (0.7-0.9)**: Dynamic field selection
+- **Low (<0.7)**: Rejection with explanation
+
+For multi-product documents:
+- Each product is evaluated independently
+- Document succeeds if at least one product passes validation
+- Partial success is supported and reported
+
+## Development & Maintenance
+
+### Updating Functions
+Edit files in `scripts/` directory - changes apply immediately without restart:
+- `document_validator.js`: For PDF validation logic
+- `success_notifier.js`: For success email formatting
+- `error_notifier.js`: For error email formatting
+
+### Updating Prompts
+Edit files in `prompts/` directory - changes apply immediately.
+
+### Updating Email Templates
+Edit files in `email_templates/` directory - changes apply immediately:
+- `email_templates/success.txt`: Template for successful extraction emails
+- `email_templates/failure.txt`: Template for error notification emails
+
+### Modifying Workflow
+1. Edit in n8n UI
+2. Export workflow
+3. Save to `workflow_Materials_Intake_V1.json`
+
+## Logging & Monitoring
+
+- **Activity Logs**: `./data/logs/document_lifecycle.json`
+- **n8n Executions**: View in n8n UI
+- **Docker Logs**: `docker-compose logs -f n8n`
+
+## Email Customization
+
+Email templates can be customized without modifying code:
+- **Success Email**: Edit `email_templates/success.txt`
+- **Error Email**: Edit `email_templates/failure.txt`
+
+Templates support placeholders (e.g., `{{sender}}`, `{{productCount}}`) that are automatically replaced with actual values.
+
+## Troubleshooting
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for common issues and solutions.
+
+## PROJECT_SPEC
+```spec
+NAME: Materials Library Extraction V1 - Email Pipeline
+DOMAIN: Document Processing / Workflow Automation
+PRIMARY_TOOLS: n8n, Docker, LLM APIs
+PIPELINE_STAGES:
+  1. Email ingestion via IMAP
+  2. PDF validation
+  3. Multimodal LLM extraction (single or multiple products)
+  4. Confidence-based data processing per product
+  5. Visual verification per product
+  6. Email notification with all extracted products
+KEY_COMPONENTS:
+- `workflow_Materials_Intake_V1.json`: n8n workflow definition
+- `scripts/*.js`: Individual function files for each processing node
+- `prompts/llm_*.txt`: LLM prompt templates for each node
+- `docker-compose.yml`: Deployment configuration
+TECHNICAL_SPECIFICATIONS:
+- `specs/`: Architecture and interface contracts
+  - Confidence policies
+  - Multi-product handling
+  - Agent communication protocols
+DESIGN_CONSTRAINTS:
+- Email-based ingestion only
+- Functions and prompts loaded via volume mounts
+- Single n8n container deployment
+- Direct PDF processing without conversion
+- Products always handled as arrays (even single products)
+- Supports partial success for multi-product documents
+```

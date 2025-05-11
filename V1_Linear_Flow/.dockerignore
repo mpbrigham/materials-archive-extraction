@@ -1,0 +1,34 @@
+# n8n data directory
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific
+logs/
+storage/
+*.log
+.env
+.git/
+.gitignore
+README.md
+tests/
+samples/
+*.bak
+
+# Docker
+.dockerignore
+docker-compose.yml

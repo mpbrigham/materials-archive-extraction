@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=0.0.0.0
+      - NODE_FUNCTION_ALLOW_BUILTIN=*
+      - NODE_FUNCTION_ALLOW_EXTERNAL=*
+      - N8N_USER_FOLDER=/home/node/data
+      - GENERIC_TIMEZONE=UTC
+    volumes:
+      - ./data:/home/node/data                    # n8n data directory
+      - ./scripts:/home/node/scripts:ro           # Mount functions as read-only
+      - ./prompts:/home/node/prompts:ro           # Mount prompts as read-only
+      - ./email_templates:/home/node/email_templates:ro     # Mount email templates as read-only
+    env_file:
+      - .env
+    networks:
+      - n8n-network
+
+networks:
+  n8n-network:
+    driver: bridge
