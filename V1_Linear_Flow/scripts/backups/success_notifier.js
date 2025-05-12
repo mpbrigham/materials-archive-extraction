@@ -24,7 +24,7 @@ const loadEmailTemplate = function(templateName, variables) {
 };
 
 // Format Success Email Function
-try {
+const formatSuccessEmail = function(items, runIndex) {
   if (!items || items.length === 0) {
     throw new Error("No items received by Email Formatter");
   }
@@ -35,9 +35,8 @@ try {
   const originalRequest = item.json.original_request || {};
   const sender = originalRequest.sender || "materials-team@example.com";
   
-  // Get product count and language
+  // Get product count
   const productCount = item.json.products ? item.json.products.length : 0;
-  const language = item.json.language_detected || "undetected";
   const partialSuccess = item.json.partial_success || false;
   
   // Format JSON for attachment - use extracted_values
@@ -91,8 +90,7 @@ try {
     productCountSuffix: productCount > 1 ? ` (${productCount} products)` : '',
     productDescription: productDescription,
     productList: productList,
-    notes: notes,
-    language: language
+    notes: notes
   };
   
   const emailContent = loadEmailTemplate('success', templateVars);
@@ -102,35 +100,22 @@ try {
   const subject = lines[0].replace('Subject: ', '');
   const body = lines.slice(2).join('\n');
   
-  return [
-    {
-      json: {
-        to: sender,
-        subject: subject,
-        body: body,
-        attachments: [
-          {
-            data: Buffer.from(jsonStr).toString('base64'),
-            name: 'extracted_metadata.json',
-            type: 'application/json'
-          }
-        ],
-        document_id: item.json.document_id,
-        _lifecycle_log: item.json._lifecycle_log || []
-      }
+  return {
+    json: {
+      to: sender,
+      subject: subject,
+      body: body,
+      attachments: [
+        {
+          data: Buffer.from(jsonStr).toString('base64'),
+          name: 'extracted_metadata.json',
+          type: 'application/json'
+        }
+      ],
+      document_id: item.json.document_id,
+      _lifecycle_log: item.json._lifecycle_log || []
     }
-  ];
-} catch (error) {
-  // Error handling
-  return [
-    {
-      json: {
-        to: "materials-team@example.com",
-        subject: "Error Formatting Success Email",
-        body: `There was an error formatting the success email: ${error.message}`,
-        document_id: items[0]?.json?.document_id || "unknown",
-        _lifecycle_log: items[0]?.json?._lifecycle_log || []
-      }
-    }
-  ];
-}
+  };
+};
+
+module.exports = { formatSuccessEmail };

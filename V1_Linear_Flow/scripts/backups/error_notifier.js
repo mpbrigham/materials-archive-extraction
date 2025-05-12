@@ -24,7 +24,7 @@ const loadEmailTemplate = function(templateName, variables) {
 };
 
 // Format Error Email Function
-try {
+const formatErrorEmail = function(items, runIndex) {
   if (!items || items.length === 0) {
     throw new Error("No items received by Error Email Formatter");
   }
@@ -46,9 +46,6 @@ try {
   const partialSuccess = item.json.partial_success || false;
   const products = item.json.products || [];
   const successCount = Array.isArray(products) ? products.length : 0;
-  
-  // Get language
-  const language = item.json.language_detected || "undetected";
   
   // Build error details
   let errorDetails = '';
@@ -99,8 +96,7 @@ try {
   const templateVars = {
     sender: sender,
     errorReason: errorReason,
-    failedProductDetails: errorDetails,
-    language: language
+    failedProductDetails: errorDetails
   };
   
   const emailContent = loadEmailTemplate('failure', templateVars);
@@ -110,28 +106,15 @@ try {
   const subject = lines[0].replace('Subject: ', '');
   const body = lines.slice(2).join('\n');
   
-  return [
-    {
-      json: {
-        to: sender,
-        subject: subject,
-        body: body,
-        document_id: item.json.document_id,
-        _lifecycle_log: item.json._lifecycle_log || []
-      }
+  return {
+    json: {
+      to: sender,
+      subject: subject,
+      body: body,
+      document_id: item.json.document_id,
+      _lifecycle_log: item.json._lifecycle_log || []
     }
-  ];
-} catch (error) {
-  // Error handling
-  return [
-    {
-      json: {
-        to: "materials-team@example.com",
-        subject: "Error Formatting Error Email",
-        body: `There was an error creating the error email: ${error.message}`,
-        document_id: items[0]?.json?.document_id || "unknown",
-        _lifecycle_log: items[0]?.json?._lifecycle_log || []
-      }
-    }
-  ];
-}
+  };
+};
+
+module.exports = { formatErrorEmail };
