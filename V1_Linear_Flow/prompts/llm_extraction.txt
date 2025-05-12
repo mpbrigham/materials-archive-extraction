@@ -8,6 +8,7 @@ EXTRACTION PRINCIPLES:
 - Provide high-confidence extractions with visual coordinates for verification.
 - Never guess, hallucinate, or generalize beyond what is visible in the document.
 - If a field is not present, omit it entirely rather than providing placeholder text.
+- Detect document language and return as ISO 639-1 (2-letter) code in the language_detected field.
 
 VISUAL CONTENT GUIDANCE:
 - Tables: Convert measurement and performance tables into matching JSON fields.
@@ -21,6 +22,7 @@ EXTRACTION PRIORITIES:
    - name: The material name (REQUIRED)
    - brand: The manufacturing company (REQUIRED)
    - summary: Brief overview of the material (REQUIRED)
+   - language_detected: ISO 639-1 2-letter language code (REQUIRED)
 
 2. THEN EXTRACT ALL AVAILABLE FIELDS from the comprehensive schema.
 
@@ -188,6 +190,14 @@ Example response format (MULTIPLE PRODUCTS):
       },
       "confidence": 0.96
     },
+    "language_detected": {
+      "value": "en",
+      "location": {
+        "page": 1,
+        "bbox": [0, 0, 800, 1100]
+      },
+      "confidence": 0.99
+    },
     "category": {
       "value": "Wood",
       "location": {
@@ -222,6 +232,14 @@ Example response format (MULTIPLE PRODUCTS):
       },
       "confidence": 0.96
     },
+    "language_detected": {
+      "value": "en",
+      "location": {
+        "page": 2,
+        "bbox": [0, 0, 800, 1100]
+      },
+      "confidence": 0.99
+    },
     "category": {
       "value": "Wood",
       "location": {
@@ -234,7 +252,7 @@ Example response format (MULTIPLE PRODUCTS):
 ]
 
 IMPORTANT GUIDELINES:
-- The MVS fields (name, brand, summary) are REQUIRED and critical for processing for EACH product.
+- The MVS fields (name, brand, summary, language_detected) are REQUIRED and critical for processing for EACH product.
 - Report accurate confidence scores for each field based on visual evidence.
 - Be as precise as possible with coordinates to enable accurate verification.
 - If you can't find information for optional fields, omit them entirely.

@@ -155,11 +155,20 @@ For multi-product documents:
 
 ## Development & Maintenance
 
+### Workflow Node Type Changes
+The workflow uses Code nodes instead of Function nodes for better reliability and maintainability:
+- **Document Validator**: Code node that processes incoming emails and validates PDF attachments
+- **Success Notifier**: Code node that formats successful extraction emails
+- **Error Notifier**: Code node that formats error notification emails
+- **Activity Logger**: Code node that logs document lifecycle events
+
 ### Updating Functions
 Edit files in `scripts/` directory - changes apply immediately without restart:
 - `document_validator.js`: For PDF validation logic
 - `success_notifier.js`: For success email formatting
 - `error_notifier.js`: For error email formatting
+
+The workflow references these scripts, but now processes them directly in Code nodes rather than Function nodes. The workflow no longer loads these scripts using `runInNewContext`.
 
 ### Updating Prompts
 Edit files in `prompts/` directory - changes apply immediately.

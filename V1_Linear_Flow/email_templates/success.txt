@@ -5,6 +5,7 @@ Dear {{sender}},
 The attached PDF has been successfully processed. {{productDescription}}
 
 {{productList}}
+Document language: {{language}}
 {{notes}}
 Best regards,
 Materials Library Bot

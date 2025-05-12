@@ -106,6 +106,49 @@ The Docker Compose configuration mounts these directories:
 - `./prompts:/home/node/prompts:ro` - LLM prompts (read-only)
 - `./email_templates:/home/node/email_templates:ro` - Email templates (read-only)
 
+## Workflow Implementation Details
+
+### Node Types
+
+The workflow uses several Code nodes instead of Function nodes for better reliability and performance:
+
+1. **Document Validator** (Code Node):
+   - Processes incoming emails
+   - Validates PDF attachments
+   - Builds structured metadata for extraction
+
+2. **LLM Extraction** (HTTP Request Node):
+   - Calls the LLM API with the PDF document
+   - Processes the multimodal extraction response
+   - Standardizes output format for single/multiple products
+
+3. **LLM Data Processor** (HTTP Request Node):
+   - Evaluates extraction confidence
+   - Applies confidence-based processing rules
+   - Passes high-confidence data for verification
+
+4. **LLM Verifier** (HTTP Request Node):
+   - Performs visual verification of extracted data
+   - Confirms values match document content
+   - Provides final validation results
+
+5. **Success/Error Notifiers** (Code Nodes):
+   - Format email responses using templates
+   - Include extracted metadata or error details
+   - Prepare attachments with JSON data
+
+6. **Activity Logger** (Code Node):
+   - Logs document lifecycle events to persistent storage
+   - Creates structured audit trail of all processing
+
+### Processing Improvements
+
+The workflow now uses modern Code nodes with these advantages:
+- More efficient execution without VM context switching
+- Better error handling with try/catch blocks
+- Consistent handling of input/output formats
+- Unified data processing across nodes
+
 ## Monitoring and Maintenance
 
 ### Activity Logs
@@ -145,7 +188,29 @@ Regular backups recommended for:
 
 4. **Docker-compose configuration issues**:
    - If you encounter Redis connection errors with the default docker-compose.yml
-   - Try using the simplified configuration in docker-compose-simple.yml:
+   - Create a simplified configuration in docker-compose-simple.yml without Redis:
+     ```yaml
+     version: '3'
+     services:
+       n8n:
+         image: n8nio/n8n
+         ports:
+           - "5678:5678"
+         environment:
+           - N8N_BASIC_AUTH_ACTIVE=false
+           - N8N_HOST=0.0.0.0
+           - N8N_PORT=5678
+           - DB_TYPE=sqlite
+           - DB_SQLITE_DATABASE=/home/node/data/database.sqlite
+         volumes:
+           - ./data:/home/node/data
+           - ./scripts:/home/node/scripts:ro
+           - ./prompts:/home/node/prompts:ro
+           - ./email_templates:/home/node/email_templates:ro
+         env_file:
+           - .env
+     ```
+     Then run:
      ```
      docker-compose -f docker-compose-simple.yml up -d
      ```
