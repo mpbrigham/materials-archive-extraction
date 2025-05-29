@@ -36,7 +36,7 @@ jobs:
       - name: Validate materials schema
         run: |
           # Validate materials schema from root directory
-          python3 -m json.tool specs/MATERIALS_SCHEMA.json > /dev/null
+          python3 -m json.tool specs/materials_schema.json > /dev/null
           echo "✅ Materials schema is valid"
 
       - name: Test extraction script
