@@ -30,6 +30,7 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             cd /opt/materials-archive-extraction/v0_initial_flow
+            git checkout v0_initial_flow
             git pull origin v0_initial_flow
             
             # Ensure data directory exists with correct permissions for n8n
