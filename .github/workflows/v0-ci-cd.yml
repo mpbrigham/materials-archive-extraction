@@ -41,3 +41,103 @@ jobs:
             EMAIL_PASS="${{ secrets.EMAIL_PASS }}" \
             LLM_API_KEY="${{ secrets.LLM_API_KEY }}" \
             docker compose up -d --build
+            
+            # Wait for n8n to be ready
+            echo "Waiting for n8n to start..."
+            timeout=300
+            while [ $timeout -gt 0 ]; do
+              if curl -s http://localhost:5678/healthz > /dev/null 2>&1; then
+                echo "n8n is ready!"
+                break
+              fi
+              sleep 5
+              timeout=$((timeout - 5))
+            done
+            
+            if [ $timeout -le 0 ]; then
+              echo "n8n failed to start within 5 minutes"
+              exit 1
+            fi
+            
+            # Source environment variables
+            source .env
+            
+            # Configure n8n workflow and credentials
+            echo "Configuring n8n workflow and credentials..."
+            
+            # Create IMAP credential
+            IMAP_CRED_RESPONSE=$(curl -s -X POST http://localhost:5678/api/v1/credentials \
+              -H "Content-Type: application/json" \
+              -d '{
+                "name": "IMAP account",
+                "type": "imap",
+                "data": {
+                  "host": "'$IMAP_HOST'",
+                  "port": '$IMAP_PORT',
+                  "secure": true,
+                  "user": "'$EMAIL_USER'",
+                  "password": "'$EMAIL_PASS'"
+                }
+              }' || echo '{"id":""}')
+            
+            IMAP_CRED_ID=$(echo $IMAP_CRED_RESPONSE | jq -r '.id // empty')
+            echo "IMAP credential ID: $IMAP_CRED_ID"
+            
+            # Create SMTP credential
+            SMTP_CRED_RESPONSE=$(curl -s -X POST http://localhost:5678/api/v1/credentials \
+              -H "Content-Type: application/json" \
+              -d '{
+                "name": "SMTP account", 
+                "type": "smtp",
+                "data": {
+                  "host": "'$SMTP_HOST'",
+                  "port": '$SMTP_PORT',
+                  "secure": false,
+                  "user": "'$EMAIL_USER'",
+                  "password": "'$EMAIL_PASS'"
+                }
+              }' || echo '{"id":""}')
+              
+            SMTP_CRED_ID=$(echo $SMTP_CRED_RESPONSE | jq -r '.id // empty')
+            echo "SMTP credential ID: $SMTP_CRED_ID"
+            
+            # Update workflow JSON with credential IDs
+            if [ -n "$IMAP_CRED_ID" ] && [ -n "$SMTP_CRED_ID" ]; then
+              cp materials_archive_extraction.json materials_archive_extraction_temp.json
+              
+              # Update IMAP credential ID
+              jq --arg imap_id "$IMAP_CRED_ID" \
+                 '(.nodes[] | select(.name == "Email Trigger") | .credentials.imap.id) = $imap_id' \
+                 materials_archive_extraction_temp.json > materials_archive_extraction_updated.json
+              
+              # Update SMTP credential ID  
+              jq --arg smtp_id "$SMTP_CRED_ID" \
+                 '(.nodes[] | select(.name == "Send Notification") | .credentials.smtp.id) = $smtp_id' \
+                 materials_archive_extraction_updated.json > materials_archive_extraction_final.json
+              
+              # Import workflow
+              WORKFLOW_RESPONSE=$(curl -s -X POST http://localhost:5678/api/v1/workflows/import \
+                -H "Content-Type: application/json" \
+                -d @materials_archive_extraction_final.json || echo '{"id":""}')
+              
+              WORKFLOW_ID=$(echo $WORKFLOW_RESPONSE | jq -r '.id // empty')
+              echo "Workflow ID: $WORKFLOW_ID"
+              
+              # Activate workflow
+              if [ -n "$WORKFLOW_ID" ]; then
+                curl -s -X POST http://localhost:5678/api/v1/workflows/$WORKFLOW_ID/activate \
+                  -H "Content-Type: application/json"
+                echo "Workflow activated successfully!"
+              else
+                echo "Failed to import workflow"
+                exit 1
+              fi
+              
+              # Cleanup temp files
+              rm -f materials_archive_extraction_temp.json materials_archive_extraction_updated.json materials_archive_extraction_final.json
+            else
+              echo "Failed to create credentials"
+              exit 1
+            fi
+            
+            echo "Deployment and configuration completed successfully!"
