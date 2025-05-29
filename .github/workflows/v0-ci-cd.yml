@@ -41,6 +41,7 @@ jobs:
             EMAIL_USER="${{ secrets.EMAIL_USER }}" \
             EMAIL_PASS="${{ secrets.EMAIL_PASS }}" \
             LLM_API_KEY="${{ secrets.LLM_API_KEY }}" \
+            N8N_ENCRYPTION_KEY="${{ secrets.N8N_ENCRYPTION_KEY }}" \
             docker compose up -d --build
             
             # Wait for n8n to be ready
