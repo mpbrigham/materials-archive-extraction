@@ -62,9 +62,9 @@ jobs:
             
             # Import credentials and workflow using export/import pattern
             echo "Importing credentials..."
-            docker exec v0_initial_flow-n8n-1 n8n import:credentials --input=/home/node/data/credentials.json
+            docker exec v0_initial_flow-n8n-1 n8n import:credentials --input=/home/node/import/credentials.json
             
             echo "Importing workflow..."
-            docker exec v0_initial_flow-n8n-1 n8n import:workflow --input=/home/node/data/workflows.json
+            docker exec v0_initial_flow-n8n-1 n8n import:workflow --input=/home/node/import/workflows.json
             
             echo "Deployment completed successfully!"

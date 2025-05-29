@@ -31,6 +31,9 @@ services:
       - ./email_templates:/home/node/email_templates:ro
       - ./schema:/home/node/schema:ro
       
+      # Mount import directory for credentials and workflows
+      - ./import:/home/node/import:ro
+      
     env_file:
       - .env
       
