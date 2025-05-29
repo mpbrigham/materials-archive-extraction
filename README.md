@@ -13,10 +13,10 @@ IMIS automates extraction, structuring, and validation of metadata from architec
 
 | Version | Strategy | Ideal For |
 |---------|----------|-----------|
-| [`V1_Linear_Flow`](./V1_Linear_Flow) | Linear simplicity | Quickstart, minimal setups |
-| [`V1.5_Enhanced_Verification`](./V1.5_Enhanced_Verification) | Multi-turn visual verification | High accuracy, evidence collection |
-| [`V2_Modular_Expansion`](./V2_Modular_Expansion) | Modular agents with explicit flow | Complex intake, scalable deployments |
-| [`V3_Intent_Driven_Minimalism`](./V3_Intent_Driven_Minimalism) | Stateless intent-based dispatch | Adaptive pipelines, future extensibility |
+| [`v1_linear_flow`](./v1_linear_flow) | Linear simplicity | Quickstart, minimal setups |
+| [`v1.5_enhanced_verification`](./v1.5_enhanced_verification) | Multi-turn visual verification | High accuracy, evidence collection |
+| [`v2_modular_expansion`](./v2_modular_expansion) | Modular agents with explicit flow | Complex intake, scalable deployments |
+| [`v3_intent_driven_minimalism`](./v3_intent_driven_minimalism) | Stateless intent-based dispatch | Adaptive pipelines, future extensibility |
 
 Each version contains:
 - Prompts (`/prompts/`)
@@ -37,7 +37,7 @@ Each version contains:
 pip install flask
 
 # Start webhook server
-cd V1_Linear_Flow/
+cd v1_linear_flow/
 python scripts/webhook_handler.py
 
 # In another terminal:
@@ -46,16 +46,16 @@ cd ..
 
 1. Open n8n
 2. Import the workflow file from your chosen version:
-   - V1: `V1_Linear_Flow/deployment/workflow_Materials_Intake_V1.json`
-   - V2: `V2_Modular_Expansion/deployment/workflow_Materials_Intake_V2.json`
-   - V3: `V3_Intent_Driven_Minimalism/deployment/workflow_Materials_Intake_V3.json`
+   - V1: `v1_linear_flow/deployment/workflow_Materials_Intake_V1.json`
+   - V2: `v2_modular_expansion/deployment/workflow_Materials_Intake_V2.json`
+   - V3: `v3_intent_driven_minimalism/deployment/workflow_Materials_Intake_V3.json`
 3. Configure environment variables
 4. Test with sample PDFs from the `samples/` directory
 
 ### Production Deployment
 
 For detailed instructions on deploying to a production environment, see:
-- [V1 Deployment Guide](./V1_Linear_Flow/deployment/DEPLOYMENT.md) - Complete setup with n8n, webhook handlers, monitoring, and scaling strategies
+- [V1 Deployment Guide](./v1_linear_flow/deployment/DEPLOYMENT.md) - Complete setup with n8n, webhook handlers, monitoring, and scaling strategies
 
 ## 🧭 Architecture
 
@@ -64,7 +64,7 @@ Each pipeline follows a composable flow:
 [Input] → [Supervisor] → [Extraction] → [Verification] → [Response]
 ```
 
-The system extracts metadata according to a standardized [schema](./materials_schema.json) including:
+The system extracts metadata according to a standardized [schema](./specs/MATERIALS_SCHEMA.json) including:
 - Basic identification (name, brand, category)
 - Physical properties (dimensions, weight, texture)
 - Performance characteristics (fire rating, acoustic properties)

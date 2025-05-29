@@ -1,0 +1,1 @@
+import{$ as o}from"./appStore.CzYAb1j6.js";const{overlayDelay:i,overlayTransition:e}=o.get();setTimeout(()=>{const t=document.getElementById("initial-overlay");t&&(t.style.transition=`opacity ${e}ms ease-out`,t.style.opacity="0",setTimeout(()=>{t.remove()},e))},i);

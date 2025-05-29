@@ -1,0 +1,198 @@
+From: bot@brigham.be
+Subject: Re: Materials Multi-PDF Test - 2025-05-27T21:29:54.804Z - Materials Extraction Complete
+Date: Tue May 27 2025 20:30:16 GMT-0100 (Cape Verde Standard Time)
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header-table { border-collapse: collapse; margin-bottom: 20px; min-width: 600px; }
+        .data-table { border-collapse: collapse; margin-bottom: 20px; min-width: 600px; }
+        .header-table th { background-color: #2c3e50; color: white; padding: 10px; text-align: left; border: 1px solid #bdc3c7; }
+        .header-table td { padding: 10px; border: 1px solid #bdc3c7; background-color: #ecf0f1; }
+        .data-table th { background-color: #34495e; color: white; padding: 8px; text-align: left; border: 1px solid #bdc3c7; }
+        .data-table td { padding: 8px; border: 1px solid #bdc3c7; }
+        .data-table tr:nth-child(even) { background-color: #f8f9fa; }
+        .summary { margin-top: 30px; padding: 15px; background-color: #e8f5e8; border-left: 4px solid #27ae60; }
+        .exceptions { margin-top: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; }
+        .failed-files { margin-top: 20px; padding: 15px; background-color: #f8d7da; border-left: 4px solid #dc3545; }
+        .request-details { margin-top: 30px; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #6c757d; }
+        .request-details table { border-collapse: collapse; min-width: 500px; }
+        .request-details th { background-color: #6c757d; color: white; padding: 8px; text-align: left; border: 1px solid #dee2e6; }
+        .request-details td { padding: 8px; border: 1px solid #dee2e6; background-color: white; }
+    </style>
+</head>
+<body>
+    <h2>EXTRACTED MATERIALS DATA</h2>
+    
+    
+    <table class="header-table">
+      <tr>
+        <th>Supplier</th>
+        <th>Product Name</th>
+        <th>SKU</th>
+        <th>Source File</th>
+      </tr>
+      <tr>
+        <td>HONEXT®</td>
+        <td>HONEXT® BOARDS 12 MM</td>
+        <td>FR-C/FR-B</td>
+        <td>test_product_1.pdf</td>
+      </tr>
+    </table>
+  
+    <table class="data-table">
+      <tr>
+        <th>Field</th>
+        <th>Value</th>
+      </tr>
+  
+      <tr>
+        <td>Material Class</td>
+        <td>WOOD</td>
+      </tr>
+      <tr>
+        <td>Composition</td>
+        <td>Paper mill primary sludge and post-consumer cardboard</td>
+      </tr>
+      <tr>
+        <td>Flammability</td>
+        <td>C-s1,d0/B-s1,d0</td>
+      </tr>
+      <tr>
+        <td>Sound Absorption</td>
+        <td>0,15</td>
+      </tr>
+      <tr>
+        <td>Sourcing Type</td>
+        <td>Reused</td>
+      </tr>
+      <tr>
+        <td>Tvoc At 28 Days</td>
+        <td>&lt; 1,0 mg/m3</td>
+      </tr>
+      <tr>
+        <td>Weight</td>
+        <td>± 550-620 / ± 580-650 kg/m3</td>
+      </tr>
+      <tr>
+        <td>Wet Abrasion Resistance</td>
+        <td>+/- 0,50 mm</td>
+      </tr>
+    </table>
+  <br>
+    <table class="header-table">
+      <tr>
+        <th>Supplier</th>
+        <th>Product Name</th>
+        <th>SKU</th>
+        <th>Source File</th>
+      </tr>
+      <tr>
+        <td>Ege</td>
+        <td>Tufted loop pile strukturvævet</td>
+        <td>DOP 5B-PA-ECT350</td>
+        <td>test_product_2.pdf</td>
+      </tr>
+    </table>
+  
+    <table class="data-table">
+      <tr>
+        <th>Field</th>
+        <th>Value</th>
+      </tr>
+  
+      <tr>
+        <td>Material Class</td>
+        <td>CARPETS</td>
+      </tr>
+      <tr>
+        <td>Composition</td>
+        <td>Regenerated and regenerable PA
+Ecotrust 350, 100% recycled</td>
+      </tr>
+      <tr>
+        <td>Format</td>
+        <td>tiles</td>
+      </tr>
+      <tr>
+        <td>Mounting</td>
+        <td>Quarter turn/ monolithic</td>
+      </tr>
+      <tr>
+        <td>Place Of Production</td>
+        <td>DK</td>
+      </tr>
+      <tr>
+        <td>Sourcing Type</td>
+        <td>Partially Recycled</td>
+      </tr>
+      <tr>
+        <td>Tvoc At 28 Days</td>
+        <td>A+/A+</td>
+      </tr>
+      <tr>
+        <td>Weight</td>
+        <td>Ca. 3.050 g/m2
+89.9 oz./yd2</td>
+      </tr>
+      <tr>
+        <td>Wet Abrasion Resistance</td>
+        <td>&gt;4</td>
+      </tr>
+    </table>
+  
+    
+    <div class="summary">
+        <h3>Extraction Summary</h3>
+        <ul><li>test_product_1.pdf: The document was processed successfully, extracting product information for Honext® Boards 12 MM. Confidence is high for most extracted values due to clear labeling and formatting.</li><li>test_product_2.pdf: The document contains product information for a flooring material. The extraction was performed with high confidence.</li></ul>
+    </div>
+    
+    
+    <div class="exceptions">
+        <h3>Processing Exceptions</h3>
+        <ul><li>test_product_1.pdf: The density values for Honext® Boards 12 mm are presented as a range, with different ranges for FR-C and FR-B.</li><li>test_product_2.pdf: [No exceptions found]</li>
+        </ul>
+    </div>
+    
+    
+    <div class="failed-files">
+        <h3>Processing Issues</h3>
+        <p>The following files could not be processed:</p>
+        <ul><li><strong>test_truly_invalid.pdf:</strong> API Error: The document has no pages.</li>
+        </ul>
+    </div>
+    
+    <div class="request-details">
+        <h3>Request Details</h3>
+        
+    <table>
+      <tr>
+        <th>From</th>
+        <td>bot-test@brigham.be</td>
+      </tr>
+      <tr>
+        <th>Subject</th>
+        <td>Materials Multi-PDF Test - 2025-05-27T21:29:54.804Z</td>
+      </tr>
+      <tr>
+        <th>Date</th>
+        <td>Tue, 27 May 2025 21:29:55 +0000 (UTC)</td>
+      </tr>
+      <tr>
+        <th>Message ID</th>
+        <td>&lt;d20c91cc-64f6-94ba-f50c-bf613e2ea3bf@brigham.be&gt;</td>
+      </tr>
+    </table>
+  
+    </div>
+    
+    <hr style="margin-top: 30px; border: none; border-top: 1px solid #bdc3c7;">
+    <p style="color: #7f8c8d; font-size: 12px;">
+        Processed 2 product(s) from 3 attachment(s)<br>
+        Generated automatically by Materials Library Extraction System
+    </p>
+</body>
+</html>

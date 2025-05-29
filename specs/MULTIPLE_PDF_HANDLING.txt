@@ -1,0 +1,91 @@
+# MULTIPLE PDF HANDLING SPECIFICATION
+
+## Overview
+This specification defines how multiple PDF attachments from a single email are processed consistently across all pipeline versions.
+
+## Multi-PDF Processing Principles
+
+1. **Independent Processing**: Each PDF attachment is processed independently
+2. **Status Aggregation**: Email succeeds if at least one PDF succeeds
+3. **Single Notification**: One email notification for all PDFs per email
+4. **Tracking Preservation**: Maintain clear relationship between email and all PDFs
+5. **Format Consistency**: Multi-PDF and single-PDF handling remain compatible
+
+## Core Processing Rules
+
+### PDF Detection
+- Scan all email attachments for PDF MIME type (`application/pdf`)
+- Process only valid PDF files
+- Ignore non-PDF attachments
+
+### ID Schema
+```
+document_id: "doc-{timestamp}-{index}"
+group_id: "email-{timestamp}"
+```
+
+Where:
+- `timestamp`: Unix timestamp when email was received
+- `index`: Zero-based index of PDF within the email
+- `group_id`: Shared identifier for all PDFs from same email
+
+### Processing Flow
+```
+Email → [PDF₁, PDF₂, ...] → Document Validator → [Item₁, Item₂, ...]
+```
+
+Each PDF becomes a separate processing item with:
+- Unique `document_id`
+- Shared `group_id`
+- Attachment metadata (`attachment_index`, `total_attachments`)
+
+### Status Aggregation Rules
+
+**Email Success Criteria:**
+- At least one PDF processes successfully
+- Partial success is supported (some PDFs succeed, others fail)
+
+**Email Failure Criteria:**
+- All PDFs fail to process
+- No valid PDFs found in email
+
+### Notification Consolidation
+
+**Single Email Response:**
+- Consolidate results from all PDFs in the same email
+- Group successful and failed PDFs by confidence levels
+- Include summary of processing status for each PDF
+- Send one notification per original email
+
+## Implementation Requirements
+
+### Document Validator
+- MUST detect all PDF attachments in email
+- MUST create separate processing items for each PDF
+- MUST assign unique `document_id` and shared `group_id`
+- MUST include attachment metadata in each item
+
+### Processing Stages
+- MUST process each PDF independently through pipeline
+- MUST maintain `group_id` throughout processing
+- MUST preserve attachment metadata
+
+### Result Consolidation
+- MUST group results by `group_id` before notification
+- MUST apply aggregation rules for email-level success/failure
+- MUST format consolidated response with all PDF results
+
+## Benefits
+
+- **Scalability**: Handle any number of PDFs per email
+- **Reliability**: Partial success prevents total email failure
+- **Clarity**: Single notification reduces email clutter
+- **Traceability**: Complete audit trail for each PDF
+- **Consistency**: Uniform handling across pipeline versions
+
+## Backward Compatibility
+
+Single-PDF emails work seamlessly:
+- `group_id` contains one `document_id`
+- Aggregation rules still apply (1 PDF = email success if PDF succeeds)
+- Notification format remains consistent

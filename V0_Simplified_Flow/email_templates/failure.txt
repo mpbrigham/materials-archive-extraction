@@ -1,0 +1,17 @@
+Materials Extraction Error Report
+
+Email: {{emailSubject}}
+Attachments Attempted: {{totalAttachments}}
+Status: Processing Failed
+
+ERROR DETAILS:
+═══════════════════════════════════════════════════════════
+{{errorDetails}}
+RECOMMENDED ACTIONS:
+═══════════════════════════════════════════════════════════
+• Check that attachments are valid PDF files
+• Ensure PDFs contain readable text or images
+• Verify PDF files are not corrupted
+• Contact support if issues persist
+
+This email was generated automatically by the Materials Library Extraction System.

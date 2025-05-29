@@ -1,0 +1,24 @@
+# SCRIPT ARCHITECTURE (V0)
+
+## Pattern
+All Code nodes use: const { functionName } = require('/home/node/scripts/script_name.js');
+
+## Scripts
+- document_validator.js - Validates emails and extracts PDF attachments
+- llm_extraction.js - Uploads PDFs to LLM API and extracts metadata  
+- result_processor.js - Consolidates results and formats email responses
+- activity_logger.js - Logs document lifecycle events
+- error_formatter.js - Formats global errors for logging
+
+## Benefits
+- Inherits n8n's default sandbox environment
+- Access to all JavaScript globals (Date, Promise, Buffer, console)
+- Environment variable access via process.env
+- Version control and testability
+- No inline JavaScript maintenance
+
+## Implementation Notes
+- N8N_BLOCK_ENV_ACCESS_IN_NODE=false required in docker-compose.yml
+- Scripts export functions using module.exports = { functionName }
+- All business logic in external files
+- Consistent pattern across all Code nodes

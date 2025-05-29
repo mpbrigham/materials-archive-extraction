@@ -1,0 +1,119 @@
+# MULTIPLE PRODUCT HANDLING SPECIFICATION
+
+## Overview
+This specification defines how multiple products within a single PDF document are identified, extracted, and processed consistently across all pipeline versions.
+
+## Product Identification Rules
+
+### Distinct Products
+Products are considered **distinct** when they have:
+- Different product names or model numbers
+- Different product codes or SKUs  
+- Different material compositions
+
+### Product Variations (NOT Distinct)
+Products are **NOT distinct** when they only differ in:
+- Color options or finish variations
+- Size or dimension options (same product, different sizes)
+- Minor specifications (same core product)
+- Packaging or quantity variations
+
+## Processing Principles
+
+### Array-First Design
+- Products are ALWAYS represented as arrays
+- Single-product documents return array with one element
+- Multi-product documents return array with all products
+- No special handling for single vs. multiple products
+
+### Independent Processing
+- Each product is extracted independently with complete metadata
+- Each product receives its own confidence scoring
+- Each product is validated independently
+- Processing policies apply separately to each product
+
+### Complete Extraction
+- Extract full metadata schema for every distinct product found
+- No arbitrary limits on number of products per document
+- All products receive equal treatment and complete extraction
+- No hierarchical relationships between products
+
+## Schema Structure
+
+Products MUST be represented as arrays:
+
+```json
+{
+  "products": [
+    {
+      "field_name": {
+        "value": "extracted_value",
+        "confidence": 0.95
+      },
+      // ... complete field set for product 1
+    },
+    {
+      "field_name": {
+        "value": "extracted_value", 
+        "confidence": 0.88
+      },
+      // ... complete field set for product 2
+    }
+  ]
+}
+```
+
+## Processing Policies
+
+### Extraction Success
+- Document succeeds if any products are extracted successfully
+- Empty product arrays indicate extraction failure
+
+### Confidence Evaluation
+- Each product evaluated independently for confidence thresholds
+- Product-level confidence calculated from field averages
+- Document-level success based on any product meeting thresholds
+
+### Validation Requirements
+- Apply same validation standards to all products
+- Independent verification for each product
+
+## Implementation Requirements
+
+### Extraction Stage
+- MUST analyze entire document for all distinct products
+- MUST apply product identification rules consistently
+- MUST extract complete metadata for each product found
+- MUST assign confidence scores to each field of each product
+
+### Processing Stage
+- MUST handle product arrays (even single products)
+- MUST process each product independently
+- MUST apply confidence policies per product
+
+### Output Stage
+- MUST maintain array structure for all outputs
+- MUST preserve individual product metadata
+
+## Quality Standards
+
+### Field Requirements
+- Each field MUST include value and confidence score
+- Confidence scores MUST be between 0.0 and 1.0
+- Missing fields should be omitted (not null/empty)
+
+## Benefits
+
+- **Completeness**: Captures all products in multi-product documents
+- **Consistency**: Uniform processing across all products
+- **Flexibility**: Supports variable number of products
+- **Quality**: Independent validation ensures high standards
+- **Scalability**: No artificial limits on extraction capability
+
+## Backward Compatibility
+
+Single-product documents remain fully compatible:
+- Array structure with one element
+- Same processing logic applies
+- No performance degradation
+- Consistent API interface

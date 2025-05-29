@@ -1,0 +1,39 @@
+# Environment variables (contains secrets)
+.env
+
+# Data directories
+data/
+data-test/
+
+# Logs
+*.log
+debug.log
+
+# Test outputs
+tests/*.json
+tests/test-extraction-result.json
+
+# Node modules (if any)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Backup files
+*.bak
+*.backup
+
+# Docker volumes
+volumes/
+
+# n8n database files
+*.sqlite
+*.sqlite3

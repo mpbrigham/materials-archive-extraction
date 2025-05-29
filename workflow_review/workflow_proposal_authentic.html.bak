@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Materials Management</title>
+    <style>
+        /* Materiatek Authentic Font */
+        @font-face {
+            font-family: 'antique';
+            src: url('fonts/Antique-No-6-Roman-Web.woff') format('woff');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            /* Materiatek Authentic Color System */
+            --background: #fefefe;
+            --foreground: #4a4a4a;
+            --card: #fcfcfc;
+            --primary: #f4f1e8;
+            --secondary: #f0f5e8;
+            --tertiary: #f2f0f8;
+            --border: #e6e6e6;
+            --muted: #f8f7f5;
+            --muted-foreground: #808080;
+            
+            /* Authentic Typography Scale */
+            --text-xs: 0.625rem;
+            --text-sm: 0.75rem;
+            --text-base: 0.875rem;
+            --text-lg: 1.125rem;
+            --text-xl: 1.25rem;
+            --text-2xl: 1.475rem;
+            --text-3xl: 1.85rem;
+            --text-4xl: 2.65rem;
+            --text-5xl: 3.25rem;
+        }
+        
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            line-height: 1.6;
+            color: var(--foreground);
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm;
+            background: var(--background);
+            font-size: 1rem;
+        }
+        
+        /* Authentic Materiatek Typography */
+        h1, h2, h3 {
+            font-family: 'antique', serif;
+            font-weight: 400;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: var(--card);
+            border: 1px solid var(--border);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--foreground);
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.015em;
+        }
+        
+        .header .subtitle {
+            font-size: var(--text-lg);
+            color: var(--muted-foreground);
+            font-weight: 400;
+        }
+        
+        .company-intro {
+            background: var(--card);
+            padding: 2rem;
+            margin-bottom: 2.5rem;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+        
+        .company-intro::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--secondary);
+        }
+        
+        .company-intro h2 {
+            font-size: var(--text-2xl);
+            color: var(--foreground);
+            margin-bottom: 1rem;
+        }
+        
+        .company-intro p {
+            font-size: 1rem;
+            color: var(--muted-foreground);
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .intro-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            margin: 1.5rem 0;
+            border: 1px solid var(--border);
+        }
+        
+        .workflow-section {
+            margin-bottom: 2.5rem;
+            background: var(--card);
+            padding: 2rem;
+            border: 1px solid var(--border);
+        }
+        
+        .workflow-section h2 {
+            font-size: 2rem;
+            color: var(--foreground);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .section-number {
+            background: var(--muted);
+            color: var(--foreground);
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: var(--text-base);
+            border: 1px solid var(--border);
+            font-family: ui-sans-serif, system-ui, sans-serif;
+        }
+        
+        .subsection {
+            margin-bottom: 1.5rem;
+        }
+        
+        .subsection h3 {
+            color: var(--foreground);
+            font-size: 1.3125rem;
+            margin-bottom: 0.75rem;
+            padding-left: 0.5rem;
+            border-left: 2px solid var(--tertiary);
+        }
+        
+        .subsection h4 {
+            color: var(--muted-foreground);
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin-left: 1rem;
+        }
+        
+        .feature-list li {
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+            position: relative;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--muted-foreground);
+        }
+        
+        .feature-list li::before {
+            content: "·";
+            position: absolute;
+            left: 0;
+            color: var(--secondary);
+            font-weight: bold;
+        }
+        
+        .section-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            margin: 1.5rem 0;
+            border: 1px solid var(--border);
+        }
+        
+        .highlight-box {
+            background: var(--muted);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 3px solid var(--primary);
+        }
+        
+        .highlight-box h4 {
+            color: var(--foreground);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+        }
+        
+        .highlight-box p {
+            color: var(--muted-foreground);
+            font-size: var(--text-sm);
+            line-height: 1.5;
+        }
+        
+        .benefits-section {
+            background: var(--card);
+            padding: 2rem;
+            margin: 2rem 0;
+            border: 1px solid var(--border);
+        }
+        
+        .benefits-section h2 {
+            font-size: var(--text-3xl);
+            color: var(--foreground);
+            margin-bottom: 1.5rem;
+        }
+        
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .benefit-card {
+            background: var(--muted);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+        }
+        
+        .benefit-card h4 {
+            color: var(--foreground);
+            font-size: var(--text-base);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+        }
+        
+        .benefit-card p {
+            color: var(--muted-foreground);
+            font-size: var(--text-sm);
+            line-height: 1.5;
+        }
+        
+        .tech-highlight {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .tech-highlight h2 {
+            color: var(--foreground);
+            margin-bottom: 1rem;
+            font-size: var(--text-3xl);
+        }
+        
+        .tech-highlight p {
+            font-size: var(--text-base);
+            color: var(--muted-foreground);
+            line-height: 1.6;
+        }
+        
+        .conclusion {
+            background: var(--muted);
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+            border: 1px solid var(--border);
+        }
+        
+        .conclusion p {
+            font-family: 'antique', serif;
+            font-size: var(--text-xl);
+            color: var(--foreground);
+            font-weight: 400;
+            line-height: 1.6;
+        }
+        
+        .powered-by {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: var(--muted);
+            border: 1px solid var(--border);
+        }
+        
+        .powered-by span {
+            color: var(--muted-foreground);
+            font-size: var(--text-sm);
+            font-weight: 500;
+        }
+        
+        .logo-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: var(--foreground);
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: white;
+            transition: all 0.2s ease;
+        }
+        
+        .logo-link:hover {
+            background: var(--card);
+            border-color: var(--secondary);
+            transform: translateY(-1px);
+        }
+        
+        .logo-link img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+        
+        .logo-link span {
+            font-size: var(--text-sm);
+            font-weight: 500;
+            color: var(--foreground);
+        }
+        
+        .tool-logos {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: 1rem 0;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 15mm;
+            }
+            
+            .workflow-section {
+                page-break-inside: avoid;
+            }
+            
+            .benefits-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .section-image, .intro-image {
+                height: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Materiatek AI-Powered Materials Workflow</h1>
+        <div class="subtitle">Powered by Notion & Activepieces AI Orchestration</div>
+        
+        <div class="powered-by">
+            <span>Powered by</span>
+            <div class="tool-logos">
+                <a href="https://notion.so" target="_blank" class="logo-link">
+                    <img src="images/Notion_app_logo.png" alt="Notion Logo">
+                    <span>Notion</span>
+                </a>
+                <span style="color: var(--muted-foreground);">+</span>
+                <a href="https://activepieces.com" target="_blank" class="logo-link">
+                    <img src="images/albjvhzj5z0ctsy56rax.webp" alt="Activepieces Logo">
+                    <span>Activepieces</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="company-intro">
+        <h2>About Materiatek</h2>
+        <p><strong>Materiatek</strong> is Belgium's largest independent materials library for spatial design, empowering architects, interior designers, and creative professionals with hands-on access to innovative and sustainable material samples.</p>
+        <p>Our new AI-powered workflow harnesses Notion and Activepieces to make product submission, review, and publication seamless for both our team and partners—maximizing transparency, efficiency, and creativity.</p>
+        <img src="images/aeb867d0-7e9b-4eb3-85e3-0c4add58d08a.png" alt="Organized materials storage system" class="intro-image">
+    </div>
+
+    <div class="workflow-section">
+        <h2><span class="section-number">1</span>Product PDF Submission</h2>
+        
+        <div class="subsection">
+            <h3>Internal Team Workflow</h3>
+            <h4>Notion Integration</h4>
+            <ul class="feature-list">
+                <li>Upload product PDFs directly to dedicated Notion database</li>
+                <li>Structured fields: product name, description, upload date, PDF file attachment</li>
+                <li>Centralized tracking and organization of all submissions</li>
+            </ul>
+            
+            <h4>AI-Driven Intake Process</h4>
+            <ul class="feature-list">
+                <li>Activepieces monitors Notion for new entries automatically</li>
+                <li>Large Language Model (LLM) extracts product information from PDFs</li>
+                <li>Structured data preparation for streamlined review process</li>
+            </ul>
+        </div>
+
+        <div class="subsection">
+            <h3>External Partner Workflow</h3>
+            <h4>Email Submission</h4>
+            <ul class="feature-list">
+                <li>Simple email submission to <strong>submissions@materiatek.eu</strong></li>
+                <li>No complex onboarding or training required</li>
+                <li>Familiar interface for all external contributors</li>
+            </ul>
+            
+            <h4>Automated Processing</h4>
+            <ul class="feature-list">
+                <li>Activepieces automatically collects email attachments</li>
+                <li>AI extraction runs on submitted PDFs</li>
+                <li>Proposed product data inserted into Notion review queue</li>
+            </ul>
+        </div>
+
+        <img src="images/f2693deb-2c51-4687-98a8-58f65718a80c.png" alt="Material selection and examination process" class="section-image">
+    </div>
+
+    <div class="workflow-section">
+        <h2><span class="section-number">2</span>Product Review & Approval</h2>
+        
+        <div class="subsection">
+            <h3>Notion Review Dashboard</h3>
+            <ul class="feature-list">
+                <li>AI-extracted products matched with existing library data</li>
+                <li>Side-by-side comparison view with highlighted changes</li>
+                <li>Comprehensive "Review Queue" for efficient processing</li>
+                <li>Full audit trail of all modifications and decisions</li>
+            </ul>
+        </div>
+
+        <div class="subsection">
+            <h3>Streamlined Approval Process</h3>
+            <ul class="feature-list">
+                <li>Direct editing capabilities within Notion interface</li>
+                <li>Accept, edit, or reject changes with single-click actions</li>
+                <li>Automatic library updates upon approval</li>
+                <li>Status tracking and completion marking</li>
+            </ul>
+        </div>
+
+        <img src="images/ab2b3afa-53d9-40b7-bf4e-a3f71094d7e5.png" alt="Team collaborative review process" class="section-image">
+
+        <div class="highlight-box">
+            <h4>Quality Assurance</h4>
+            <p>Every product submission undergoes thorough review to ensure accuracy, completeness, and alignment with Materiatek's quality standards before publication.</p>
+        </div>
+    </div>
+
+    <div class="workflow-section">
+        <h2><span class="section-number">3</span>External Company Integration</h2>
+        
+        <div class="subsection">
+            <h3>Public Submission Forms</h3>
+            <ul class="feature-list">
+                <li>Notion public forms for direct partner submissions</li>
+                <li>No login or account creation required</li>
+                <li>Customizable form fields for specific product categories</li>
+                <li>Seamless integration with existing workflow</li>
+            </ul>
+        </div>
+
+        <div class="subsection">
+            <h3>Automated Validation & Queuing</h3>
+            <ul class="feature-list">
+                <li>Activepieces ingests new submissions automatically</li>
+                <li>AI validation ensures data completeness and quality</li>
+                <li>Smart queuing system prioritizes submissions</li>
+                <li>Notification system keeps submitters informed</li>
+            </ul>
+        </div>
+
+        <img src="images/01080bd8-ae4d-47dc-9cd7-858e66fbc82e.png" alt="Detailed material examination" class="section-image">
+    </div>
+
+    <div class="workflow-section">
+        <h2><span class="section-number">4</span>Digital Access & Distribution</h2>
+        
+        <div class="subsection">
+            <h3>QR Code Generation</h3>
+            <ul class="feature-list">
+                <li>Automatic QR code creation upon product approval</li>
+                <li>Direct links to Notion product pages or downloadable PDFs</li>
+                <li>Instant access to up-to-date product information</li>
+                <li>Bridge between physical samples and digital resources</li>
+            </ul>
+        </div>
+
+        <div class="subsection">
+            <h3>Multi-Channel Access</h3>
+            <ul class="feature-list">
+                <li>QR codes for print materials and physical displays</li>
+                <li>Digital sharing capabilities for online platforms</li>
+                <li>Mobile-optimized access for field professionals</li>
+                <li>Real-time updates across all access points</li>
+            </ul>
+        </div>
+
+        <img src="images/588e2ad5-9976-4f4b-a959-fe1ebaf31e5f.png" alt="QR code integration with digital product information" class="section-image">
+    </div>
+
+    <div class="benefits-section">
+        <h2>Key Benefits for Materiatek</h2>
+        
+        <div class="benefits-grid">
+            <div class="benefit-card">
+                <h4>Builds Trust & Transparency</h4>
+                <p>Every product and update is tracked, reviewed, and documented, creating a comprehensive audit trail that builds confidence with partners and users.</p>
+            </div>
+            
+            <div class="benefit-card">
+                <h4>Reduces Operational Friction</h4>
+                <p>Both internal and external contributors use familiar tools—Notion or email—eliminating training overhead and adoption barriers.</p>
+            </div>
+            
+            <div class="benefit-card">
+                <h4>Accelerates Innovation</h4>
+                <p>Automated routine tasks free your team to focus on curating the best materials and supporting the design community's creative needs.</p>
+            </div>
+            
+            <div class="benefit-card">
+                <h4>Bridges Physical & Digital</h4>
+                <p>QR codes transform every material sample into a live, accessible digital resource, available anywhere, anytime.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="tech-highlight">
+        <h2>Activepieces: Your Automation Backbone</h2>
+        <p>Activepieces orchestrates the entire workflow—monitoring submissions, running AI extraction, managing reviews, updating the library, and generating QR codes. It's <strong>modular, scalable, and open-source</strong>—future-proofing Materiatek's operations while maintaining full control and flexibility.</p>
+        
+        <div class="tool-logos" style="margin-top: 1.5rem;">
+            <a href="https://activepieces.com" target="_blank" class="logo-link">
+                <img src="images/albjvhzj5z0ctsy56rax.webp" alt="Activepieces Logo">
+                <span>Learn More About Activepieces</span>
+            </a>
+            <a href="https://notion.so" target="_blank" class="logo-link">
+                <img src="images/Notion_app_logo.png" alt="Notion Logo">
+                <span>Explore Notion</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="conclusion">
+        <p><strong>Let's make sustainable, innovative materials easier to discover, select, and share—for every creative professional, today and tomorrow.</strong></p>
+    </div>
+</body>
+</html>

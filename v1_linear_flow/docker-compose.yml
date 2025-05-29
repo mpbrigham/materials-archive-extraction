@@ -1,0 +1,24 @@
+services:
+  n8n:
+    image: n8nio/n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_EDITOR_BASE_URL=http://localhost:5678
+      - N8N_USER_FOLDER=/home/node/data
+      - N8N_DISABLE_EXTERNAL_REQUIRE=false
+      - NODE_FUNCTION_ALLOW_BUILTIN=*
+      - NODE_FUNCTION_ALLOW_EXTERNAL=*
+      - GENERIC_TIMEZONE=UTC
+      - DB_TYPE=sqlite
+      - DB_SQLITE_DATABASE=/home/node/data/database.sqlite
+    volumes:
+      - ./data:/home/node/data
+      - ./scripts:/home/node/scripts:ro
+      - ./prompts:/home/node/prompts:ro
+      - ./email_templates:/home/node/email_templates:ro
+    env_file:
+      - .env

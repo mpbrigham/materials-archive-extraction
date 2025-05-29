@@ -1,192 +1,38 @@
-name: V0 Initial Flow CI/CD
+name: Deploy to Production
 
 on:
   push:
-    branches: [master, develop]
-    paths: 
-      - 'V0_Initial_Flow/**'
-      - '.github/workflows/v0-ci-cd.yml'
-  pull_request:
-    paths:
-      - 'V0_Initial_Flow/**'
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/v0-initial-flow
+    branches: [master]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Validate workflow JSON
-        run: |
-          cd V0_Initial_Flow
-          # Validate n8n workflow JSON syntax
-          python3 -m json.tool materials_archive_extraction.json > /dev/null
-          echo "✅ Workflow JSON is valid"
-
+      - uses: actions/checkout@v4
+      
       - name: Validate materials schema
         run: |
-          # Validate materials schema from root directory
-          python3 -m json.tool specs/materials_schema.json > /dev/null
+          cd v0_initial_flow
+          python3 -m json.tool schema/materials_schema.json > /dev/null
           echo "✅ Materials schema is valid"
 
-      - name: Test extraction script
-        run: |
-          cd V0_Initial_Flow/tests
-          # Validate test scripts syntax (only files that exist)
-          node -c test-extraction.js
-          node -c test-email.js
-          echo "✅ Test scripts are valid"
-
-      - name: Validate prompt templates
-        run: |
-          cd V0_Initial_Flow
-          # Check prompt file exists and has content
-          if [[ ! -s "prompts/llm_extraction.txt" ]]; then
-            echo "❌ LLM extraction prompt is missing or empty"
-            exit 1
-          fi
-          echo "✅ Prompt templates are valid"
-
-      - name: Validate email templates
-        run: |
-          cd V0_Initial_Flow
-          # Check email templates exist
-          if [[ ! -f "email_templates/success.html" ]] || [[ ! -f "email_templates/failure.html" ]]; then
-            echo "❌ Email templates are missing"
-            exit 1
-          fi
-          echo "✅ Email templates are valid"
-
-  build:
+  deploy:
     needs: test
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    outputs:
-      image-digest: ${{ steps.build.outputs.digest }}
-      image-tag: ${{ steps.meta.outputs.tags }}
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push Docker image
-        id: build
-        uses: docker/build-push-action@v5
-        with:
-          context: ./V0_Initial_Flow
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-  deploy-staging:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop'
-    environment: staging
-    
-    steps:
-      - name: Deploy to staging
-        run: |
-          echo "🚀 Deploying to staging environment"
-          echo "Image: ${{ needs.build.outputs.image-tag }}"
-          # Add staging deployment logic here when ready
-
-  deploy-production:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-    environment: production
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Deploy to production
-        env:
-          # Pass secrets as environment variables
-          EMAIL_USER: ${{ secrets.EMAIL_USER }}
-          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-        run: |
-          echo "🚀 Deploying to production server"
-          
-          # Setup SSH
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
-          
-          # Deploy via SSH with secrets injection
-          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_HOST }} << EOF
-            cd /opt/materials-extraction/V0_Initial_Flow || { echo "❌ Deployment directory not found"; exit 1; }
-            
-            # Set environment variables for secrets
-            export EMAIL_USER="${EMAIL_USER}"
-            export EMAIL_PASS="${EMAIL_PASS}"
-            export LLM_API_KEY="${LLM_API_KEY}"
-            export NEW_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
-            
-            echo "Updating to image: \$NEW_IMAGE"
-            
-            # Login to container registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-            
-            # Pull latest image
-            docker pull \$NEW_IMAGE
-            
-            # Stop existing containers
-            docker compose -f docker-compose.prod.yml down || true
-            
-            # Start with new image and injected secrets
-            docker compose -f docker-compose.prod.yml up -d
-            
-            # Health check
-            sleep 15
-            if docker compose -f docker-compose.prod.yml ps | grep -q "Up"; then
-              echo "✅ Deployment successful"
-              docker compose -f docker-compose.prod.yml logs --tail=20
-            else
-              echo "❌ Deployment failed"
-              docker compose -f docker-compose.prod.yml logs --tail=50
-              exit 1
-            fi
-          EOF
-
-      - name: Deployment notification
-        if: always()
-        run: |
-          if [ ${{ job.status }} == 'success' ]; then
-            echo "✅ V0 Initial Flow deployed successfully to production"
-          else
-            echo "❌ V0 Initial Flow deployment failed"
-          fi
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /opt/materials-extraction/v0_initial_flow
+            git pull origin master
+            cp .env.production .env
+            EMAIL_USER="${{ secrets.EMAIL_USER }}" \
+            EMAIL_PASS="${{ secrets.EMAIL_PASS }}" \
+            LLM_API_KEY="${{ secrets.LLM_API_KEY }}" \
+            docker compose -f docker-compose.prod.yml up -d --build

@@ -1,0 +1,1 @@
+import{a as o}from"./appStore.CzYAb1j6.js";const t=document.getElementById("tabContentLoader"),n=document.getElementById("tabContent");function a(e){t&&n&&(e?(t.style.opacity="1",t.style.pointerEvents="all",n.style.opacity="0.1"):(t.style.opacity="0",t.style.pointerEvents="none",n.style.opacity="1"))}a(o.get());o.listen(e=>{a(e)});
