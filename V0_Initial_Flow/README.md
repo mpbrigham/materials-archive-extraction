@@ -15,6 +15,7 @@ Email Trigger → Document Validator → LLM Extraction → Result Processor →
 
 ## Quick Start
 
+### Development
 1. Copy `.env.template` to `.env` and add credentials
 2. `docker compose up -d`
 3. Open http://localhost:5678
@@ -22,12 +23,59 @@ Email Trigger → Document Validator → LLM Extraction → Result Processor →
 5. Configure IMAP/SMTP credentials
 6. Activate workflow
 
+### Production Deployment via CI/CD
+
+The project uses GitHub Actions for automated CI/CD deployment:
+
+**Branches:**
+- `develop` → Deploys to staging environment
+- `main` → Deploys to production environment
+
+**CI/CD Pipeline:**
+1. **Test Phase**: Validates JSON files, prompt templates, and test scripts
+2. **Build Phase**: Creates Docker image and pushes to GitHub Container Registry
+3. **Deploy Phase**: Automatically deploys to production server
+
+**Required GitHub Secrets:**
+- `DEPLOY_HOST` - Production server address
+- `DEPLOY_SSH_KEY` - SSH private key for deployment user
+- `DEPLOY_SSH_USER` - SSH username (default: deploy)
+
+**Production Server Setup:**
+```bash
+# Create deployment directory
+sudo mkdir -p /opt/materials-extraction/V0_Initial_Flow
+sudo chown deploy:deploy /opt/materials-extraction/V0_Initial_Flow
+
+# Clone repository
+cd /opt/materials-extraction
+git clone <repository-url> .
+
+# Setup environment
+cd V0_Initial_Flow
+cp .env.template .env
+# Edit .env with production credentials
+
+# Create data directory
+mkdir -p data
+```
+
+**Manual Production Deployment:**
+```bash
+# On production server
+cd /opt/materials-extraction/V0_Initial_Flow
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
 ## Files
 
 ```
 .
 ├── materials_archive_extraction.json        # n8n workflow
-├── docker-compose.yml                       # Docker setup
+├── docker-compose.yml                       # Development setup
+├── docker-compose.prod.yml                  # Production setup
+├── Dockerfile                               # Custom n8n image
 ├── DEPLOYMENT.md                            # Setup guide
 ├── prompts/llm_extraction.txt               # LLM prompt
 ├── email_templates/
@@ -48,11 +96,27 @@ node test-email.js          # Full pipeline test
 node check-latest-email.js  # Check latest email
 ```
 
+## CI/CD Monitoring
+
+**GitHub Actions Dashboard:** Check workflow status in repository's Actions tab
+
+**Health Checks:**
+- Production: `curl -f http://localhost:5678/healthz`
+- Logs: `docker compose -f docker-compose.prod.yml logs -f`
+
+**Rollback:**
+```bash
+# On production server - rollback to previous image
+docker compose -f docker-compose.prod.yml down
+docker image rm ghcr.io/materiatek/materials-library-extraction/v0-initial-flow:latest
+docker compose -f docker-compose.prod.yml up -d
+```
+
 ## PROJECT_SPEC
 ```spec
 NAME: Materials Library Extraction Pipeline
 DOMAIN: Document Processing Automation
-PRIMARY_TOOLS: n8n, Gemini AI, Node.js, IMAP/SMTP, Docker
+PRIMARY_TOOLS: n8n, Gemini AI, Node.js, IMAP/SMTP, Docker, GitHub Actions
 PIPELINE_STAGES:
   1. Email trigger receives PDF attachments
   2. Document validator creates email context + clean PDF items
@@ -65,6 +129,8 @@ KEY_COMPONENTS:
 - `prompts/llm_extraction.txt`: LLM extraction prompt
 - `tests/test-extraction.js`: Direct API testing
 - `tests/test-email.js`: End-to-end pipeline testing
+- `.github/workflows/v0-ci-cd.yml`: CI/CD pipeline
+- `docker-compose.prod.yml`: Production deployment
 DATA_STRUCTURE:
 - Email context: single item with email metadata
 - PDF items: clean processing items without duplication
@@ -76,4 +142,6 @@ DESIGN_CONSTRAINTS:
 - Must handle multiple PDFs per email
 - Must gracefully handle extraction failures
 - Symmetric structure: email context separate from PDF processing
+- Automated CI/CD deployment via GitHub Actions
+- Container-based production deployment
 ```
