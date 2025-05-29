@@ -29,10 +29,6 @@ jobs:
           username: ubuntu
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
-            # Install required tools
-            sudo apt-get update -qq
-            sudo apt-get install -y jq
-            
             cd /opt/materials-archive-extraction/v0_initial_flow
             git pull origin v0_initial_flow
             
@@ -40,10 +36,11 @@ jobs:
             mkdir -p data
             chown -R 1000:1000 data/ 2>/dev/null || echo "Cannot change ownership, continuing..."
             
-            # Deploy with environment variables
+            # Deploy with environment variables including credential overwrites
             EMAIL_USER="${{ secrets.EMAIL_USER }}" \
             EMAIL_PASS="${{ secrets.EMAIL_PASS }}" \
             LLM_API_KEY="${{ secrets.LLM_API_KEY }}" \
+            CREDENTIALS_OVERWRITE_DATA='{"imap":{"host":"'$IMAP_HOST'","port":'$IMAP_PORT',"secure":true,"user":"'$EMAIL_USER'","password":"'$EMAIL_PASS'"},"smtp":{"host":"'$SMTP_HOST'","port":'$SMTP_PORT',"secure":false,"user":"'$EMAIL_USER'","password":"'$EMAIL_PASS'"}}' \
             docker compose up -d --build
             
             # Wait for n8n to be ready
@@ -63,85 +60,12 @@ jobs:
               exit 1
             fi
             
-            # Source environment variables
-            source .env
+            # Import workflow using CLI
+            echo "Importing workflow..."
+            docker exec v0_initial_flow-n8n-1 n8n import:workflow --input=/home/node/materials_archive_extraction.json
             
-            # Configure n8n workflow and credentials
-            echo "Configuring n8n workflow and credentials..."
+            # Activate workflow
+            echo "Activating workflow..."
+            docker exec v0_initial_flow-n8n-1 n8n update:workflow --id=SjsG0ctMg0DMZCMn --active=true
             
-            # Create IMAP credential
-            IMAP_CRED_RESPONSE=$(curl -s -X POST http://localhost:5678/api/v1/credentials \
-              -H "Content-Type: application/json" \
-              -d '{
-                "name": "IMAP account",
-                "type": "imap",
-                "data": {
-                  "host": "'$IMAP_HOST'",
-                  "port": '$IMAP_PORT',
-                  "secure": true,
-                  "user": "'$EMAIL_USER'",
-                  "password": "'$EMAIL_PASS'"
-                }
-              }' || echo '{"id":""}')
-            
-            IMAP_CRED_ID=$(echo $IMAP_CRED_RESPONSE | jq -r '.id // empty')
-            echo "IMAP credential ID: $IMAP_CRED_ID"
-            
-            # Create SMTP credential
-            SMTP_CRED_RESPONSE=$(curl -s -X POST http://localhost:5678/api/v1/credentials \
-              -H "Content-Type: application/json" \
-              -d '{
-                "name": "SMTP account", 
-                "type": "smtp",
-                "data": {
-                  "host": "'$SMTP_HOST'",
-                  "port": '$SMTP_PORT',
-                  "secure": false,
-                  "user": "'$EMAIL_USER'",
-                  "password": "'$EMAIL_PASS'"
-                }
-              }' || echo '{"id":""}')
-              
-            SMTP_CRED_ID=$(echo $SMTP_CRED_RESPONSE | jq -r '.id // empty')
-            echo "SMTP credential ID: $SMTP_CRED_ID"
-            
-            # Update workflow JSON with credential IDs
-            if [ -n "$IMAP_CRED_ID" ] && [ -n "$SMTP_CRED_ID" ]; then
-              cp materials_archive_extraction.json materials_archive_extraction_temp.json
-              
-              # Update IMAP credential ID
-              jq --arg imap_id "$IMAP_CRED_ID" \
-                 '(.nodes[] | select(.name == "Email Trigger") | .credentials.imap.id) = $imap_id' \
-                 materials_archive_extraction_temp.json > materials_archive_extraction_updated.json
-              
-              # Update SMTP credential ID  
-              jq --arg smtp_id "$SMTP_CRED_ID" \
-                 '(.nodes[] | select(.name == "Send Notification") | .credentials.smtp.id) = $smtp_id' \
-                 materials_archive_extraction_updated.json > materials_archive_extraction_final.json
-              
-              # Import workflow
-              WORKFLOW_RESPONSE=$(curl -s -X POST http://localhost:5678/api/v1/workflows/import \
-                -H "Content-Type: application/json" \
-                -d @materials_archive_extraction_final.json || echo '{"id":""}')
-              
-              WORKFLOW_ID=$(echo $WORKFLOW_RESPONSE | jq -r '.id // empty')
-              echo "Workflow ID: $WORKFLOW_ID"
-              
-              # Activate workflow
-              if [ -n "$WORKFLOW_ID" ]; then
-                curl -s -X POST http://localhost:5678/api/v1/workflows/$WORKFLOW_ID/activate \
-                  -H "Content-Type: application/json"
-                echo "Workflow activated successfully!"
-              else
-                echo "Failed to import workflow"
-                exit 1
-              fi
-              
-              # Cleanup temp files
-              rm -f materials_archive_extraction_temp.json materials_archive_extraction_updated.json materials_archive_extraction_final.json
-            else
-              echo "Failed to create credentials"
-              exit 1
-            fi
-            
-            echo "Deployment and configuration completed successfully!"
+            echo "Deployment completed successfully!"
