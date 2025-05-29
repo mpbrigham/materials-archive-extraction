@@ -29,7 +29,7 @@ jobs:
           username: ${{ secrets.DEPLOY_SSH_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
-            cd /opt/materials-extraction/v0_initial_flow
+            cd /opt/materials-archive-extraction/v0_initial_flow
             git pull origin v0_initial_flow
             EMAIL_USER="${{ secrets.EMAIL_USER }}" \
             EMAIL_PASS="${{ secrets.EMAIL_PASS }}" \
