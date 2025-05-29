@@ -1,8 +1,10 @@
 # Environment variables (contains secrets)
 .env
 
-# Data directories
+# Data directories (but allow export files)
 data/
+!data/credentials.json
+!data/workflows.json
 data-test/
 
 # Logs
