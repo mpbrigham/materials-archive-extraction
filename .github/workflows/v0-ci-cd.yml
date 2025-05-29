@@ -1,8 +1,8 @@
-name: Deploy to Production
+name: Deploy V0 Initial Flow
 
 on:
   push:
-    branches: [master]
+    branches: [v0_initial_flow]
 
 jobs:
   test:
@@ -30,9 +30,8 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             cd /opt/materials-extraction/v0_initial_flow
-            git pull origin master
-            cp .env.production .env
+            git pull origin v0_initial_flow
             EMAIL_USER="${{ secrets.EMAIL_USER }}" \
             EMAIL_PASS="${{ secrets.EMAIL_PASS }}" \
             LLM_API_KEY="${{ secrets.LLM_API_KEY }}" \
-            docker compose -f docker-compose.prod.yml up -d --build
+            docker compose up -d --build
