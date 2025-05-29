@@ -29,12 +29,16 @@ jobs:
           username: ubuntu
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
+            # Install required tools
+            sudo apt-get update -qq
+            sudo apt-get install -y jq
+            
             cd /opt/materials-archive-extraction/v0_initial_flow
             git pull origin v0_initial_flow
             
             # Ensure data directory exists with correct permissions for n8n
             mkdir -p data
-            sudo chown -R 1000:1000 data/
+            chown -R 1000:1000 data/ 2>/dev/null || echo "Cannot change ownership, continuing..."
             
             # Deploy with environment variables
             EMAIL_USER="${{ secrets.EMAIL_USER }}" \
