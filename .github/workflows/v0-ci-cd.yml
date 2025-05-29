@@ -42,10 +42,9 @@ jobs:
       - name: Test extraction script
         run: |
           cd V0_Initial_Flow/tests
-          # Validate test scripts syntax (no package.json needed for syntax check)
+          # Validate test scripts syntax (only files that exist)
           node -c test-extraction.js
           node -c test-email.js
-          node -c check-latest-email.js
           echo "✅ Test scripts are valid"
 
       - name: Validate prompt templates
