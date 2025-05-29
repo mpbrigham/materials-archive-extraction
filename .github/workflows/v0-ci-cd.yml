@@ -2,7 +2,7 @@ name: V0 Initial Flow CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, develop]
     paths: 
       - 'V0_Initial_Flow/**'
       - '.github/workflows/v0-ci-cd.yml'
@@ -128,7 +128,7 @@ jobs:
   deploy-production:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'
     environment: production
     
     steps:
