@@ -42,9 +42,7 @@ jobs:
       - name: Test extraction script
         run: |
           cd V0_Initial_Flow/tests
-          # Install dependencies
-          npm install --no-package-lock
-          # Validate test scripts syntax
+          # Validate test scripts syntax (no package.json needed for syntax check)
           node -c test-extraction.js
           node -c test-email.js
           node -c check-latest-email.js
