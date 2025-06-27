@@ -10,6 +10,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Fix symlinks
+        run: |
+          cd v0_initial_flow
+          git config core.symlinks true
+          git reset --hard HEAD
+      
       - name: Validate materials schema
         run: |
           cd v0_initial_flow
