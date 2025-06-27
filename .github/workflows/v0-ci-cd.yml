@@ -33,6 +33,10 @@ jobs:
             git checkout v0_initial_flow
             git pull origin v0_initial_flow
             
+            # Ensure git processes symlinks correctly
+            git config core.symlinks true
+            git checkout HEAD -- prompts/llm_extraction.txt schema/materials_schema.json
+            
             # Ensure data directory exists with correct permissions for n8n
             mkdir -p data
             chown -R 1000:1000 data/ 2>/dev/null || echo "Cannot change ownership, continuing..."
