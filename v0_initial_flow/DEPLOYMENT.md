@@ -1,6 +1,6 @@
 # V0 Initial Flow - Deployment Guide
 
-Email-to-extraction pipeline with automated CI/CD deployment.
+Email-to-extraction pipeline with **export/import pattern** for automated CI/CD deployment.
 
 ## 🏗️ Architecture
 
@@ -41,18 +41,37 @@ docker compose up -d
 docker compose logs -f n8n
 ```
 
-### 3. Configure n8n Workflow
+### 3. Configure n8n Workflow (One-time Setup)
 1. Open http://localhost:5678
-2. Import `materials_archive_extraction.json`
-3. Configure credentials:
-   - **IMAP**: Settings → Credentials → New → IMAP
-   - **SMTP**: Settings → Credentials → New → SMTP
-4. Activate workflow
-5. Test with sample email + PDFs
+2. Create IMAP credentials with your email settings
+3. Create SMTP credentials with your email settings
+4. Import the workflow (copy/paste JSON or use import)
+5. Link credentials to workflow nodes
+6. Test with sample email + PDFs
+7. **Export everything for deployment:**
+   ```bash
+   # Export credentials
+   docker exec v0_initial_flow-n8n-1 n8n export:credentials --all --output=/home/node/import/credentials.json
+   
+   # Export workflow (get ID from n8n UI or list command)
+   docker exec v0_initial_flow-n8n-1 n8n export:workflow --id=YOUR_WORKFLOW_ID --output=/home/node/import/workflows.json
+   ```
+
+### 4. Commit Export Files
+```bash
+git add import/credentials.json import/workflows.json
+git commit -m "Update exported n8n configuration"
+```
 
 ## 🏭 Production Deployment
 
-### Option 1: Automated CI/CD (Recommended)
+### Automated CI/CD (Recommended)
+
+**Deployment Strategy:**
+Uses the **export/import pattern** following n8n community best practices:
+- Development environment exports working credentials and workflows
+- Export files stored in `import/` folder in Git
+- CI/CD imports both to production, preserving UUIDs and relationships
 
 **Prerequisites:**
 - GitHub repository with Actions enabled
@@ -62,7 +81,6 @@ docker compose logs -f n8n
 **Setup GitHub Secrets:**
 ```
 DEPLOY_HOST=your-server-ip
-DEPLOY_SSH_USER=ubuntu
 DEPLOY_SSH_KEY=your-private-key
 EMAIL_USER=your-email@domain.com
 EMAIL_PASS=your-app-password
@@ -73,7 +91,7 @@ LLM_API_KEY=your-gemini-api-key
 ```bash
 # Any commit to v0_initial_flow branch triggers deployment
 git checkout v0_initial_flow
-git add .
+git add import/  # Include updated export files
 git commit -m "Deploy to production"
 git push origin v0_initial_flow
 ```
@@ -88,11 +106,12 @@ git checkout v0_initial_flow
 sudo chown -R ubuntu:ubuntu /opt/materials-archive-extraction
 ```
 
-### Option 2: Manual Deployment
+### Manual Deployment
 
 ```bash
 # On your VPS
 cd /opt/materials-archive-extraction/v0_initial_flow
+git checkout v0_initial_flow
 git pull origin v0_initial_flow
 
 # Set environment variables and deploy
@@ -100,6 +119,10 @@ EMAIL_USER="your-email" \
 EMAIL_PASS="your-password" \
 LLM_API_KEY="your-api-key" \
 docker compose up -d --build
+
+# Import credentials and workflow
+docker exec v0_initial_flow-n8n-1 n8n import:credentials --input=/home/node/import/credentials.json
+docker exec v0_initial_flow-n8n-1 n8n import:workflow --input=/home/node/import/workflows.json
 ```
 
 ## 🧪 Testing
@@ -179,18 +202,19 @@ LLM_API_KEY=your-gemini-api-key
 ### File Structure
 ```
 v0_initial_flow/
-├── materials_archive_extraction.json    # n8n workflow definition
-├── docker-compose.yml                   # Container orchestration
-├── Dockerfile                          # Custom n8n image
-├── prompts/llm_extraction.txt          # LLM extraction prompt
-├── email_templates/                    # Response templates
-│   ├── success.html                   # Success email template
-│   └── failure.html                   # Error email template
-├── schema/materials_schema.json        # Output validation schema
-├── tests/                              # Test suite
-└── data/                              # Runtime data (auto-created)
-    ├── database.sqlite                # n8n database
-    └── debug.log                      # Application logs
+├── import/                             # Exported n8n configuration
+│   ├── credentials.json               # n8n credentials export
+│   └── workflows.json                 # n8n workflow export
+├── docker-compose.yml                 # Container orchestration
+├── prompts/llm_extraction.txt         # LLM extraction prompt
+├── schema/materials_schema.json       # Output validation schema
+├── email_templates/                   # Response templates
+│   ├── success.html                  # Success email template
+│   └── failure.html                  # Error email template
+├── tests/                            # Test suite
+└── data/                            # Runtime data (auto-created)
+    ├── database.sqlite              # n8n database
+    └── debug.log                    # Application logs
 ```
 
 ## 🚨 Troubleshooting
@@ -204,26 +228,34 @@ v0_initial_flow/
 | **Git ownership errors** | Run `sudo chown -R ubuntu:ubuntu /opt/materials-archive-extraction` |
 | **CI/CD deployment fails** | Check GitHub Secrets, verify server SSH access, review logs |
 | **Schema validation errors** | Validate output against schema/materials_schema.json |
+| **Import fails** | Check export files exist in import/ folder, verify n8n container health |
+| **Credentials not working** | Re-export credentials from working dev environment |
 
-## 🔄 CI/CD Pipeline
+## 🔄 Workflow Updates
 
-### Workflow Stages
-1. **Test**: Schema validation, syntax checking
-2. **Deploy**: SSH to server, pull latest code, restart services
+### Making Changes
+1. **Local Development**: Make changes in your local n8n instance
+2. **Test Thoroughly**: Verify with sample emails and PDFs
+3. **Export Updated Config**:
+   ```bash
+   # Export credentials (if changed)
+   docker exec v0_initial_flow-n8n-1 n8n export:credentials --all --output=/home/node/import/credentials.json
+   
+   # Export workflow
+   docker exec v0_initial_flow-n8n-1 n8n export:workflow --id=YOUR_WORKFLOW_ID --output=/home/node/import/workflows.json
+   ```
+4. **Deploy**: Commit and push to `v0_initial_flow` branch
 
-### Branch Strategy
-- **`v0_initial_flow`**: Production deployments
-- Other branches: Development/feature work
-
-### Deployment Flow
+### CI/CD Pipeline Flow
 ```mermaid
 graph LR
-    A[Push to v0_initial_flow] --> B[GitHub Actions]
-    B --> C[Validate Schema]
-    C --> D[SSH to Server]
-    D --> E[Git Pull]
-    E --> F[Docker Compose Up]
-    F --> G[Health Check]
+    A[Local Dev Changes] --> B[Export to import/]
+    B --> C[Git Commit & Push]
+    C --> D[GitHub Actions]
+    D --> E[Deploy Containers]
+    E --> F[Import Credentials]
+    F --> G[Import Workflow]
+    G --> H[Ready for Emails]
 ```
 
-The pipeline ensures zero-downtime deployments with automatic rollback on failure.
+The pipeline ensures reliable deployments by using n8n's native export/import functionality, preserving all UUIDs and relationships automatically.

@@ -19,65 +19,47 @@ Email Trigger → Document Validator → LLM Extraction → Result Processor →
 1. Copy `.env.template` to `.env` and add credentials
 2. `docker compose up -d`
 3. Open http://localhost:5678
-4. Import `materials_archive_extraction.json`
-5. Configure IMAP/SMTP credentials
-6. Activate workflow
+4. Import workflow and configure credentials manually (one-time setup)
+5. Test with sample email + PDFs
+6. Export everything: `docker exec v0_initial_flow-n8n-1 n8n export:credentials --all --output=/home/node/import/credentials.json`
+7. Export workflow: `docker exec v0_initial_flow-n8n-1 n8n export:workflow --id=WORKFLOW_ID --output=/home/node/import/workflows.json`
 
 ### Production Deployment via CI/CD
 
-The project uses GitHub Actions for automated CI/CD deployment:
+The project uses GitHub Actions with an **export/import pattern** for automated deployment:
 
-**Branches:**
-- `develop` → Deploys to staging environment
-- `main` → Deploys to production environment
-
-**CI/CD Pipeline:**
-1. **Test Phase**: Validates JSON files, prompt templates, and test scripts
-2. **Build Phase**: Creates Docker image and pushes to GitHub Container Registry
-3. **Deploy Phase**: Automatically deploys to production server
+**Deployment Strategy:**
+- Export credentials and workflows from working development environment
+- Store exported files in `import/` folder in Git
+- CI/CD imports both credentials and workflows to production
+- Preserves UUIDs and credential relationships automatically
 
 **Required GitHub Secrets:**
 - `DEPLOY_HOST` - Production server address
 - `DEPLOY_SSH_KEY` - SSH private key for deployment user
-- `DEPLOY_SSH_USER` - SSH username (default: deploy)
+- `EMAIL_USER` - Email account for IMAP/SMTP
+- `EMAIL_PASS` - Email password/app password  
+- `LLM_API_KEY` - Gemini AI API key
 
-**Production Server Setup:**
-```bash
-# Create deployment directory
-sudo mkdir -p /opt/materials-extraction/v0_initial_flow
-sudo chown deploy:deploy /opt/materials-extraction/v0_initial_flow
-
-# Clone repository
-cd /opt/materials-extraction
-git clone <repository-url> .
-
-# Setup environment
-cd v0_initial_flow
-cp .env.template .env
-# Edit .env with production credentials
-
-# Create data directory
-mkdir -p data
-```
-
-**Manual Production Deployment:**
-```bash
-# On production server
-cd /opt/materials-extraction/v0_initial_flow
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml up -d
-```
+**Deployment Process:**
+1. Push to `v0_initial_flow` branch triggers deployment
+2. Server pulls latest code including updated `import/` files
+3. Deploys Docker containers with environment variables
+4. Imports credentials: `n8n import:credentials --input=/home/node/import/credentials.json`
+5. Imports workflows: `n8n import:workflow --input=/home/node/import/workflows.json`
+6. Workflow ready to process emails
 
 ## Files
 
 ```
 .
-├── materials_archive_extraction.json        # n8n workflow
-├── docker-compose.yml                       # Development setup
-├── docker-compose.prod.yml                  # Production setup
-├── Dockerfile                               # Custom n8n image
+├── import/
+│   ├── credentials.json                     # Exported n8n credentials
+│   └── workflows.json                       # Exported n8n workflow
+├── docker-compose.yml                       # Development/Production setup
 ├── DEPLOYMENT.md                            # Setup guide
 ├── prompts/llm_extraction.txt               # LLM prompt
+├── schema/materials_schema.json             # Data structure definition
 ├── email_templates/
 │   ├── success.html                         # Success template
 │   └── failure.html                         # Error template
@@ -102,15 +84,18 @@ node check-latest-email.js  # Check latest email
 
 **Health Checks:**
 - Production: `curl -f http://localhost:5678/healthz`
-- Logs: `docker compose -f docker-compose.prod.yml logs -f`
+- Logs: `docker compose logs -f`
 
-**Rollback:**
-```bash
-# On production server - rollback to previous image
-docker compose -f docker-compose.prod.yml down
-docker image rm ghcr.io/materiatek/materials-library-extraction/v0-initial-flow:latest
-docker compose -f docker-compose.prod.yml up -d
-```
+**Updating Workflows:**
+1. Make changes in local n8n development environment
+2. Test thoroughly with sample emails
+3. Export updated files:
+   ```bash
+   docker exec v0_initial_flow-n8n-1 n8n export:credentials --all --output=/home/node/import/credentials.json
+   docker exec v0_initial_flow-n8n-1 n8n export:workflow --id=WORKFLOW_ID --output=/home/node/import/workflows.json
+   ```
+4. Commit and push to `v0_initial_flow` branch
+5. Deployment automatically imports updated workflow
 
 ## PROJECT_SPEC
 ```spec
@@ -136,12 +121,13 @@ DATA_STRUCTURE:
 - PDF items: clean processing items without duplication
 - Results: structured HTML tables with metadata
 DESIGN_CONSTRAINTS:
+- Export/import deployment pattern for credentials and workflows
 - Results sent back to original email sender only
 - Header table: supplier, product_name, sku_number, source_file
 - Data table: all other extracted fields
 - Must handle multiple PDFs per email
 - Must gracefully handle extraction failures
-- Symmetric structure: email context separate from PDF processing
+- Preserves UUID relationships via n8n export/import
 - Automated CI/CD deployment via GitHub Actions
 - Container-based production deployment
 ```
