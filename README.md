@@ -1,6 +1,6 @@
 # 🧠 Intelligent Materials Intake System (IMIS) 
 
-A modular, agent-based pipeline for extracting structured metadata from architectural materials PDFs using LLMs. Uses schema-first prompting and n8n for orchestration.
+A modular, agent-based pipeline for extracting structured metadata from architectural materials PDFs using LLMs. Available in both n8n and ActivePieces implementations.
 
 ## 🌐 Project Vision
 
@@ -8,13 +8,14 @@ IMIS automates extraction, structuring, and validation of metadata from architec
 
 ## 📦 Available Pipelines
 
-| Version | Strategy | Ideal For |
-|---------|----------|-----------|
-| [`v0_initial_flow`](./v0_initial_flow) | Email-to-extraction pipeline | Email-based intake, production ready |
-| [`v1_linear_flow`](./v1_linear_flow) | Linear simplicity | Quickstart, minimal setups |
-| [`v1.5_enhanced_verification`](./v1.5_enhanced_verification) | Multi-turn visual verification | High accuracy, evidence collection |
-| [`v2_modular_expansion`](./v2_modular_expansion) | Modular agents with explicit flow | Complex intake, scalable deployments |
-| [`v3_intent_driven_minimalism`](./v3_intent_driven_minimalism) | Stateless intent-based dispatch | Adaptive pipelines, future extensibility |
+| Version | Implementation | Strategy | Ideal For |
+|---------|---------------|----------|-----------|
+| [`v0_initial_flow`](./v0_initial_flow) | n8n | Email-to-extraction pipeline | Email-based intake, production ready |
+| [`v0_initial_flow_ap`](./v0_initial_flow_ap) | ActivePieces | Email-to-extraction pipeline | Alternative to n8n, same functionality |
+| [`v1_linear_flow`](./v1_linear_flow) | n8n | Linear simplicity | Quickstart, minimal setups |
+| [`v1.5_enhanced_verification`](./v1.5_enhanced_verification) | n8n | Multi-turn visual verification | High accuracy, evidence collection |
+| [`v2_modular_expansion`](./v2_modular_expansion) | n8n | Modular agents with explicit flow | Complex intake, scalable deployments |
+| [`v3_intent_driven_minimalism`](./v3_intent_driven_minimalism) | n8n | Stateless intent-based dispatch | Adaptive pipelines, future extensibility |
 
 Each version contains:
 - Prompts (`/prompts/`)
@@ -25,21 +26,15 @@ Each version contains:
 
 ## 🚀 Getting Started
 
-### V0 Initial Flow (Recommended)
+### V0 Initial Flow - Choose Your Platform
 
-**Email-based materials extraction pipeline with automated CI/CD deployment.**
+We offer the same email-based extraction pipeline in two workflow automation platforms:
 
-#### Requirements
-- Docker & Docker Compose
-- Email provider (Gmail/IMAP/SMTP)
-- Google Gemini API key
-- Git repository with GitHub Actions enabled
+#### n8n Implementation (Original)
 
-#### Quick Setup
 ```bash
-# Clone and navigate
-git clone https://github.com/mpbrigham/materials-archive-extraction.git
-cd materials-archive-extraction/v0_initial_flow
+# Navigate to n8n version
+cd v0_initial_flow
 
 # Configure environment
 cp .env.template .env
@@ -49,14 +44,51 @@ cp .env.template .env
 docker compose up -d
 
 # Open n8n at http://localhost:5678
-# Import materials_archive_extraction.json
-# Configure IMAP/SMTP credentials
-# Activate workflow
 ```
 
-#### Production Deployment
-- **Automatic**: Push to `v0_initial_flow` branch triggers CI/CD deployment
-- **Manual**: See [V0 Deployment Guide](./v0_initial_flow/DEPLOYMENT.md)
+#### ActivePieces Implementation (Alternative)
+
+```bash
+# Navigate to ActivePieces version
+cd v0_initial_flow_ap
+
+# Configure environment
+cp .env.template .env
+# Edit .env with your credentials
+
+# Launch locally
+docker compose up -d
+
+# Open ActivePieces at http://localhost:5679
+```
+
+Both implementations provide the same functionality:
+- Email trigger with PDF attachments
+- Gemini AI extraction
+- Structured results emailed back
+
+### Production Deployment
+
+**Automated CI/CD with Path-Based Triggers:**
+- Changes to `v0_initial_flow/` → Deploy n8n version
+- Changes to `v0_initial_flow_ap/` → Deploy ActivePieces version
+- Single GitHub Actions workflow handles both
+
+```bash
+# Deploy n8n version
+git add v0_initial_flow/
+git commit -m "Update n8n workflow"
+git push origin v0_initial_flow
+
+# Deploy ActivePieces version
+git add v0_initial_flow_ap/
+git commit -m "Update ActivePieces workflow"
+git push origin v0_initial_flow
+```
+
+See deployment guides:
+- [n8n Deployment](./v0_initial_flow/DEPLOYMENT.md)
+- [ActivePieces Deployment](./v0_initial_flow_ap/DEPLOYMENT.md)
 
 ### Other Versions
 
@@ -72,7 +104,7 @@ python scripts/webhook_handler.py
 
 ## 🧭 Architecture
 
-### V0 Initial Flow
+### V0 Initial Flow (Both Implementations)
 ```
 Email Trigger → Document Validator → LLM Extraction → Result Processor → Send Notification
 ```
@@ -93,15 +125,28 @@ Each pipeline implements confidence policies with fallback mechanisms.
 
 ## 🔄 CI/CD Integration
 
-### Branch-Specific Deployment
-- **`v0_initial_flow`** → Automatic deployment to production
-- Other branches can have their own CI/CD workflows added
+### Unified Deployment Strategy
+- **Single workflow** handles both n8n and ActivePieces deployments
+- **Path-based triggers** detect which implementation changed
+- **Independent deployments** - each platform deploys separately
+- **Shared resources** - prompts and schemas can be symlinked
 
-### Workflow Features
-- Schema validation on every commit
-- Automated deployment with environment variable injection
-- Single Docker Compose file approach
-- Health checks and rollback capabilities
+### GitHub Actions Workflow
+```yaml
+on:
+  push:
+    branches: [v0_initial_flow]
+    paths:
+      - 'v0_initial_flow/**'      # Triggers n8n deployment
+      - 'v0_initial_flow_ap/**'   # Triggers ActivePieces deployment
+```
+
+### Required GitHub Secrets
+- `DEPLOY_HOST` - Production server IP
+- `DEPLOY_SSH_KEY` - SSH deployment key
+- `EMAIL_USER`, `EMAIL_PASS` - Email credentials
+- `LLM_API_KEY`, `LLM_MODEL` - Gemini configuration
+- `N8N_ENCRYPTION_KEY` - n8n specific
 
 ## 🛠 Contributing
 
@@ -115,9 +160,13 @@ We welcome thoughtful contributions that follow these principles:
    - Follow the [Prompt Design](./guidelines/prompt_design_guidelines.txt) and [Style Guidelines](./guidelines/prompt_style_guidelines.txt)
 
 3. **Validate Before Committing**
-   - Test workflows in n8n with placeholder data
+   - Test workflows with placeholder data
    - Validate all JSON outputs against the schema
-   - Branch-specific testing ensures isolation
+   - Test both n8n and ActivePieces implementations if relevant
+
+4. **Platform Parity**
+   - When updating v0, consider updating both implementations
+   - Document any platform-specific differences
 
 ## 🔗 License
 

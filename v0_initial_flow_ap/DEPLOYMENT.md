@@ -1,6 +1,6 @@
-# V0 Initial Flow - Deployment Guide
+# V0 Initial Flow ActivePieces - Deployment Guide
 
-Email-to-extraction pipeline with **export/import pattern** for automated CI/CD deployment.
+Email-to-extraction pipeline using **ActivePieces** with automated CI/CD deployment.
 
 ## 🏗️ Architecture
 
@@ -29,72 +29,72 @@ cp .env.template .env
 # - IMAP_HOST, IMAP_PORT, EMAIL_USER, EMAIL_PASS
 # - SMTP_HOST, SMTP_PORT  
 # - LLM_API_KEY (Gemini API key)
-# - LLM_API_ENDPOINT
+# - LLM_MODEL (e.g., gemini-2.0-flash)
 ```
 
 ### 2. Launch
 ```bash
-# Build and start n8n with mounted volumes
+# Build and start ActivePieces with mounted volumes
 docker compose up -d
 
 # Check logs
-docker compose logs -f n8n
+docker compose logs -f activepieces
 ```
 
-### 3. Configure n8n Workflow (One-time Setup)
-1. Open http://localhost:5678
-2. Create IMAP credentials with your email settings
-3. Create SMTP credentials with your email settings
-4. Import the workflow (copy/paste JSON or use import)
-5. Link credentials to workflow nodes
-6. Test with sample email + PDFs
-7. **Export everything for deployment:**
-   ```bash
-   # Export credentials
-   docker exec v0_initial_flow-n8n-1 n8n export:credentials --all --output=/home/node/import/credentials.json
-   
-   # Export workflow (get ID from n8n UI or list command)
-   docker exec v0_initial_flow-n8n-1 n8n export:workflow --id=YOUR_WORKFLOW_ID --output=/home/node/import/workflows.json
-   ```
-
-### 4. Commit Export Files
-```bash
-git add import/credentials.json import/workflows.json
-git commit -m "Update exported n8n configuration"
-```
+### 3. Access ActivePieces
+1. Open http://localhost:5679 (port 5679 to avoid conflict with n8n)
+2. Create initial admin account
+3. Import or create the workflow from `activepieces.json`
+4. Test with sample email + PDFs
 
 ## 🏭 Production Deployment
 
 ### Automated CI/CD (Recommended)
 
 **Deployment Strategy:**
-Uses the **export/import pattern** following n8n community best practices:
-- Development environment exports working credentials and workflows
-- Export files stored in `import/` folder in Git
-- CI/CD imports both to production, preserving UUIDs and relationships
+Uses **path-based triggers** in a monorepo setup:
+- Changes to `v0_initial_flow_ap/` directory trigger ActivePieces deployment
+- Changes to `v0_initial_flow/` directory trigger n8n deployment
+- Single GitHub Actions workflow handles both deployments intelligently
 
 **Prerequisites:**
 - GitHub repository with Actions enabled
 - VPS with Docker installed
-- GitHub Secrets configured
+- GitHub Secrets configured (see below)
 
-**Setup GitHub Secrets:**
+**Required GitHub Secrets:**
 ```
+# Server Access
 DEPLOY_HOST=your-server-ip
 DEPLOY_SSH_KEY=your-private-key
+
+# Email Configuration
+IMAP_HOST=imap.hostinger.com
+IMAP_PORT=993
+SMTP_HOST=smtp.hostinger.com
+SMTP_PORT=465
 EMAIL_USER=your-email@domain.com
 EMAIL_PASS=your-app-password
+
+# LLM Configuration
 LLM_API_KEY=your-gemini-api-key
+LLM_MODEL=gemini-2.0-flash
 ```
 
 **Deploy:**
 ```bash
-# Any commit to v0_initial_flow branch triggers deployment
-git checkout v0_initial_flow
-git add import/  # Include updated export files
-git commit -m "Deploy to production"
+# Any commit to v0_initial_flow branch that changes ActivePieces files triggers deployment
+git add v0_initial_flow_ap/
+git commit -m "Update ActivePieces workflow"
 git push origin v0_initial_flow
 ```
+
+**How Path-Based Deployment Works:**
+1. Push to `v0_initial_flow` branch
+2. GitHub Actions detects which directories changed
+3. Runs tests only for changed components
+4. Deploys only what changed (n8n, ActivePieces, or both)
+5. Each deployment is independent
 
 **Server Setup (one-time):**
 ```bash
@@ -110,77 +110,82 @@ sudo chown -R ubuntu:ubuntu /opt/materials-archive-extraction
 
 ```bash
 # On your VPS
-cd /opt/materials-archive-extraction/v0_initial_flow
-git checkout v0_initial_flow
+cd /opt/materials-archive-extraction/v0_initial_flow_ap
 git pull origin v0_initial_flow
 
-# Set environment variables and deploy
-EMAIL_USER="your-email" \
-EMAIL_PASS="your-password" \
-LLM_API_KEY="your-api-key" \
+# Create .env file with your credentials
+cp .env.template .env
+# Edit .env with actual values
+
+# Deploy
 docker compose up -d --build
 
-# Import credentials and workflow
-docker exec v0_initial_flow-n8n-1 n8n import:credentials --input=/home/node/import/credentials.json
-docker exec v0_initial_flow-n8n-1 n8n import:workflow --input=/home/node/import/workflows.json
+# Check status
+docker compose ps
+docker compose logs -f
 ```
 
 ## 🧪 Testing
 
-### Automated Tests
+### Debug Logging
+The implementation includes comprehensive debug logging:
 ```bash
-# Install dependencies
-cd tests
-npm install
+# Monitor debug logs
+tail -f data/debug.log | jq .
 
-# Test LLM extraction directly
-node test-extraction.js
-
-# Test full email pipeline
-node test-email.js
-
-# Check latest received email
-node check-latest-email.js
+# Check for attachment structure
+tail -f data/debug.log | grep "attachment-debug"
 ```
 
 ### Manual Testing
 1. Send email with PDF attachment to configured address
-2. Monitor n8n executions at http://localhost:5678
-3. Check response email in your inbox
-4. Verify extracted metadata format
+2. Monitor ActivePieces at http://localhost:5679
+3. Check debug logs for processing details
+4. Verify response email in your inbox
+
+### Test Scripts
+```bash
+cd tests
+# Run attachment debugger
+node debug-attachments.js
+```
 
 ## 📊 Monitoring & Operations
 
-### Logs
+### Container Management
 ```bash
-# Application logs
-docker compose logs -f n8n
+# View running containers
+docker compose ps
 
-# Structured debug logs (if configured)
-tail -f data/debug.log | jq .
+# Check container logs
+docker compose logs -f activepieces
+docker compose logs -f postgres
+docker compose logs -f redis
+
+# Restart services
+docker compose restart activepieces
+
+# Stop all services
+docker compose down
+
+# Remove all data and start fresh
+docker compose down -v
 ```
 
 ### Health Checks
 ```bash
-# Check n8n health
-curl http://localhost:5678/healthz
+# Check ActivePieces health
+curl http://localhost:5679/api/v1/health
 
-# Check container status
-docker compose ps
+# Production health check (from server)
+curl http://localhost:5679/api/v1/health
 ```
 
-### Restart/Update
-```bash
-# Restart services
-docker compose restart n8n
-
-# Update and rebuild
-git pull origin v0_initial_flow
-docker compose up -d --build
-
-# Stop all services
-docker compose down
-```
+### Debugging Failed Extractions
+1. Check `/data/debug.log` for detailed error messages
+2. Look for "attachment-debug" entries to see attachment structure
+3. Verify LLM API key is valid
+4. Check PDF file validity
 
 ## 🔧 Configuration
 
@@ -195,67 +200,104 @@ EMAIL_USER=bot@yourdomain.com
 EMAIL_PASS=your-app-password
 
 # LLM Configuration  
-LLM_API_ENDPOINT=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
 LLM_API_KEY=your-gemini-api-key
+LLM_MODEL=gemini-2.0-flash  # Required, no default
 ```
+
+### Port Configuration
+- **ActivePieces UI**: http://localhost:5679 (changed from 5678 to avoid n8n conflict)
+- **Health endpoint**: http://localhost:5679/api/v1/health
 
 ### File Structure
 ```
-v0_initial_flow/
-├── import/                             # Exported n8n configuration
-│   ├── credentials.json               # n8n credentials export
-│   └── workflows.json                 # n8n workflow export
-├── docker-compose.yml                 # Container orchestration
-├── prompts/llm_extraction.txt         # LLM extraction prompt
-├── schema/materials_schema.json       # Output validation schema
-├── email_templates/                   # Response templates
-│   ├── success.html                  # Success email template
-│   └── failure.html                  # Error email template
-├── tests/                            # Test suite
-└── data/                            # Runtime data (auto-created)
-    ├── database.sqlite              # n8n database
-    └── debug.log                    # Application logs
+v0_initial_flow_ap/
+├── activepieces.json              # Workflow definition
+├── docker-compose.yml             # Container orchestration
+├── Dockerfile                     # ActivePieces image
+├── .env                          # Environment variables (git-ignored)
+├── .env.template                 # Environment template
+├── DEPLOYMENT.md                 # This file
+├── README.md                     # Project documentation
+├── prompts/                      # LLM prompts
+│   └── llm_extraction.txt
+├── schema/                       # Data schemas
+│   └── materials_schema.json
+├── email_templates/              # Email templates
+│   ├── success.html
+│   └── failure.html
+├── tests/                        # Test scripts
+│   └── debug-attachments.js
+└── data/                         # Runtime data (auto-created)
+    └── debug.log                 # Debug logs
 ```
 
 ## 🚨 Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| **Email not triggering workflow** | Check IMAP credentials, verify email in INBOX, check n8n logs |
-| **Extraction fails** | Verify LLM_API_KEY, check PDF validity, review prompt configuration |
+| **Port 5679 conflict** | Change port mapping in docker-compose.yml |
+| **Email not triggering workflow** | Check IMAP credentials, verify email in INBOX, check ActivePieces logs |
+| **Attachment processing fails** | Check debug.log for "attachment-debug" entries, verify attachment structure |
+| **LLM extraction fails** | Verify LLM_API_KEY and LLM_MODEL are set correctly |
 | **No response email** | Check SMTP credentials, verify sender email, check spam folder |
-| **Port 5678 conflict** | Change port mapping in docker-compose.yml |
-| **Git ownership errors** | Run `sudo chown -R ubuntu:ubuntu /opt/materials-archive-extraction` |
-| **CI/CD deployment fails** | Check GitHub Secrets, verify server SSH access, review logs |
-| **Schema validation errors** | Validate output against schema/materials_schema.json |
-| **Import fails** | Check export files exist in import/ folder, verify n8n container health |
-| **Credentials not working** | Re-export credentials from working dev environment |
+| **CI/CD deployment fails** | Check GitHub Secrets, verify server SSH access, review GitHub Actions logs |
+| **ActivePieces won't start** | Check postgres/redis containers, verify data directory permissions |
+| **Debug logs not appearing** | Ensure data directory exists and is writable |
+
+## 🔄 CI/CD Pipeline Details
+
+### GitHub Actions Workflow
+The deployment uses a single workflow file (`.github/workflows/deploy-materials-extraction.yml`) that:
+
+1. **Detects Changes**: Uses `dorny/paths-filter` to identify which directories changed
+2. **Runs Tests**: Validates schemas and configurations only for changed components
+3. **Deploys Selectively**: Only deploys the components that changed
+4. **Provides Feedback**: Summarizes deployment results
+
+### Deployment Flow
+```mermaid
+graph LR
+    A[Push to v0_initial_flow] --> B{Path Filter}
+    B -->|v0_initial_flow/*| C[Test n8n]
+    B -->|v0_initial_flow_ap/*| D[Test ActivePieces]
+    C --> E[Deploy n8n]
+    D --> F[Deploy ActivePieces]
+    E --> G[Summary]
+    F --> G
+```
+
+### Monitoring Deployments
+- Check GitHub Actions tab in repository for deployment status
+- Each deployment shows which component was deployed
+- Failed deployments include error logs
 
 ## 🔄 Workflow Updates
 
 ### Making Changes
-1. **Local Development**: Make changes in your local n8n instance
-2. **Test Thoroughly**: Verify with sample emails and PDFs
-3. **Export Updated Config**:
+1. **Local Development**: Test changes locally using docker compose
+2. **Update Workflow**: Modify `activepieces.json` or code nodes
+3. **Test Thoroughly**: Send test emails with PDFs
+4. **Deploy**: 
    ```bash
-   # Export credentials (if changed)
-   docker exec v0_initial_flow-n8n-1 n8n export:credentials --all --output=/home/node/import/credentials.json
-   
-   # Export workflow
-   docker exec v0_initial_flow-n8n-1 n8n export:workflow --id=YOUR_WORKFLOW_ID --output=/home/node/import/workflows.json
+   git add v0_initial_flow_ap/
+   git commit -m "Update ActivePieces workflow"
+   git push origin v0_initial_flow
    ```
-4. **Deploy**: Commit and push to `v0_initial_flow` branch
 
-### CI/CD Pipeline Flow
-```mermaid
-graph LR
-    A[Local Dev Changes] --> B[Export to import/]
-    B --> C[Git Commit & Push]
-    C --> D[GitHub Actions]
-    D --> E[Deploy Containers]
-    E --> F[Import Credentials]
-    F --> G[Import Workflow]
-    G --> H[Ready for Emails]
+### Rollback Procedure
+```bash
+# On production server
+cd /opt/materials-archive-extraction
+git log --oneline -10  # Find previous working commit
+git checkout <commit-hash>
+cd v0_initial_flow_ap
+docker compose up -d --build
 ```
 
-The pipeline ensures reliable deployments by using n8n's native export/import functionality, preserving all UUIDs and relationships automatically.
+## 🎯 Key Differences from n8n Version
+
+1. **No Export/Import Pattern**: ActivePieces uses direct configuration
+2. **Different Port**: Uses 5679 instead of 5678
+3. **Debug Logging**: Extensive logging to `/data/debug.log`
+4. **Attachment Handling**: May need adjustment based on ActivePieces format
+5. **No Silent Failures**: Explicit errors for all failure cases
