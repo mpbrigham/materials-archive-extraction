@@ -164,7 +164,7 @@ jobs:
             chmod 755 data
             
             # Create .env file with secrets
-            cat > .env << 'EOF'
+            cat > .env << EOF
             # Email Configuration
             IMAP_HOST=${{ secrets.IMAP_HOST }}
             IMAP_PORT=${{ secrets.IMAP_PORT }}
