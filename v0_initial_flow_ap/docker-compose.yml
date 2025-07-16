@@ -22,6 +22,10 @@ services:
       - AP_POSTGRES_USERNAME=activepieces
       - AP_POSTGRES_PASSWORD=activepieces
       
+      # Redis configuration
+      - AP_REDIS_HOST=redis
+      - AP_REDIS_PORT=6379
+      
       # Security settings
       - AP_ENCRYPTION_KEY=activepieces-encryption-key-min-32-chars
       - AP_JWT_SECRET=activepieces-jwt-secret-min-32-chars
