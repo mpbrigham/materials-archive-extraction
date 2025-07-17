@@ -1,33 +1,30 @@
 services:
   activepieces:
-    image: activepieces/activepieces:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: materials-ap
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5679:80"  # Changed port mapping to match AP default (80 internal)
+      - "127.0.0.1:80:80"
     environment:
-      # Core ActivePieces configuration - simplified for SQLite
       - AP_DB_TYPE=SQLITE3
       - AP_QUEUE_MODE=MEMORY
-      - AP_FRONTEND_URL=http://127.0.0.1:5679
-      - AP_WEBHOOK_URL=http://127.0.0.1:5679/api/v1/webhooks
+      - AP_FRONTEND_URL=http://127.0.0.1:80
+      - AP_WEBHOOK_URL=http://127.0.0.1:80/api/v1/webhooks
       - AP_SANDBOX_RUN_TIME_SECONDS=600
       - AP_TELEMETRY_ENABLED=false
       
-      # Security settings (still required)
       - AP_ENCRYPTION_KEY=activepieces-encryption-key-min-32-chars
       - AP_JWT_SECRET=activepieces-jwt-secret-min-32-chars
       
     volumes:
-      # Data persistence - SQLite database will be stored here
       - ./data:/root/.activepieces
       
-      # Mount prompt and template directories
       - ./prompts:/data/prompts:ro
       - ./email_templates:/data/email_templates:ro
       - ./schema:/data/schema:ro
       
-      # Mount workflow definition
       - ./activepieces.json:/data/activepieces.json:ro
       
     env_file:
@@ -39,7 +36,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-
-# No more postgres or redis services needed!
-# SQLite database will be stored in ./data directory
-# Memory queue eliminates need for Redis
