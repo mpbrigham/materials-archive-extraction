@@ -186,7 +186,7 @@ jobs:
             echo "Waiting for ActivePieces to start..."
             timeout=300
             while [ $timeout -gt 0 ]; do
-              if curl -s http://localhost:5679/api/v1/health > /dev/null 2>&1; then
+              if curl -s http://localhost/api/v1/health > /dev/null 2>&1; then
                 echo "ActivePieces is ready!"
                 break
               fi
