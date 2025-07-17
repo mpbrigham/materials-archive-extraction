@@ -109,7 +109,7 @@ PIPELINE_STAGES:
   4. Result processor combines context + results, generates HTML
   5. Send notification emails results back to sender
 KEY_COMPONENTS:
-- `materials_archive_extraction.json`: n8n workflow definition
+- `n8n.json`: n8n workflow definition
 - `email_templates/success.html`: HTML results template
 - `prompts/llm_extraction.txt`: LLM extraction prompt
 - `tests/test-extraction.js`: Direct API testing
