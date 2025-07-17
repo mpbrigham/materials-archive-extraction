@@ -13,6 +13,14 @@ Email → PDF extraction → LLM metadata → Send results
 
 IMAP Trigger → Read Config → Document Validator → Loop → LLM Extraction → Result Processor → Send Email
 
+### Simplified Infrastructure (Updated)
+
+**Single Container Deployment:**
+- Uses SQLite instead of PostgreSQL
+- Uses in-memory queue instead of Redis  
+- Runs as a single lightweight container
+- Perfect for low-volume workloads (30 messages/hour)
+
 ## Key Differences from n8n Version
 
 This is a migration from n8n to ActivePieces with the following changes:
@@ -32,9 +40,10 @@ This is a migration from n8n to ActivePieces with the following changes:
 - All paths hardcoded to `/data/` (container volume)
 
 ### 4. **Error Philosophy**
-- Explicit error throwing for missing values
-- No default values or assumptions
-- Better to fail immediately than process incorrectly
+- Continue processing on errors (matches n8n behavior)
+- Use fallback values for missing data
+- Log errors but don't stop the workflow
+- Better to process what we can than fail completely
 
 ## Environment Variables
 
@@ -57,7 +66,7 @@ LLM_MODEL='gemini-2.5-flash'  # No fallback - required
 ```
 .
 ├── activepieces.json                        # ActivePieces workflow definition
-├── docker-compose.yml                       # Container setup
+├── docker-compose.yml                       # Container setup (simplified)
 ├── .env                                     # Environment configuration
 ├── prompts/
 │   └── llm_extraction.txt                   # LLM prompt
@@ -71,6 +80,22 @@ LLM_MODEL='gemini-2.5-flash'  # No fallback - required
 └── tests/
     └── debug-attachments.js                 # Attachment structure debugger
 ```
+
+## Deployment
+
+### Quick Start
+
+1. Copy `.env.template` to `.env` and fill in your credentials
+2. Start the container:
+   ```bash
+   docker compose up -d
+   ```
+3. Access ActivePieces UI at http://localhost:5679
+4. Import the workflow from `activepieces.json`
+
+### Data Persistence
+
+All data (SQLite database, files) is stored in `./data/` directory.
 
 ## Debugging
 
@@ -87,9 +112,14 @@ The implementation includes comprehensive debug logging:
 
 ## Current Status
 
-⚠️ **Attachment Handling Needs Verification**
+✅ **Attachment Handling Updated**
 
-The code currently throws an informative error when processing attachments, logging the actual structure provided by ActivePieces. This is intentional - we need to see the real attachment format before implementing the handler.
+The attachment handling has been updated based on ActivePieces documentation. The code now properly handles:
+- Direct data access via `attachment.data` property
+- Alternative property names (`content`, `base64`)
+- Clear error messages if attachment structure is unexpected
+
+The implementation should now work with ActivePieces' standard attachment format.
 
 ## Next Steps
 
@@ -111,10 +141,10 @@ The code currently throws an informative error when processing attachments, logg
 
 ```bash
 # Check debug logs after processing
-tail -f /data/debug.log | grep "attachment-debug"
+tail -f ./data/debug.log | grep "attachment-debug"
 
 # View all logs
-cat /data/debug.log | jq .
+cat ./data/debug.log | jq .
 ```
 
 ## Design Principles
@@ -142,15 +172,16 @@ KEY_COMPONENTS:
 - `activepieces.json`: Workflow definition
 - `email_templates/*.html`: Response templates
 - `prompts/llm_extraction.txt`: LLM extraction prompt
-- `/data/debug.log`: Debug logging output
+- `./data/`: SQLite database and logs
 DATA_STRUCTURE:
 - Email context: First item with email metadata
 - PDF items: Valid/invalid items with attachment references
 - Results: HTML tables with extracted metadata
 DESIGN_CONSTRAINTS:
-- No silent failures or default values
+- Continue processing on errors (like n8n)
+- Use fallback values for missing data
 - Debug logging at all stages
 - File paths hardcoded to /data/
-- Attachment format TBD (needs verification)
-- Fails fast on any missing configuration
+- Attachment format uses direct data access
+- Single container deployment with SQLite
 ```
