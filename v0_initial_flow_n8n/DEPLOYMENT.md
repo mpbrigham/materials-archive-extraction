@@ -1,6 +1,6 @@
 # V0 Initial Flow - Deployment Guide
 
-Email-to-extraction pipeline with **export/import pattern** for automated CI/CD deployment.
+Email-to-extraction pipeline with **simplified environment-based** deployment for automated CI/CD.
 
 ## 🏗️ Architecture
 
@@ -43,24 +43,14 @@ docker compose logs -f n8n
 
 ### 3. Configure n8n Workflow (One-time Setup)
 1. Open http://localhost:5678
-2. Create IMAP credentials with your email settings
-3. Create SMTP credentials with your email settings
-4. Import the workflow (copy/paste JSON or use import)
-5. Link credentials to workflow nodes
-6. Test with sample email + PDFs
-7. **Export everything for deployment:**
-   ```bash
-   # Export credentials
-   docker exec v0_initial_flow-n8n-1 n8n export:credentials --all --output=/home/node/import/credentials.json
-   
-   # Export workflow (get ID from n8n UI or list command)
-   docker exec v0_initial_flow-n8n-1 n8n export:workflow --id=YOUR_WORKFLOW_ID --output=/home/node/import/workflows.json
-   ```
+2. Import the workflow from n8n.json
+3. Configure credentials using environment variables
+4. Test with sample email + PDFs
 
-### 4. Commit Export Files
+### 4. Commit Configuration
 ```bash
-git add import/credentials.json import/workflows.json
-git commit -m "Update exported n8n configuration"
+git add .env.template n8n.json
+git commit -m "Update n8n configuration"
 ```
 
 ## 🏭 Production Deployment
@@ -68,21 +58,23 @@ git commit -m "Update exported n8n configuration"
 ### Automated CI/CD (Recommended)
 
 **Deployment Strategy:**
-Uses the **export/import pattern** following n8n community best practices:
-- Development environment exports working credentials and workflows
-- Export files stored in `import/` folder in Git
-- CI/CD imports both to production, preserving UUIDs and relationships
+Uses **environment-based configuration** following modern deployment practices:
+- Development and production use the same environment variables
+- Sensitive credentials stored in GitHub Secrets
+- Non-sensitive configuration can be stored in server .env files
 
 **Prerequisites:**
 - GitHub repository with Actions enabled
 - VPS with Docker installed
 - GitHub Secrets configured
 
-**Setup GitHub Secrets:**
+**Required GitHub Secrets:**
 ```
+# Server Access
 DEPLOY_HOST=your-server-ip
 DEPLOY_SSH_KEY=your-private-key
-EMAIL_USER=your-email@domain.com
+
+# Sensitive Credentials (same for both n8n and ActivePieces)
 EMAIL_PASS=your-app-password
 LLM_API_KEY=your-gemini-api-key
 ```
@@ -91,7 +83,6 @@ LLM_API_KEY=your-gemini-api-key
 ```bash
 # Any commit to v0_initial_flow branch triggers deployment
 git checkout v0_initial_flow
-git add import/  # Include updated export files
 git commit -m "Deploy to production"
 git push origin v0_initial_flow
 ```
@@ -119,10 +110,6 @@ EMAIL_USER="your-email" \
 EMAIL_PASS="your-password" \
 LLM_API_KEY="your-api-key" \
 docker compose up -d --build
-
-# Import credentials and workflow
-docker exec v0_initial_flow-n8n-1 n8n import:credentials --input=/home/node/import/credentials.json
-docker exec v0_initial_flow-n8n-1 n8n import:workflow --input=/home/node/import/workflows.json
 ```
 
 ## 🧪 Testing
@@ -195,16 +182,13 @@ EMAIL_USER=bot@yourdomain.com
 EMAIL_PASS=your-app-password
 
 # LLM Configuration  
-LLM_API_ENDPOINT=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
 LLM_API_KEY=your-gemini-api-key
+LLM_MODEL=gemini-2.0-flash
 ```
 
 ### File Structure
 ```
 v0_initial_flow/
-├── import/                             # Exported n8n configuration
-│   ├── credentials.json               # n8n credentials export
-│   └── workflows.json                 # n8n workflow export
 ├── docker-compose.yml                 # Container orchestration
 ├── prompts/llm_extraction.txt         # LLM extraction prompt
 ├── schema/materials_schema.json       # Output validation schema
@@ -228,34 +212,25 @@ v0_initial_flow/
 | **Git ownership errors** | Run `sudo chown -R ubuntu:ubuntu /opt/materials-archive-extraction` |
 | **CI/CD deployment fails** | Check GitHub Secrets, verify server SSH access, review logs |
 | **Schema validation errors** | Validate output against schema/materials_schema.json |
-| **Import fails** | Check export files exist in import/ folder, verify n8n container health |
-| **Credentials not working** | Re-export credentials from working dev environment |
+| **Credentials not working** | Check environment variables are set correctly |
 
 ## 🔄 Workflow Updates
 
 ### Making Changes
 1. **Local Development**: Make changes in your local n8n instance
 2. **Test Thoroughly**: Verify with sample emails and PDFs
-3. **Export Updated Config**:
-   ```bash
-   # Export credentials (if changed)
-   docker exec v0_initial_flow-n8n-1 n8n export:credentials --all --output=/home/node/import/credentials.json
-   
-   # Export workflow
-   docker exec v0_initial_flow-n8n-1 n8n export:workflow --id=YOUR_WORKFLOW_ID --output=/home/node/import/workflows.json
-   ```
+3. **Update Configuration**: Update n8n.json if workflow changed
 4. **Deploy**: Commit and push to `v0_initial_flow` branch
 
 ### CI/CD Pipeline Flow
 ```mermaid
 graph LR
-    A[Local Dev Changes] --> B[Export to import/]
+    A[Local Dev Changes] --> B[Update Configuration]
     B --> C[Git Commit & Push]
     C --> D[GitHub Actions]
-    D --> E[Deploy Containers]
-    E --> F[Import Credentials]
-    F --> G[Import Workflow]
-    G --> H[Ready for Emails]
+    D --> E[Deploy Container]
+    E --> F[Configure via ENV]
+    F --> G[Ready for Emails]
 ```
 
-The pipeline ensures reliable deployments by using n8n's native export/import functionality, preserving all UUIDs and relationships automatically.
+The pipeline ensures reliable deployments by using environment-based configuration, maintaining consistency between development and production.

@@ -21,6 +21,11 @@ IMAP Trigger → Read Config → Document Validator → Loop → LLM Extraction 
 - Runs as a single lightweight container
 - Perfect for low-volume workloads (30 messages/hour)
 
+**Custom Docker Image:**
+- Extends activepieces/activepieces:latest
+- Includes @google/generative-ai npm package
+- Built automatically via docker-compose.yml
+
 ## Key Differences from n8n Version
 
 This is a migration from n8n to ActivePieces with the following changes:
@@ -59,6 +64,10 @@ EMAIL_PASS='your-password'
 # LLM Configuration
 LLM_API_KEY='your-gemini-api-key'
 LLM_MODEL='gemini-2.5-flash'  # No fallback - required
+
+# ActivePieces Configuration (Required)
+AP_ENCRYPTION_KEY='32-character-hex-string'  # Generate with: openssl rand -hex 16
+AP_JWT_SECRET='minimum-32-character-string'  # Any 32+ char string
 ```
 
 ## Files
@@ -90,7 +99,7 @@ LLM_MODEL='gemini-2.5-flash'  # No fallback - required
    ```bash
    docker compose up -d
    ```
-3. Access ActivePieces UI at http://localhost:5679
+3. Access ActivePieces UI at http://localhost
 4. Import the workflow from `activepieces.json`
 
 ### Data Persistence
@@ -109,17 +118,6 @@ The implementation includes comprehensive debug logging:
 1. Send test email with PDFs
 2. Check `/data/debug.log` for "attachment-debug" entries
 3. Update code based on actual attachment format
-
-## Current Status
-
-✅ **Attachment Handling Updated**
-
-The attachment handling has been updated based on ActivePieces documentation. The code now properly handles:
-- Direct data access via `attachment.data` property
-- Alternative property names (`content`, `base64`)
-- Clear error messages if attachment structure is unexpected
-
-The implementation should now work with ActivePieces' standard attachment format.
 
 ## Next Steps
 
