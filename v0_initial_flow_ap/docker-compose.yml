@@ -1,5 +1,5 @@
 services:
-  activepieces:
+  ap:
     build:
       context: .
       dockerfile: Dockerfile
@@ -13,23 +13,15 @@ services:
       - AP_FRONTEND_URL=http://127.0.0.1:80
       - AP_WEBHOOK_URL=http://127.0.0.1:80/api/v1/webhooks
       - AP_SANDBOX_RUN_TIME_SECONDS=600
-      - AP_TELEMETRY_ENABLED=false
-      
-      - AP_ENCRYPTION_KEY=activepieces-encryption-key-min-32-chars
-      - AP_JWT_SECRET=activepieces-jwt-secret-min-32-chars
-      
+      - AP_TELEMETRY_ENABLED=false     
     volumes:
       - ./data:/root/.activepieces
-      
       - ./prompts:/data/prompts:ro
       - ./email_templates:/data/email_templates:ro
       - ./schema:/data/schema:ro
-      
       - ./activepieces.json:/data/activepieces.json:ro
-      
     env_file:
       - .env
-      
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/api/v1/health"]
       interval: 30s

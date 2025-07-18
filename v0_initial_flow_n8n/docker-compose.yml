@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: materials-n8n
     restart: unless-stopped
     ports:
       - "127.0.0.1:5678:5678"
@@ -20,19 +21,13 @@ services:
       
       - N8N_SECURE_COOKIE=false
       - N8N_METRICS=false
-      
     volumes:
       - ./data:/home/node/data
-      
-      - ./prompts:/home/node/prompts:ro
-      - ./email_templates:/home/node/email_templates:ro
-      - ./schema:/home/node/schema:ro
-      
-      - ./import:/home/node/import:ro
-      
+      - ./prompts:/home/node/data/prompts:ro
+      - ./email_templates:/home/node/data/email_templates:ro
+      - ./schema:/home/node/data/schema:ro
     env_file:
       - .env
-      
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:5678/healthz"]
       interval: 30s
