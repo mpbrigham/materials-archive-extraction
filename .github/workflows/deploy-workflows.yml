@@ -117,6 +117,9 @@ jobs:
               LLM_MODEL=gemini-2.0-flash
             fi
             
+            # Stop any existing containers
+            docker compose down --remove-orphans
+            
             # Deploy with environment variables (config from .env + secrets from GitHub)
             IMAP_HOST="${IMAP_HOST}" \
             IMAP_PORT="${IMAP_PORT}" \
