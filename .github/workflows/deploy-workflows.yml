@@ -272,7 +272,7 @@ jobs:
             echo "Waiting for ActivePieces to start..."
             timeout=300
             while [ $timeout -gt 0 ]; do
-              if curl -s http://localhost:5679/api/v1/health > /dev/null 2>&1; then
+              if docker exec materials-ap curl -s http://localhost:80/api/v1/health > /dev/null 2>&1; then
                 echo "ActivePieces is ready!"
                 break
               fi
