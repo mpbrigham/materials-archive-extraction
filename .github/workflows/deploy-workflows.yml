@@ -4,9 +4,9 @@ on:
   push:
     branches: [v0_initial_flow]
     paths:
-      - 'v0_initial_flow/**'
+      - 'v0_initial_flow_n8n/**'
       - 'v0_initial_flow_ap/**'
-      - '.github/workflows/deploy-n8n.yml'
+      - '.github/workflows/deploy-workflows.yml'
 
 jobs:
   detect-changes:
@@ -27,7 +27,7 @@ jobs:
         with:
           filters: |
             n8n:
-              - 'v0_initial_flow/**'
+              - 'v0_initial_flow_n8n/**'
             activepieces:
               - 'v0_initial_flow_ap/**'
 
@@ -45,7 +45,7 @@ jobs:
       
       - name: Validate n8n materials schema
         run: |
-          cd v0_initial_flow
+          cd v0_initial_flow_n8n
           python3 -m json.tool schema/materials_schema.json > /dev/null
           echo "✅ n8n materials schema is valid"
 
@@ -70,7 +70,7 @@ jobs:
       - name: Validate ActivePieces workflow
         run: |
           cd v0_initial_flow_ap
-          python3 -m json.tool activepieces.json > /dev/null
+          python3 -m json.tool ap.json > /dev/null
           echo "✅ ActivePieces workflow is valid JSON"
 
   deploy-n8n:
@@ -88,7 +88,7 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             echo "🚀 Starting n8n deployment..."
-            cd /opt/materials-archive-extraction/v0_initial_flow
+            cd /opt/materials-archive-extraction/v0_initial_flow_n8n
             git checkout v0_initial_flow
             git pull origin v0_initial_flow
             
@@ -126,6 +126,7 @@ jobs:
             LLM_MODEL="${LLM_MODEL}" \
             EMAIL_PASS="${{ secrets.EMAIL_PASS }}" \
             LLM_API_KEY="${{ secrets.LLM_API_KEY }}" \
+            N8N_ENCRYPTION_KEY="${{ secrets.N8N_ENCRYPTION_KEY }}" \
             docker compose up -d --build
             
             # Wait for n8n to be ready
@@ -144,6 +145,66 @@ jobs:
               echo "n8n failed to start within 5 minutes"
               exit 1
             fi
+            
+            # Import credentials and workflow
+            echo "Importing n8n credentials..."
+            
+            # Generate temporary credentials file
+            cat > /dev/shm/n8n-credentials-$$.json << 'EOF'
+            [
+              {
+                "id": "gemini-ai",
+                "name": "Gemini AI",
+                "type": "googleAi",
+                "data": {
+                  "apiKey": "$LLM_API_KEY"
+                }
+              },
+              {
+                "id": "email-imap",
+                "name": "Email IMAP",
+                "type": "imap",
+                "data": {
+                  "host": "$IMAP_HOST",
+                  "port": $IMAP_PORT,
+                  "user": "$EMAIL_USER",
+                  "password": "$EMAIL_PASS",
+                  "secure": true
+                }
+              },
+              {
+                "id": "email-smtp",
+                "name": "Email SMTP",
+                "type": "smtp",
+                "data": {
+                  "host": "$SMTP_HOST",
+                  "port": $SMTP_PORT,
+                  "user": "$EMAIL_USER",
+                  "password": "$EMAIL_PASS",
+                  "secure": true,
+                  "authentication": true
+                }
+              }
+            ]
+            EOF
+            
+            # Substitute environment variables
+            export LLM_API_KEY="${{ secrets.LLM_API_KEY }}"
+            export EMAIL_PASS="${{ secrets.EMAIL_PASS }}"
+            envsubst < /dev/shm/n8n-credentials-$$.json > /dev/shm/n8n-credentials-final-$$.json
+            
+            # Copy credentials file into container
+            docker cp /dev/shm/n8n-credentials-final-$$.json materials-n8n:/tmp/credentials.json
+            
+            # Import credentials
+            docker exec materials-n8n n8n import:credentials --input=/tmp/credentials.json
+            
+            # Import workflow
+            docker exec materials-n8n n8n import:workflow --input=/home/node/data/n8n.json
+            
+            # Clean up sensitive files
+            docker exec materials-n8n rm -f /tmp/credentials.json
+            rm -f /dev/shm/n8n-credentials-$$.json /dev/shm/n8n-credentials-final-$$.json
             
             echo "✅ n8n deployment completed successfully!"
 
@@ -203,13 +264,15 @@ jobs:
             LLM_MODEL="${LLM_MODEL}" \
             EMAIL_PASS="${{ secrets.EMAIL_PASS }}" \
             LLM_API_KEY="${{ secrets.LLM_API_KEY }}" \
+            AP_ENCRYPTION_KEY="${{ secrets.AP_ENCRYPTION_KEY }}" \
+            AP_JWT_SECRET="${{ secrets.AP_JWT_SECRET }}" \
             docker compose up -d --build
             
             # Wait for ActivePieces to be ready
             echo "Waiting for ActivePieces to start..."
             timeout=300
             while [ $timeout -gt 0 ]; do
-              if curl -s http://localhost/api/v1/health > /dev/null 2>&1; then
+              if curl -s http://localhost:5679/api/v1/health > /dev/null 2>&1; then
                 echo "ActivePieces is ready!"
                 break
               fi
