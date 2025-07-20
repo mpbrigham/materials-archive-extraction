@@ -113,8 +113,6 @@ The system implements a sophisticated confidence calculation:
    python testing_script.py
    ```
 
-For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
-
 ## System Requirements
 
 - Python 3.8+

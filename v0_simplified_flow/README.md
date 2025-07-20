@@ -23,15 +23,15 @@ flowchart TD
 
 ## Key Features
 
-- ✅ **Email-based ingestion** via IMAP monitoring
-- ✅ **Direct PDF processing** with multimodal LLM
-- ✅ **Multiple product extraction** from single documents
-- ✅ **Visual extraction** with confidence scores and coordinates
-- ✅ **Integrated confidence-based processing** with dynamic field selection
-- ✅ **Comprehensive result routing** for success and error scenarios
-- ✅ **Partial success support** for multi-product documents
-- ✅ **Automated email responses** with extracted metadata
-- ✅ **Comprehensive logging** of document lifecycle
+- **Email-based ingestion** via IMAP monitoring
+- **Direct PDF processing** with multimodal LLM
+- **Multiple product extraction** from single documents
+- **Visual extraction** with confidence scores and coordinates
+- **Integrated confidence-based processing** with dynamic field selection
+- **Comprehensive result routing** for success and error scenarios
+- **Partial success support** for multi-product documents
+- **Automated email responses** with extracted metadata
+- **Comprehensive logging** of document lifecycle
 
 ## Script Architecture
 
@@ -57,11 +57,11 @@ return functionName(items);
 ```
 
 This approach:
-- ✅ Inherits n8n's default sandbox environment
-- ✅ Provides access to all JavaScript globals (Date, Promise, Buffer, etc.)
-- ✅ Allows environment variable access via `process.env`
-- ✅ Enables proper version control and testing
-- ✅ Eliminates inline code maintenance issues
+- Inherits n8n's default sandbox environment
+- Provides access to all JavaScript globals (Date, Promise, Buffer, etc.)
+- Allows environment variable access via `process.env`
+- Enables proper version control and testing
+- Eliminates inline code maintenance issues
 
 ## Deployment Architecture
 
@@ -98,8 +98,6 @@ The system runs as a single n8n container with volume-mounted scripts and prompt
 4. **Test the System**:
    - Send an email with PDF attachment to your IMAP inbox
    - System processes and responds with extracted metadata
-
-For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## System Components
 
@@ -256,7 +254,12 @@ Templates support placeholders (e.g., `{{sender}}`, `{{productCount}}`) that are
 
 ## Troubleshooting
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for common issues and solutions.
+Common issues and solutions:
+
+- **Email not triggering**: Check IMAP credentials and server settings
+- **LLM extraction failing**: Verify API key and endpoint configuration
+- **No response email**: Check SMTP settings and credentials
+- **Container issues**: Review Docker logs with `docker-compose logs -f`
 
 ## PROJECT_SPEC
 ```spec

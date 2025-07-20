@@ -103,7 +103,6 @@ Required GitHub Secrets:
 - `LLM_API_KEY`: Gemini API key
 - `AP_ENCRYPTION_KEY`: ActivePieces encryption
 - `AP_JWT_SECRET`: ActivePieces JWT secret
-- `AP_API_KEY`: ActivePieces API key
 
 ### API Setup
 

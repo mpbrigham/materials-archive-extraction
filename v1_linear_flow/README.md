@@ -70,8 +70,6 @@ The system runs as a single n8n container with volume-mounted functions and prom
    - Send an email with PDF attachment to your IMAP inbox
    - System processes and responds with extracted metadata
 
-For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
-
 ## System Components
 
 ### Core Files
@@ -199,7 +197,12 @@ Templates support placeholders (e.g., `{{sender}}`, `{{productCount}}`) that are
 
 ## Troubleshooting
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for common issues and solutions.
+Common issues and solutions:
+
+- **Email not triggering**: Check IMAP credentials and server settings
+- **LLM extraction failing**: Verify API key and endpoint configuration
+- **No response email**: Check SMTP settings and credentials
+- **Container issues**: Review Docker logs with `docker-compose logs -f`
 
 ## PROJECT_SPEC
 ```spec

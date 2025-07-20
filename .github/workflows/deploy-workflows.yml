@@ -107,14 +107,20 @@ jobs:
               set -a  # automatically export all variables
               source <(grep -E '^(IMAP_HOST|IMAP_PORT|SMTP_HOST|SMTP_PORT|EMAIL_USER|LLM_MODEL)=' .env | sed "s/'//g")
               set +a
+              
+              # Validate required variables
+              REQUIRED_VARS="IMAP_HOST IMAP_PORT SMTP_HOST SMTP_PORT EMAIL_USER LLM_MODEL"
+              for var in $REQUIRED_VARS; do
+                if [ -z "${!var}" ]; then
+                  echo "ERROR: Required variable $var is not set in .env file"
+                  exit 1
+                fi
+              done
+              echo "All required configuration variables are set"
             else
-              echo "Warning: .env file not found, using defaults"
-              IMAP_HOST=imap.gmail.com
-              IMAP_PORT=993
-              SMTP_HOST=smtp.gmail.com  
-              SMTP_PORT=587
-              EMAIL_USER=bot@example.com
-              LLM_MODEL=gemini-2.0-flash
+              echo "ERROR: .env file not found - cannot proceed without configuration"
+              echo "Please create .env file from .env.template and configure all required values"
+              exit 1
             fi
             
             # Stop any existing containers
@@ -200,13 +206,13 @@ jobs:
             docker cp /dev/shm/n8n-credentials-final-$$.json materials-n8n:/tmp/credentials.json
             
             # Import credentials
-            docker exec materials-n8n n8n import:credentials --input=/tmp/credentials.json
+            docker compose exec -T n8n n8n import:credentials --input=/tmp/credentials.json
             
             # Import workflow
-            docker exec materials-n8n n8n import:workflow --input=/home/node/data/n8n.json
+            docker compose exec -T n8n n8n import:workflow --input=/home/node/data/n8n.json
             
             # Clean up sensitive files
-            docker exec materials-n8n rm -f /tmp/credentials.json
+            docker compose exec -T n8n rm -f /tmp/credentials.json
             rm -f /dev/shm/n8n-credentials-$$.json /dev/shm/n8n-credentials-final-$$.json
             
             echo "✅ n8n deployment completed successfully!"
@@ -245,14 +251,31 @@ jobs:
               set -a  # automatically export all variables
               source <(grep -E '^(IMAP_HOST|IMAP_PORT|SMTP_HOST|SMTP_PORT|EMAIL_USER|LLM_MODEL)=' .env | sed "s/'//g")
               set +a
+              
+              # Validate required variables
+              REQUIRED_VARS="IMAP_HOST IMAP_PORT SMTP_HOST SMTP_PORT EMAIL_USER LLM_MODEL"
+              for var in $REQUIRED_VARS; do
+                if [ -z "${!var}" ]; then
+                  echo "ERROR: Required variable $var is not set in .env file"
+                  exit 1
+                fi
+              done
+              echo "All required configuration variables are set"
             else
-              echo "Warning: .env file not found, using defaults"
-              IMAP_HOST=imap.hostinger.com
-              IMAP_PORT=993
-              SMTP_HOST=smtp.hostinger.com
-              SMTP_PORT=465
-              EMAIL_USER=bot@brigham.be
-              LLM_MODEL=gemini-2.0-flash
+              echo "ERROR: .env file not found - cannot proceed without configuration"
+              echo "Please create .env file from .env.template and configure all required values"
+              exit 1
+            fi
+            
+            # Generate API key if not already in .env
+            if ! grep -q "^AP_API_KEY=" .env 2>/dev/null; then
+              echo "Generating new AP_API_KEY..."
+              AP_API_KEY="ap_$(openssl rand -hex 16)"
+              echo "AP_API_KEY=${AP_API_KEY}" >> .env
+              echo "AP_API_KEY generated and saved to .env"
+            else
+              echo "Using existing AP_API_KEY from .env"
+              AP_API_KEY=$(grep "^AP_API_KEY=" .env | cut -d'=' -f2)
             fi
             
             # Deploy with docker compose
@@ -269,13 +292,14 @@ jobs:
             LLM_API_KEY="${{ secrets.LLM_API_KEY }}" \
             AP_ENCRYPTION_KEY="${{ secrets.AP_ENCRYPTION_KEY }}" \
             AP_JWT_SECRET="${{ secrets.AP_JWT_SECRET }}" \
+            AP_API_KEY="${AP_API_KEY}" \
             docker compose up -d --build
             
             # Wait for ActivePieces to be ready
             echo "Waiting for ActivePieces to start..."
             timeout=300
             while [ $timeout -gt 0 ]; do
-              if docker exec materials-ap curl -s http://localhost:80/api/v1/health > /dev/null 2>&1; then
+              if docker compose exec -T ap curl -s http://localhost:80/api/v1/health > /dev/null 2>&1; then
                 echo "ActivePieces is ready!"
                 break
               fi
@@ -286,6 +310,30 @@ jobs:
             if [ $timeout -le 0 ]; then
               echo "ActivePieces failed to start within 5 minutes"
               docker compose logs
+              exit 1
+            fi
+            
+            # Setup connections and workflow
+            echo "Setting up ActivePieces connections and workflow..."
+            sleep 10
+            
+            docker compose exec -T ap pip install requests
+            docker compose exec -T \
+              -e AP_URL=http://localhost:80 \
+              -e AP_API_KEY="${AP_API_KEY}" \
+              -e IMAP_HOST="${IMAP_HOST}" \
+              -e IMAP_PORT="${IMAP_PORT}" \
+              -e SMTP_HOST="${SMTP_HOST}" \
+              -e SMTP_PORT="${SMTP_PORT}" \
+              -e EMAIL_USER="${EMAIL_USER}" \
+              -e EMAIL_PASS="${{ secrets.EMAIL_PASS }}" \
+              -e LLM_API_KEY="${{ secrets.LLM_API_KEY }}" \
+              ap python3 /data/scripts/setup-ap.py
+            
+            if [ $? -eq 0 ]; then
+              echo "✅ ActivePieces setup completed successfully!"
+            else
+              echo "❌ ActivePieces setup failed"
               exit 1
             fi
             
