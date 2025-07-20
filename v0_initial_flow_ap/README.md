@@ -1,185 +1,160 @@
 # Materials Intake Pipeline - ActivePieces Implementation
 
-Email → PDF extraction → LLM metadata → Send results
+## What This Pipeline Does
 
-## Core Workflow
+This pipeline provides an automated email-based service for extracting structured metadata from architectural material PDFs:
 
-**Request-response email service:**
-1. User sends email with PDF attachments to bot@brigham.be
-2. Bot extracts materials metadata from PDFs using Gemini AI
-3. Bot emails results back to the original sender
+1. **Email Trigger**: Monitors inbox for emails with PDF attachments
+2. **PDF Processing**: Validates and processes each PDF attachment
+3. **LLM Extraction**: Uses Google Gemini AI to extract structured metadata
+4. **Response Delivery**: Sends formatted results back to the sender
 
 ## Architecture
 
+```
 IMAP Trigger → Read Config → Document Validator → Loop → LLM Extraction → Result Processor → Send Email
+```
 
-### Simplified Infrastructure (Updated)
+### Components
 
-**Single Container Deployment:**
-- Uses SQLite instead of PostgreSQL
-- Uses in-memory queue instead of Redis  
-- Runs as a single lightweight container
-- Perfect for low-volume workloads (30 messages/hour)
+- **IMAP Trigger**: Email monitoring for incoming messages
+- **Read Config**: Loads prompts and schema from mounted volumes
+- **Document Validator**: Filters valid PDF attachments
+- **Loop**: Processes each PDF individually
+- **LLM Extraction**: Gemini AI with custom prompts
+- **Result Processor**: Formats extracted data
+- **Send Email**: SMTP response with results
 
-**Custom Docker Image:**
-- Extends activepieces/activepieces:latest
-- Includes @google/generative-ai npm package
-- Built automatically via docker-compose.yml
+### Infrastructure
 
-## Key Differences from n8n Version
+- **Single Container**: SQLite database, in-memory queue
+- **Custom Image**: ActivePieces with @google/generative-ai package
+- **Lightweight**: Suitable for low-volume workloads
 
-This is a migration from n8n to ActivePieces with the following changes:
+## Configuration
 
-### 1. **Platform**
-- **n8n**: Traditional workflow automation
-- **ActivePieces**: Modern workflow automation with different architecture
+### Environment Variables
 
-### 2. **File Handling**
-- **n8n**: Direct binary data access (`item.binary.pdf.data`)
-- **ActivePieces**: File references (likely `"db://..."` format)
-- Debug logging added to capture actual attachment structure
-
-### 3. **Configuration**
-- No silent fallbacks - fails fast on missing configuration
-- Direct model name via `LLM_MODEL` env var (no endpoint parsing)
-- All paths hardcoded to `/data/` (container volume)
-
-### 4. **Error Philosophy**
-- Continue processing on errors (matches n8n behavior)
-- Use fallback values for missing data
-- Log errors but don't stop the workflow
-- Better to process what we can than fail completely
-
-## Environment Variables
+Create a `.env` file from the template:
 
 ```bash
-# Email Configuration
-IMAP_HOST='imap.hostinger.com'
-IMAP_PORT=993
-SMTP_HOST='smtp.hostinger.com'
-SMTP_PORT=465
-EMAIL_USER='bot@brigham.be'
-EMAIL_PASS='your-password'
-
-# LLM Configuration
-LLM_API_KEY='your-gemini-api-key'
-LLM_MODEL='gemini-2.5-flash'  # No fallback - required
-
-# ActivePieces Configuration (Required)
-AP_ENCRYPTION_KEY='32-character-hex-string'  # Generate with: openssl rand -hex 16
-AP_JWT_SECRET='minimum-32-character-string'  # Any 32+ char string
+cp .env.template .env
 ```
 
-## Files
+Required configuration:
+- `IMAP_HOST`, `IMAP_PORT`: Email server for receiving
+- `SMTP_HOST`, `SMTP_PORT`: Email server for sending
+- `EMAIL_USER`, `EMAIL_PASS`: Email credentials
+- `LLM_API_KEY`: Google Gemini API key
+- `LLM_MODEL`: Model name (e.g., gemini-2.0-flash)
+- `AP_ENCRYPTION_KEY`: Auto-generated if not set
+- `AP_JWT_SECRET`: Auto-generated if not set
+- `AP_API_KEY`: Auto-generated if not set
+
+Optional configuration:
+- `AP_PROJECT_ID`: Project name (defaults to 'materials-archive-extraction')
+
+### Directory Structure
 
 ```
-.
-├── activepieces.json                        # ActivePieces workflow definition
-├── docker-compose.yml                       # Container setup (simplified)
-├── .env                                     # Environment configuration
-├── prompts/
-│   └── llm_extraction.txt                   # LLM prompt
-├── schema/
-│   └── materials_schema.json                # Data structure definition
-├── email_templates/
-│   ├── success.html                         # Success template
-│   └── failure.html                         # Error template
-├── docs/
-│   └── MIGRATION_NOTES.md                   # Detailed migration notes
-└── tests/
-    └── debug-attachments.js                 # Attachment structure debugger
+v0_initial_flow_ap/
+├── docker-compose.yml    # Container configuration
+├── Dockerfile           # ActivePieces with Gemini
+├── ap.json             # Workflow definition
+├── prompts/            # LLM extraction prompts
+├── schema/             # Material data JSON schema
+├── email_templates/    # Success/failure templates
+├── scripts/            # Setup automation
+└── data/               # Persistent storage
 ```
 
-## Deployment
+## Setup and Usage
 
-### Quick Start
+### Local Development
 
-1. Copy `.env.template` to `.env` and fill in your credentials
-2. Start the container:
+1. Configure environment variables in `.env`
+2. Start the service:
    ```bash
    docker compose up -d
    ```
-3. Access ActivePieces UI at http://localhost
-4. Import the workflow from `activepieces.json`
+3. Wait for ActivePieces to initialize
+4. Run setup script to create connections and import workflow:
+   ```bash
+   docker compose exec ap python3 /data/scripts/setup-ap.py
+   ```
+5. Access ActivePieces at http://localhost:5679
 
-### Data Persistence
+### Production Deployment
 
-All data (SQLite database, files) is stored in `./data/` directory.
+The pipeline deploys automatically via GitHub Actions:
 
-## Debugging
+1. Push changes to `v0_initial_flow` branch
+2. CI/CD validates schema and workflow JSON
+3. Deploys to production server with:
+   - Docker container management
+   - Automated connection setup
+   - Workflow import and activation
+   - Health checks
 
-The implementation includes comprehensive debug logging:
+Required GitHub Secrets:
+- `DEPLOY_HOST`: Production server address
+- `DEPLOY_SSH_KEY`: SSH key for deployment
+- `EMAIL_PASS`: Email password
+- `LLM_API_KEY`: Gemini API key
+- `AP_ENCRYPTION_KEY`: ActivePieces encryption
+- `AP_JWT_SECRET`: ActivePieces JWT secret
+- `AP_API_KEY`: ActivePieces API key
 
-1. **All nodes log input/output** to `/data/debug.log`
-2. **Attachment structure debugging** in LLM Extraction node
-3. **No silent failures** - explicit errors for missing data
+### API Setup
 
-### To Debug Attachments:
-1. Send test email with PDFs
-2. Check `/data/debug.log` for "attachment-debug" entries
-3. Update code based on actual attachment format
-
-## Next Steps
-
-1. **Test with real email**:
-   - Send email with PDF attachments to bot email
-   - Let ActivePieces process it
-   - Check debug logs for attachment structure
-
-2. **Update attachment handling**:
-   - Based on debug logs, implement proper handling
-   - Remove the debug throw in `extract_metadata`
-
-3. **Verify end-to-end**:
-   - Ensure PDFs are processed correctly
-   - Check email responses are formatted properly
-   - Validate all error cases
+The `setup-ap.py` script automatically:
+1. Creates IMAP connection for email monitoring
+2. Creates SMTP connection for sending responses
+3. Creates Gemini AI connection for LLM processing
+4. Imports and activates the workflow
 
 ## Testing
 
-```bash
-# Check debug logs after processing
-tail -f ./data/debug.log | grep "attachment-debug"
+Send an email with PDF attachments to the configured inbox. The pipeline will:
+1. Process each PDF attachment
+2. Extract material metadata using Gemini AI
+3. Reply with structured JSON results
 
-# View all logs
-cat ./data/debug.log | jq .
+## Extracted Data Schema
+
+The pipeline extracts the following material properties:
+
+```json
+{
+  "manufacturer": "string",
+  "productName": "string",
+  "productType": "string",
+  "material": "string",
+  "dimensions": {},
+  "weight": {},
+  "color": [],
+  "finish": "string",
+  "fireRating": "string",
+  "acousticRating": {},
+  "thermalProperties": {},
+  "certifications": [],
+  "applications": [],
+  "price": {}
+}
 ```
 
-## Design Principles
+See `schema/materials_schema.json` for complete schema definition.
 
-1. **Fail Fast**: No silent failures or fallbacks
-2. **Debug Everything**: Comprehensive logging at all stages
-3. **Explicit Over Implicit**: All values must be provided
-4. **Simple**: Minimal code, clear flow
-5. **Complete**: Full feature parity with n8n version
+## Monitoring
 
-## PROJECT_SPEC
-```spec
-NAME: Materials Library Extraction Pipeline (ActivePieces)
-DOMAIN: Document Processing Automation
-PRIMARY_TOOLS: ActivePieces, Gemini AI, Node.js, IMAP/SMTP, Docker
-PIPELINE_STAGES:
-  1. IMAP trigger receives email with attachments
-  2. Read config loads prompts and templates
-  3. Document validator separates email context from PDFs
-  4. Loop processes each item (email context + PDFs)
-  5. LLM extraction analyzes PDFs using Gemini AI
-  6. Result processor combines all results into HTML
-  7. Send email returns results to sender
-KEY_COMPONENTS:
-- `activepieces.json`: Workflow definition
-- `email_templates/*.html`: Response templates
-- `prompts/llm_extraction.txt`: LLM extraction prompt
-- `./data/`: SQLite database and logs
-DATA_STRUCTURE:
-- Email context: First item with email metadata
-- PDF items: Valid/invalid items with attachment references
-- Results: HTML tables with extracted metadata
-DESIGN_CONSTRAINTS:
-- Continue processing on errors (like n8n)
-- Use fallback values for missing data
-- Debug logging at all stages
-- File paths hardcoded to /data/
-- Attachment format uses direct data access
-- Single container deployment with SQLite
-```
+- Container logs: `docker compose logs -f`
+- ActivePieces dashboard: Flow execution history
+- Health endpoint: `docker compose exec ap curl http://localhost:80/api/v1/health`
+
+## Platform Differences
+
+This implementation uses ActivePieces instead of n8n but provides identical functionality:
+- Same email trigger mechanism
+- Same LLM extraction process
+- Same output schema
+- Same email response templates
