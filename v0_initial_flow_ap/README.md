@@ -1,6 +1,6 @@
 # Materials Intake Pipeline - ActivePieces Implementation
 
-## What This Pipeline Does
+## Pipeline Overview
 
 This pipeline provides an automated email-based service for extracting structured metadata from architectural material PDFs:
 
@@ -149,11 +149,3 @@ See `schema/materials_schema.json` for complete schema definition.
 - Container logs: `docker compose logs -f`
 - ActivePieces dashboard: Flow execution history
 - Health endpoint: `docker compose exec ap curl http://localhost:80/api/v1/health`
-
-## Platform Differences
-
-This implementation uses ActivePieces instead of n8n but provides identical functionality:
-- Same email trigger mechanism
-- Same LLM extraction process
-- Same output schema
-- Same email response templates

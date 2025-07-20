@@ -1,6 +1,6 @@
 # Materials Intake Pipeline - n8n Implementation
 
-## What This Pipeline Does
+## Pipeline Overview
 
 This pipeline provides an automated email-based service for extracting structured metadata from architectural material PDFs:
 
