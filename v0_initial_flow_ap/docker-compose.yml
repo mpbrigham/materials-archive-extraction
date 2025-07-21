@@ -6,7 +6,7 @@ services:
     container_name: materials-ap
     restart: unless-stopped
     ports:
-      - "localhost:5679:80"
+      - "127.0.0.1:5679:80"
     environment:
       - AP_DB_TYPE=SQLITE3
       - AP_QUEUE_MODE=MEMORY

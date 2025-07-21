@@ -85,6 +85,22 @@ Required GitHub Secrets:
 - `LLM_API_KEY`: Gemini API key
 - `N8N_ENCRYPTION_KEY`: n8n encryption key
 
+#### CI/CD Configuration Approach
+
+The deployment workflow uses a hybrid configuration approach:
+
+- **Non-sensitive config** (from `.env` file on server):
+  - `IMAP_HOST`, `IMAP_PORT`, `SMTP_HOST`, `SMTP_PORT`
+  - `EMAIL_USER` (username only)
+  - `LLM_MODEL`
+
+- **Sensitive secrets** (from GitHub Secrets):
+  - `EMAIL_PASS`
+  - `LLM_API_KEY`
+  - `N8N_ENCRYPTION_KEY`
+
+**Important**: The `.env` file must exist on the deployment server. It won't be created automatically and isn't stored in Git for security reasons.
+
 ### Testing
 
 Send an email with PDF attachments to the configured inbox. The pipeline will:

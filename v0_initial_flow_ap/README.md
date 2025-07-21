@@ -104,6 +104,24 @@ Required GitHub Secrets:
 - `AP_ENCRYPTION_KEY`: ActivePieces encryption
 - `AP_JWT_SECRET`: ActivePieces JWT secret
 
+#### CI/CD Configuration Approach
+
+The deployment workflow uses a hybrid configuration approach:
+
+- **Non-sensitive config** (from `.env` file on server):
+  - `IMAP_HOST`, `IMAP_PORT`, `SMTP_HOST`, `SMTP_PORT`
+  - `EMAIL_USER` (username only)
+  - `LLM_MODEL`
+  - `AP_API_KEY` (auto-generated if not present)
+
+- **Sensitive secrets** (from GitHub Secrets):
+  - `EMAIL_PASS`
+  - `LLM_API_KEY`
+  - `AP_ENCRYPTION_KEY`
+  - `AP_JWT_SECRET`
+
+**Important**: The `.env` file must exist on the deployment server. It won't be created automatically and isn't stored in Git for security reasons.
+
 ### API Setup
 
 The `setup-ap.py` script automatically:
