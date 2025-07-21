@@ -19,6 +19,8 @@ services:
       - ./prompts:/data/prompts:ro
       - ./email_templates:/data/email_templates:ro
       - ./schema:/data/schema:ro
+      - ./scripts:/data/scripts:ro
+      - ./ap.json:/data/ap.json:ro
     env_file:
       - .env
     healthcheck:
