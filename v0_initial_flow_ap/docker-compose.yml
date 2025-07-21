@@ -6,12 +6,12 @@ services:
     container_name: materials-ap
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5679:80"
+      - "${VPN_IP}:5679:80"
     environment:
       - AP_DB_TYPE=SQLITE3
       - AP_QUEUE_MODE=MEMORY
-      - AP_FRONTEND_URL=http://localhost:5679
-      - AP_WEBHOOK_URL=http://localhost:5679/api/v1/webhooks
+      - AP_FRONTEND_URL=http://${VPN_IP}:5679
+      - AP_WEBHOOK_URL=http://${VPN_IP}:5679/api/v1/webhooks
       - AP_SANDBOX_RUN_TIME_SECONDS=600
       - AP_TELEMETRY_ENABLED=false     
     volumes:

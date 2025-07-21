@@ -6,9 +6,9 @@ services:
     container_name: materials-n8n
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5678:5678"
+      - "${VPN_IP}:5678:5678"
     environment:
-      - N8N_EDITOR_BASE_URL=http://127.0.0.1:5678
+      - N8N_EDITOR_BASE_URL=http://${VPN_IP}:5678
       - N8N_USER_FOLDER=/home/node/data
       - N8N_DISABLE_EXTERNAL_REQUIRE=false
       - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
