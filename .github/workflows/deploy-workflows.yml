@@ -138,11 +138,11 @@ jobs:
             N8N_ENCRYPTION_KEY="${{ secrets.N8N_ENCRYPTION_KEY }}" \
             docker compose up -d --build
             
-            # Wait for n8n to be ready
+            # Wait for n8n to be ready (using correct health endpoint)
             echo "Waiting for n8n to start..."
             timeout=300
             while [ $timeout -gt 0 ]; do
-              if curl -s http://localhost:5678/healthz > /dev/null 2>&1; then
+              if curl -s http://localhost:5678/health > /dev/null 2>&1; then
                 echo "n8n is ready!"
                 break
               fi
@@ -313,27 +313,22 @@ jobs:
               exit 1
             fi
             
-            # Setup connections and workflow
-            echo "Setting up ActivePieces connections and workflow..."
+            # Setup workflow only (CE edition - no credentials via API)
+            echo "Setting up ActivePieces workflow (CE edition)..."
             sleep 10
             
             docker compose exec -T ap pip install requests
             docker compose exec -T \
               -e AP_URL=http://localhost:80 \
               -e AP_API_KEY="${AP_API_KEY}" \
-              -e IMAP_HOST="${IMAP_HOST}" \
-              -e IMAP_PORT="${IMAP_PORT}" \
-              -e SMTP_HOST="${SMTP_HOST}" \
-              -e SMTP_PORT="${SMTP_PORT}" \
-              -e EMAIL_USER="${EMAIL_USER}" \
-              -e EMAIL_PASS="${{ secrets.EMAIL_PASS }}" \
-              -e LLM_API_KEY="${{ secrets.LLM_API_KEY }}" \
+              -e AP_CE_MODE=true \
               ap python3 /data/scripts/setup-ap.py
             
             if [ $? -eq 0 ]; then
-              echo "✅ ActivePieces setup completed successfully!"
+              echo "✅ ActivePieces workflow import completed successfully!"
+              echo "Note: Connections must be configured manually in the ActivePieces UI (CE edition)"
             else
-              echo "❌ ActivePieces setup failed"
+              echo "❌ ActivePieces workflow import failed"
               exit 1
             fi
             

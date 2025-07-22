@@ -2,6 +2,7 @@
 """
 ActivePieces API Setup Script
 Automates the creation of connections and workflow import
+Supports both CE (Community Edition) and EE (Enterprise Edition)
 """
 
 import os
@@ -19,9 +20,26 @@ class ActivePiecesAPI:
             'Content-Type': 'application/json'
         }
         self.project_id = None
+        self.ce_mode = os.getenv('AP_CE_MODE', 'false').lower() == 'true'
     
-    def get_or_create_project(self, project_name: str) -> str:
-        """Get existing project by name or create a new one"""
+    def test_api_access(self) -> bool:
+        """Test if we can access the API"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/v1/flows",
+                headers=self.headers
+            )
+            return response.status_code in [200, 404]  # 404 is ok if no flows exist yet
+        except Exception as e:
+            print(f"❌ Cannot access API: {e}")
+            return False
+    
+    def get_or_create_project(self, project_name: str) -> Optional[str]:
+        """Get existing project or create one (EE only)"""
+        if self.ce_mode:
+            print("Running in CE mode - skipping project management")
+            return "default"
+        
         try:
             # Search for existing project by external ID
             response = requests.get(
@@ -62,10 +80,13 @@ class ActivePiecesAPI:
             print(f"❌ Error managing project: {e}")
             if hasattr(e, 'response') and e.response:
                 print(f"   Response: {e.response.text}")
-            raise
+            return None
     
     def connection_exists(self, name: str) -> bool:
-        """Check if a connection with the given name exists"""
+        """Check if a connection with the given name exists (EE only)"""
+        if self.ce_mode:
+            return False  # CE doesn't support API connection management
+        
         try:
             response = requests.get(
                 f"{self.base_url}/api/v1/app-connections",
@@ -80,7 +101,11 @@ class ActivePiecesAPI:
             return False
     
     def create_connection(self, name: str, piece_name: str, connection_data: Dict[str, Any]) -> bool:
-        """Create a new connection"""
+        """Create a new connection (EE only)"""
+        if self.ce_mode:
+            print(f"⚠️  CE mode - cannot create connection '{name}' via API")
+            return True  # Return true to continue with workflow import
+        
         if self.connection_exists(name):
             print(f"⚠️  Connection '{name}' already exists, skipping...")
             return True
@@ -114,8 +139,9 @@ class ActivePiecesAPI:
             with open(workflow_path, 'r') as f:
                 workflow = json.load(f)
             
-            # Add project ID to workflow
-            workflow['projectId'] = self.project_id
+            # Add project ID to workflow if available
+            if self.project_id and self.project_id != "default":
+                workflow['projectId'] = self.project_id
             
             response = requests.post(
                 f"{self.base_url}/api/v1/flows",
@@ -131,6 +157,8 @@ class ActivePiecesAPI:
             
         except Exception as e:
             print(f"❌ Failed to import workflow: {e}")
+            if hasattr(e, 'response') and e.response:
+                print(f"   Response: {e.response.text}")
             return None
     
     def activate_workflow(self, flow_id: str) -> bool:
@@ -158,6 +186,13 @@ class ActivePiecesAPI:
 def main():
     print("=== ActivePieces API Setup Script ===\n")
     
+    # Detect CE mode
+    ce_mode = os.getenv('AP_CE_MODE', 'false').lower() == 'true'
+    if ce_mode:
+        print("🔧 Running in Community Edition (CE) mode")
+        print("   - Workflow import only")
+        print("   - Connections must be configured manually in the UI\n")
+    
     # Get configuration from environment
     config = {
         'AP_URL': os.getenv('AP_URL', 'http://localhost:5679'),
@@ -172,7 +207,10 @@ def main():
     }
     
     # Validate required variables
-    required = ['AP_API_KEY', 'IMAP_HOST', 'SMTP_HOST', 'EMAIL_USER', 'EMAIL_PASS', 'LLM_API_KEY']
+    required = ['AP_API_KEY']
+    if not ce_mode:
+        required.extend(['IMAP_HOST', 'SMTP_HOST', 'EMAIL_USER', 'EMAIL_PASS', 'LLM_API_KEY'])
+    
     missing = [var for var in required if not config.get(var)]
     
     if missing:
@@ -184,56 +222,68 @@ def main():
     
     # Initialize API client
     api = ActivePiecesAPI(config['AP_URL'], config['AP_API_KEY'])
+    api.ce_mode = ce_mode
     
-    # Get or create project with consistent name
-    print("Managing project...")
-    project_name = os.getenv('AP_PROJECT_ID', 'materials-archive-extraction')
-    
-    try:
-        project_id = api.get_or_create_project(project_name)
-        api.project_id = project_id
-        print(f"Using project ID: {project_id} (name: {project_name})\n")
-    except Exception as e:
-        print(f"❌ Failed to manage project: {e}")
+    # Test API access
+    if not api.test_api_access():
+        print("❌ Cannot access ActivePieces API")
         sys.exit(1)
     
-    # Create IMAP connection
-    print("Creating IMAP connection...")
-    imap_success = api.create_connection(
-        name='imap_connection',
-        piece_name='@activepieces/piece-imap',
-        connection_data={
-            'host': config['IMAP_HOST'],
-            'port': config['IMAP_PORT'],
-            'username': config['EMAIL_USER'],
-            'password': config['EMAIL_PASS'],
-            'tls': True
-        }
-    )
+    # Get or create project (EE only)
+    if not ce_mode:
+        print("Managing project...")
+        project_name = os.getenv('AP_PROJECT_ID', 'materials-archive-extraction')
+        
+        try:
+            project_id = api.get_or_create_project(project_name)
+            if not project_id:
+                print("❌ Failed to manage project")
+                sys.exit(1)
+            api.project_id = project_id
+            print(f"Using project ID: {project_id} (name: {project_name})\n")
+        except Exception as e:
+            print(f"❌ Failed to manage project: {e}")
+            sys.exit(1)
     
-    # Create SMTP connection
-    print("\nCreating SMTP connection...")
-    smtp_success = api.create_connection(
-        name='smtp_connection',
-        piece_name='@activepieces/piece-smtp',
-        connection_data={
-            'host': config['SMTP_HOST'],
-            'port': config['SMTP_PORT'],
-            'username': config['EMAIL_USER'],
-            'password': config['EMAIL_PASS'],
-            'from_email': config['EMAIL_USER']
-        }
-    )
-    
-    # Create Gemini AI connection
-    print("\nCreating Gemini AI connection...")
-    gemini_success = api.create_connection(
-        name='gemini_connection',
-        piece_name='@activepieces/piece-google-gemini',
-        connection_data={
-            'apiKey': config['LLM_API_KEY']
-        }
-    )
+    # Create connections (EE only)
+    if not ce_mode:
+        # Create IMAP connection
+        print("Creating IMAP connection...")
+        imap_success = api.create_connection(
+            name='imap_connection',
+            piece_name='@activepieces/piece-imap',
+            connection_data={
+                'host': config['IMAP_HOST'],
+                'port': config['IMAP_PORT'],
+                'username': config['EMAIL_USER'],
+                'password': config['EMAIL_PASS'],
+                'tls': True
+            }
+        )
+        
+        # Create SMTP connection
+        print("\nCreating SMTP connection...")
+        smtp_success = api.create_connection(
+            name='smtp_connection',
+            piece_name='@activepieces/piece-smtp',
+            connection_data={
+                'host': config['SMTP_HOST'],
+                'port': config['SMTP_PORT'],
+                'username': config['EMAIL_USER'],
+                'password': config['EMAIL_PASS'],
+                'from_email': config['EMAIL_USER']
+            }
+        )
+        
+        # Create Gemini AI connection
+        print("\nCreating Gemini AI connection...")
+        gemini_success = api.create_connection(
+            name='gemini_connection',
+            piece_name='@activepieces/piece-google-gemini',
+            connection_data={
+                'apiKey': config['LLM_API_KEY']
+            }
+        )
     
     # Import workflow
     print("\nImporting workflow...")
@@ -252,15 +302,26 @@ def main():
     
     # Summary
     print("\n=== Setup Complete ===\n")
-    print("Next steps:")
-    print(f"1. Access ActivePieces at {config['AP_URL']}")
-    print("2. Verify connections under 'Connections' tab")
-    print("3. Check workflow under 'Flows' tab")
-    print("4. Send a test email with PDF attachments")
     
-    if not all([imap_success, smtp_success, gemini_success, flow_id]):
-        print("\n⚠️  Some steps failed. Please check the errors above.")
-        sys.exit(1)
+    if ce_mode:
+        print("CE Mode Instructions:")
+        print(f"1. Access ActivePieces at {config['AP_URL']}")
+        print("2. Manually configure the following connections in the UI:")
+        print("   - IMAP connection for email monitoring")
+        print("   - SMTP connection for sending emails")
+        print("   - Google Gemini AI connection")
+        print("3. The workflow has been imported and is ready to use")
+        print("4. Activate the workflow after configuring connections")
+    else:
+        print("Next steps:")
+        print(f"1. Access ActivePieces at {config['AP_URL']}")
+        print("2. Verify connections under 'Connections' tab")
+        print("3. Check workflow under 'Flows' tab")
+        print("4. Send a test email with PDF attachments")
+        
+        if not all([imap_success, smtp_success, gemini_success, flow_id]):
+            print("\n⚠️  Some steps failed. Please check the errors above.")
+            sys.exit(1)
 
 if __name__ == '__main__':
     main()
