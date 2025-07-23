@@ -1,133 +1,105 @@
-# Materials Intake Pipeline
+# Materials Intake Pipeline - n8n Implementation
 
-Email → PDF extraction → LLM metadata → Send results
+## Pipeline Overview
 
-## Core Workflow
+This pipeline provides an automated email-based service for extracting structured metadata from architectural material PDFs:
 
-**Request-response email service:**
-1. User sends email with PDF attachments to bot@brigham.be
-2. Bot extracts materials metadata from PDFs using Gemini AI
-3. Bot emails results back to the original sender
+1. **Email Trigger**: Monitors inbox for emails with PDF attachments
+2. **PDF Processing**: Validates and processes each PDF attachment
+3. **LLM Extraction**: Uses Google Gemini AI to extract structured metadata
+4. **Response Delivery**: Sends formatted results back to the sender
 
 ## Architecture
 
+```
 Email Trigger → Document Validator → LLM Extraction → Result Processor → Send Notification
-
-## Quick Start
-
-### Development
-1. Copy `.env.template` to `.env` and add credentials
-2. `docker compose up -d`
-3. Open http://localhost:5678
-4. Import workflow and configure credentials manually (one-time setup)
-5. Test with sample email + PDFs
-6. Export everything: `docker exec v0_initial_flow-n8n-1 n8n export:credentials --all --output=/home/node/import/credentials.json`
-7. Export workflow: `docker exec v0_initial_flow-n8n-1 n8n export:workflow --id=WORKFLOW_ID --output=/home/node/import/workflows.json`
-
-### Production Deployment via CI/CD
-
-The project uses GitHub Actions with an **export/import pattern** for automated deployment:
-
-**Deployment Strategy:**
-- Export credentials and workflows from working development environment
-- Store exported files in `import/` folder in Git
-- CI/CD imports both credentials and workflows to production
-- Preserves UUIDs and credential relationships automatically
-
-**Required GitHub Secrets:**
-- `DEPLOY_HOST` - Production server address
-- `DEPLOY_SSH_KEY` - SSH private key for deployment user
-- `EMAIL_USER` - Email account for IMAP/SMTP
-- `EMAIL_PASS` - Email password/app password  
-- `LLM_API_KEY` - Gemini AI API key
-
-**Deployment Process:**
-1. Push to `v0_initial_flow` branch triggers deployment
-2. Server pulls latest code including updated `import/` files
-3. Deploys Docker containers with environment variables
-4. Imports credentials: `n8n import:credentials --input=/home/node/import/credentials.json`
-5. Imports workflows: `n8n import:workflow --input=/home/node/import/workflows.json`
-6. Workflow ready to process emails
-
-## Files
-
-```
-.
-├── import/
-│   ├── credentials.json                     # Exported n8n credentials
-│   └── workflows.json                       # Exported n8n workflow
-├── docker-compose.yml                       # Development/Production setup
-├── DEPLOYMENT.md                            # Setup guide
-├── prompts/llm_extraction.txt               # LLM prompt
-├── schema/materials_schema.json             # Data structure definition
-├── email_templates/
-│   ├── success.html                         # Success template
-│   └── failure.html                         # Error template
-└── tests/                                   # Test scripts
-    ├── test-extraction.js
-    ├── test-email.js
-    └── check-latest-email.js
 ```
 
-## Test
+### Components
+
+- **Email Trigger**: IMAP monitoring for incoming emails
+- **Document Validator**: Checks for valid PDF attachments
+- **LLM Extraction**: Gemini AI with custom prompts for material data extraction
+- **Result Processor**: Formats extracted data into structured JSON
+- **Send Notification**: SMTP email with success/failure templates
+
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file from the template:
 
 ```bash
-cd tests
-node test-extraction.js      # Direct LLM test
-node test-email.js          # Full pipeline test
-node check-latest-email.js  # Check latest email
+cp .env.template .env
 ```
 
-## CI/CD Monitoring
+Required configuration:
+- `IMAP_HOST`, `IMAP_PORT`: Email server for receiving
+- `SMTP_HOST`, `SMTP_PORT`: Email server for sending
+- `EMAIL_USER`, `EMAIL_PASS`: Email credentials
+- `LLM_API_KEY`: Google Gemini API key
+- `LLM_MODEL`: Model name (e.g., gemini-2.0-flash)
+- `N8N_ENCRYPTION_KEY`: Auto-generated if not set
 
-**GitHub Actions Dashboard:** Check workflow status in repository's Actions tab
+### Directory Structure
 
-**Health Checks:**
-- Production: `curl -f http://localhost:5678/healthz`
-- Logs: `docker compose logs -f`
+```
+v0_initial_flow_n8n/
+├── docker-compose.yml    # Container configuration
+├── Dockerfile           # n8n with Gemini AI package
+├── n8n.json            # Workflow definition
+├── prompts/            # LLM extraction prompts
+├── schema/             # Material data JSON schema
+├── email_templates/    # Success/failure templates
+└── data/               # Persistent storage
+```
 
-**Updating Workflows:**
-1. Make changes in local n8n development environment
-2. Test thoroughly with sample emails
-3. Export updated files:
+## Setup and Usage
+
+### Deployment
+
+1. Configure environment variables in `.env`
+2. Start the service:
    ```bash
-   docker exec v0_initial_flow-n8n-1 n8n export:credentials --all --output=/home/node/import/credentials.json
-   docker exec v0_initial_flow-n8n-1 n8n export:workflow --id=WORKFLOW_ID --output=/home/node/import/workflows.json
+   docker compose up -d
    ```
-4. Commit and push to `v0_initial_flow` branch
-5. Deployment automatically imports updated workflow
+3. Access n8n interface at http://localhost:5678
+4. Workflow loads automatically from n8n.json
 
-## PROJECT_SPEC
-```spec
-NAME: Materials Library Extraction Pipeline
-DOMAIN: Document Processing Automation
-PRIMARY_TOOLS: n8n, Gemini AI, Node.js, IMAP/SMTP, Docker, GitHub Actions
-PIPELINE_STAGES:
-  1. Email trigger receives PDF attachments
-  2. Document validator creates email context + clean PDF items
-  3. LLM extraction processes PDFs, passes through email context
-  4. Result processor combines context + results, generates HTML
-  5. Send notification emails results back to sender
-KEY_COMPONENTS:
-- `n8n.json`: n8n workflow definition
-- `email_templates/success.html`: HTML results template
-- `prompts/llm_extraction.txt`: LLM extraction prompt
-- `tests/test-extraction.js`: Direct API testing
-- `tests/test-email.js`: End-to-end pipeline testing
-- `.github/workflows/v0-ci-cd.yml`: CI/CD pipeline
-- `docker-compose.prod.yml`: Production deployment
-DATA_STRUCTURE:
-- Email context: single item with email metadata
-- PDF items: clean processing items without duplication
-- Results: structured HTML tables with metadata
-DESIGN_CONSTRAINTS:
-- Export/import deployment pattern for credentials and workflows
-- Results sent back to original email sender only
-- Header table: supplier, product_name, sku_number, source_file
-- Data table: all other extracted fields
-- Must handle multiple PDFs per email
-- Must gracefully handle extraction failures
-- Preserves UUID relationships via n8n export/import
-- Automated CI/CD deployment via GitHub Actions
-- Container-based production deployment
+### Testing
+
+Send an email with PDF attachments to the configured inbox. The pipeline will:
+1. Process each PDF attachment
+2. Extract material metadata
+3. Reply with structured JSON results
+
+## Extracted Data Schema
+
+The pipeline extracts the following material properties:
+
+```json
+{
+  "manufacturer": "string",
+  "productName": "string",
+  "productType": "string",
+  "material": "string",
+  "dimensions": {},
+  "weight": {},
+  "color": [],
+  "finish": "string",
+  "fireRating": "string",
+  "acousticRating": {},
+  "thermalProperties": {},
+  "certifications": [],
+  "applications": [],
+  "price": {}
+}
 ```
+
+See `schema/materials_schema.json` for complete schema definition.
+
+## Monitoring
+
+- Container logs: `docker compose logs -f`
+- n8n execution history: Available in web interface
+- Health endpoint: http://localhost:5678/healthz
