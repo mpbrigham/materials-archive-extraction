@@ -29,7 +29,7 @@ This repository provides multiple pipeline implementations for automated PDF pro
 ├── v3_intent_driven_minimalism/ # Intent-driven approach
 ├── samples/                  # Example PDFs and outputs
 ├── evaluation/              # Evaluation tools and metrics
-└── .github/workflows/       # CI/CD automation
+└── notebooks/               # Jupyter notebooks for analysis
 ```
 
 ## Core Components
@@ -46,7 +46,6 @@ Each pipeline typically includes:
 - **Workflow Platforms**: n8n, ActivePieces
 - **LLM**: Google Gemini AI
 - **Infrastructure**: Docker, Docker Compose
-- **CI/CD**: GitHub Actions
 - **Languages**: JavaScript, Python
 
 ## Getting Started
@@ -64,5 +63,4 @@ Each pipeline directory contains its own README with specific setup instructions
 
 - All pipelines follow consistent schema definitions
 - Docker-based deployment for all implementations
-- Automated CI/CD for v0 pipelines
 - Comprehensive documentation in each pipeline directory

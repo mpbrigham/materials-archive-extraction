@@ -56,7 +56,7 @@ v0_initial_flow_n8n/
 
 ## Setup and Usage
 
-### Local Development
+### Deployment
 
 1. Configure environment variables in `.env`
 2. Start the service:
@@ -65,41 +65,6 @@ v0_initial_flow_n8n/
    ```
 3. Access n8n interface at http://localhost:5678
 4. Workflow loads automatically from n8n.json
-
-### Production Deployment
-
-The pipeline deploys automatically via GitHub Actions:
-
-1. Push changes to `v0_initial_flow` branch
-2. CI/CD validates schema and configuration
-3. Deploys to production server with:
-   - Docker container management
-   - Credential import from environment
-   - Workflow activation
-   - Health checks
-
-Required GitHub Secrets:
-- `DEPLOY_HOST`: Production server address
-- `DEPLOY_SSH_KEY`: SSH key for deployment
-- `EMAIL_PASS`: Email password
-- `LLM_API_KEY`: Gemini API key
-- `N8N_ENCRYPTION_KEY`: n8n encryption key
-
-#### CI/CD Configuration Approach
-
-The deployment workflow uses a hybrid configuration approach:
-
-- **Non-sensitive config** (from `.env` file on server):
-  - `IMAP_HOST`, `IMAP_PORT`, `SMTP_HOST`, `SMTP_PORT`
-  - `EMAIL_USER` (username only)
-  - `LLM_MODEL`
-
-- **Sensitive secrets** (from GitHub Secrets):
-  - `EMAIL_PASS`
-  - `LLM_API_KEY`
-  - `N8N_ENCRYPTION_KEY`
-
-**Important**: The `.env` file must exist on the deployment server. It won't be created automatically and isn't stored in Git for security reasons.
 
 ### Testing
 
