@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: materials-n8n
+    container_name: n8n
     restart: unless-stopped
     ports:
       - "${VPN_IP}:5678:5678"

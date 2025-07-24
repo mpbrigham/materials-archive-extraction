@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: materials-langflow
+    container_name: langflow
     restart: unless-stopped
     ports:
       - "${VPN_IP}:7860:7860"

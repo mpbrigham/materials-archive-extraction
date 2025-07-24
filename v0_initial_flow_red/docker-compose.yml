@@ -2,6 +2,7 @@ services:
   nodered:
     build:
       context: .
+      dockerfile: Dockerfile
     container_name: nodered
     restart: unless-stopped
     ports:
@@ -19,7 +20,7 @@ services:
       - LLM_MODEL=${LLM_MODEL}
     volumes:
       - ./data:/data
-      - ./red.json:/data/red.json:ro
+      - ./flows.json:/data/flows.json:ro
       - ./prompts:/data/prompts:ro
       - ./email_templates:/data/email_templates:ro
       - ./schema:/data/schema:ro
