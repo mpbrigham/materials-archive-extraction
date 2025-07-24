@@ -1,0 +1,149 @@
+{
+  "name": "materials-archive-extraction",
+  "nodes": [
+    {
+      "parameters": {
+        "downloadAttachments": true,
+        "options": {}
+      },
+      "id": "e3342267-7e3b-48dd-b544-068c0fd2cb5d",
+      "name": "Email Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        40
+      ],
+      "credentials": {
+        "imap": {
+          "id": "email-imap",
+          "name": "Email IMAP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "python3 /python/document_validator.py",
+        "options": {}
+      },
+      "id": "aa2a234a-5362-498e-ac76-5b702cfc38eb",
+      "name": "Document Validator",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        40
+      ]
+    },    
+    {
+      "parameters": {
+        "command": "python3 /python/llm_extraction.py",
+        "options": {}
+      },
+      "id": "f3c28adc-df60-4323-9398-4535071e7e4d",
+      "name": "LLM Extraction",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        100,
+        40
+      ]
+    },    
+    {
+      "parameters": {
+        "command": "python3 /python/result_processor.py",
+        "options": {}
+      },
+      "id": "19606e46-3541-4fc6-baf2-9f71ac9591ad",
+      "name": "Result Processor",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        300,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.EMAIL_USER }}",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.body }}",
+        "emailFormat": "html",
+        "options": {}
+      },
+      "id": "f349c364-688e-4e7e-a440-2dc8f79d5caf",
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        500,
+        40
+      ],
+      "webhookId": "1ae1ebae-1ce9-46b6-a2b7-660a90b76597",
+      "credentials": {
+        "smtp": {
+          "id": "email-smtp",
+          "name": "Email SMTP"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Document Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document Validator": {
+      "main": [
+        [
+          {
+            "node": "LLM Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Extraction": {
+      "main": [
+        [
+          {
+            "node": "Result Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Result Processor": {
+      "main": [
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c2699518-3822-4e17-8841-9ad64c12281a",
+  "meta": {
+    "instanceId": "e1e0ee79e4c5b81b27275682c295e7cabb465f2da75a30ee8c409c8a6d0154ce"
+  },
+  "id": "SjsG0ctMg0DMZCMn",
+  "tags": []
+}
