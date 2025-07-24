@@ -1,9 +1,9 @@
 services:
-  n8n:
+  n8n-python:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: n8n
+    container_name: n8n-python
     restart: unless-stopped
     ports:
       - "${VPN_IP}:5678:5678"
@@ -22,7 +22,7 @@ services:
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
     volumes:
       - ./data:/home/node/data
-      - ./n8n.json:/home/node/data/n8n.json:ro
+      - ./n8n-python.json:/home/node/data/n8n-python.json:ro
       - ./python:/python:ro
       - ./prompts:/data/prompts:ro
       - ./email_templates:/data/email_templates:ro
