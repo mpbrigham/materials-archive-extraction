@@ -9,7 +9,7 @@ services:
       - "1880:1880"
     environment:
       - NODE_RED_ENABLE_PROJECTS=false
-      - NODE_RED_FLOW_FILE=flows.json
+      - NODE_RED_FLOW_FILE=red.json
       - TZ=UTC
       # Pass through email configuration
       - IMAP_HOST=${IMAP_HOST}
@@ -23,7 +23,7 @@ services:
       - LLM_MODEL=${LLM_MODEL}
     volumes:
       - ./data:/data
-      - ./red.json:/data/flows.json:ro
+      - ./red.json:/data/red.json:ro
       - ./prompts:/data/prompts:ro
       - ./email_templates:/data/email_templates:ro
       - ./schema:/data/schema:ro

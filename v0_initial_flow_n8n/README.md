@@ -64,7 +64,10 @@ v0_initial_flow_n8n/
    docker compose up -d
    ```
 3. Access n8n interface at http://localhost:5678
-4. Workflow loads automatically from n8n.json
+4. Import the workflow:
+   - Go to Workflows → Import from File
+   - Select `/home/node/data/n8n.json` or download and upload from local `n8n.json`
+   - Save and activate the workflow
 
 ### Testing
 
