@@ -1,6 +1,6 @@
 module.exports = {
     // Flow file
-    flowFile: 'red.json',
+    flowFile: '/data/red.json',
     
     // User directory
     userDir: '/data/',

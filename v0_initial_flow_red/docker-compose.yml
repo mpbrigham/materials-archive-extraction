@@ -2,23 +2,19 @@ services:
   nodered:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: materials-nodered
+    container_name: nodered
     restart: unless-stopped
     ports:
       - "1880:1880"
     environment:
       - NODE_RED_ENABLE_PROJECTS=false
-      - NODE_RED_FLOW_FILE=red.json
       - TZ=UTC
-      # Pass through email configuration
       - IMAP_HOST=${IMAP_HOST}
       - IMAP_PORT=${IMAP_PORT}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASS=${EMAIL_PASS}
-      # Pass through LLM configuration
       - LLM_API_KEY=${LLM_API_KEY}
       - LLM_MODEL=${LLM_MODEL}
     volumes:
