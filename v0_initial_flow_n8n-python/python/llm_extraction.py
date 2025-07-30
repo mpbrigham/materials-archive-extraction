@@ -6,7 +6,6 @@ LLM Extraction - Extract material metadata from PDFs using Google Gemini
 import json
 import sys
 import os
-import base64
 from datetime import datetime
 import google.generativeai as genai
 
@@ -33,14 +32,15 @@ def process_pdf(item, api_key, model_name):
     if not item.get('json', {}).get('valid'):
         return item
     
-    pdf_data = item.get('binary', {}).get('pdf', {}).get('data')
+    # Get file path from the item
+    file_path = item.get('json', {}).get('filePath')
     
-    if not pdf_data:
+    if not file_path or not os.path.exists(file_path):
         return {
             'json': {
                 **item.get('json', {}),
                 'valid': False,
-                'error': 'No PDF data found',
+                'error': f'PDF file not found at path: {file_path}',
                 'errorType': 'extraction'
             }
         }
@@ -70,8 +70,9 @@ def process_pdf(item, api_key, model_name):
             generation_config=generation_config
         )
         
-        # Decode base64 PDF data
-        pdf_bytes = base64.b64decode(pdf_data)
+        # Read PDF file directly from disk
+        with open(file_path, 'rb') as pdf_file:
+            pdf_bytes = pdf_file.read()
         
         # Make API request
         response = model.generate_content([
@@ -99,8 +100,7 @@ def process_pdf(item, api_key, model_name):
                 'valid': True,
                 'extractedData': extracted_data,
                 'productCount': len(extracted_data.get('products', []))
-            },
-            'binary': item.get('binary', {})
+            }
         }
         
     except Exception as e:
@@ -116,8 +116,11 @@ def process_pdf(item, api_key, model_name):
 def main():
     """Main extraction logic"""
     try:
-        # Read input from n8n
-        input_data = json.loads(sys.stdin.read())
+        # Read input from command-line argument
+        if len(sys.argv) < 2:
+            raise ValueError('No input data provided. Expected JSON data as command-line argument.')
+        
+        input_data = json.loads(sys.argv[1])
         execution_id = os.environ.get('EXECUTION_ID', 'unknown')
         
         # Get API credentials

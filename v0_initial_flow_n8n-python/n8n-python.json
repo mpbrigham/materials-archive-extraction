@@ -23,7 +23,7 @@
     },
     {
       "parameters": {
-        "command": "python3 /python/document_validator.py",
+        "command": "python3 /python/document_validator.py '{{ JSON.stringify($input.all()) }}'",
         "options": {}
       },
       "id": "aa2a234a-5362-498e-ac76-5b702cfc38eb",
@@ -37,7 +37,7 @@
     },    
     {
       "parameters": {
-        "command": "python3 /python/llm_extraction.py",
+        "command": "python3 /python/llm_extraction.py '{{ JSON.stringify($input.all()) }}'",
         "options": {}
       },
       "id": "f3c28adc-df60-4323-9398-4535071e7e4d",
@@ -51,7 +51,7 @@
     },    
     {
       "parameters": {
-        "command": "python3 /python/result_processor.py",
+        "command": "python3 /python/result_processor.py '{{ JSON.stringify($input.all()) }}'",
         "options": {}
       },
       "id": "19606e46-3541-4fc6-baf2-9f71ac9591ad",

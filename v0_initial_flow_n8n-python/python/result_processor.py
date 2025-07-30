@@ -128,8 +128,11 @@ def create_failed_files_section(errors):
 def main():
     """Main processing logic"""
     try:
-        # Read input from n8n
-        input_data = json.loads(sys.stdin.read())
+        # Read input from command-line argument
+        if len(sys.argv) < 2:
+            raise ValueError('No input data provided. Expected JSON data as command-line argument.')
+        
+        input_data = json.loads(sys.argv[1])
         execution_id = os.environ.get('EXECUTION_ID', 'unknown')
         
         # Get model name for display
