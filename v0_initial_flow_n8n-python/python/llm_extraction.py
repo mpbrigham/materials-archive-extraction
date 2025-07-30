@@ -11,8 +11,9 @@ import google.generativeai as genai
 
 def log_debug(execution_id, node_name, phase, data):
     """Log debug information to file"""
+    
     log_entry = {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(datetime.UTC).isoformat(),
         "executionId": execution_id,
         "node": node_name,
         "phase": phase,
@@ -21,28 +22,33 @@ def log_debug(execution_id, node_name, phase, data):
     with open('/home/node/data/debug.log', 'a') as f:
         f.write(json.dumps(log_entry) + '\n')
 
-def process_pdf(item, api_key, model_name):
+def parse_n8n_input(input_data):
+    """Parse input that may be wrapped by n8n's Execute Command node"""
+    
+    # If input is a string, parse it
+    if isinstance(input_data, str):
+        input_data = json.loads(input_data)
+    
+    # If it's a single item with n8n wrapper structure
+    if (len(input_data) == 1 and 
+        isinstance(input_data[0], dict) and 
+        'json' in input_data[0] and 
+        'stdout' in input_data[0].get('json', {})):
+        # Extract the actual output from stdout
+        stdout_data = input_data[0]['json']['stdout']
+        return json.loads(stdout_data)
+    
+    return input_data
+
+def process_pdf(file_info, api_key, model_name):
     """Process a single PDF with Gemini AI"""
     
-    # Skip email context items
-    if item.get('json', {}).get('email') and not item.get('json', {}).get('fileName'):
-        return item
-    
-    # Skip invalid items
-    if not item.get('json', {}).get('valid'):
-        return item
-    
-    # Get file path from the item
-    file_path = item.get('json', {}).get('filePath')
+    file_path = file_info.get('filePath')
     
     if not file_path or not os.path.exists(file_path):
         return {
-            'json': {
-                **item.get('json', {}),
-                'valid': False,
-                'error': f'PDF file not found at path: {file_path}',
-                'errorType': 'extraction'
-            }
+            "status": "failed",
+            "error": f'PDF file not found at path: {file_path}'
         }
     
     try:
@@ -90,37 +96,30 @@ def process_pdf(item, api_key, model_name):
             for product in extracted_data['products']:
                 if not product.get('source_file_name'):
                     product['source_file_name'] = {
-                        'value': item['json']['fileName'],
+                        'value': file_info['fileName'],
                         'confidence': 1.0
                     }
         
         return {
-            'json': {
-                **item.get('json', {}),
-                'valid': True,
-                'extractedData': extracted_data,
-                'productCount': len(extracted_data.get('products', []))
-            }
+            "status": "processed",
+            "extractedData": extracted_data
         }
         
     except Exception as e:
         return {
-            'json': {
-                **item.get('json', {}),
-                'valid': False,
-                'error': str(e),
-                'errorType': 'extraction'
-            }
+            "status": "failed",
+            "error": str(e)
         }
 
 def main():
     """Main extraction logic"""
+    
     try:
         # Read input from command-line argument
         if len(sys.argv) < 2:
             raise ValueError('No input data provided. Expected JSON data as command-line argument.')
         
-        input_data = json.loads(sys.argv[1])
+        input_data = parse_n8n_input(sys.argv[1])
         execution_id = os.environ.get('EXECUTION_ID', 'unknown')
         
         # Get API credentials
@@ -133,30 +132,49 @@ def main():
         if not model_name:
             raise ValueError('LLM_MODEL is not defined in environment variables.')
         
-        # Process each item
-        results = []
-        for item in input_data:
-            # Log input
-            log_debug(execution_id, "LLM Extraction", "input", item)
-            
-            result = process_pdf(item, api_key, model_name)
-            
-            # Log output
-            log_debug(execution_id, "LLM Extraction", "output", result)
-            
-            results.append(result)
+        # Extract state object
+        if isinstance(input_data, list) and len(input_data) > 0:
+            state = input_data[0].get('json', {})
+        else:
+            raise ValueError('Invalid input format. Expected state object.')
         
-        # Return results to n8n
-        print(json.dumps(results))
+        # Log input
+        log_debug(execution_id, "LLM Extraction", "input", state)
+        
+        # Process files with "pending" status
+        for file_info in state.get('files', []):
+            if file_info.get('status') == 'pending':
+                # Process the PDF
+                result = process_pdf(file_info, api_key, model_name)
+                
+                # Update the file info with results
+                file_info.update(result)
+        
+        # Log output
+        log_debug(execution_id, "LLM Extraction", "output", state)
+        
+        # Return updated state to n8n
+        print(json.dumps([{"json": state}]))
         
     except Exception as e:
-        error_result = [{
-            'json': {
-                'error': str(e),
-                'errorType': 'system'
+        # Try to preserve state if possible
+        try:
+            if 'state' in locals():
+                state['errors'].append({
+                    "error": str(e)
+                })
+                print(json.dumps([{"json": state}]))
+            else:
+                raise
+        except:
+            error_state = {
+                "email_context": {},
+                "files": [],
+                "errors": [{
+                    "error": str(e)
+                }]
             }
-        }]
-        print(json.dumps(error_result))
+            print(json.dumps([{"json": error_state}]))
         sys.exit(1)
 
 if __name__ == '__main__':

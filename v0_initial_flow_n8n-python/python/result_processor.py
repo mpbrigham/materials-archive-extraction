@@ -11,8 +11,9 @@ import html
 
 def log_debug(execution_id, node_name, phase, data):
     """Log debug information to file"""
+    
     log_entry = {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(datetime.UTC).isoformat(),
         "executionId": execution_id,
         "node": node_name,
         "phase": phase,
@@ -21,20 +22,40 @@ def log_debug(execution_id, node_name, phase, data):
     with open('/home/node/data/debug.log', 'a') as f:
         f.write(json.dumps(log_entry) + '\n')
 
+def parse_n8n_input(input_data):
+    """Parse input that may be wrapped by n8n's Execute Command node"""
+    
+    # If input is a string, parse it
+    if isinstance(input_data, str):
+        input_data = json.loads(input_data)
+    
+    # If it's a single item with n8n wrapper structure
+    if (len(input_data) == 1 and 
+        isinstance(input_data[0], dict) and 
+        'json' in input_data[0] and 
+        'stdout' in input_data[0].get('json', {})):
+        # Extract the actual output from stdout
+        stdout_data = input_data[0]['json']['stdout']
+        return json.loads(stdout_data)
+    
+    return input_data
 def escape_html(text):
     """Escape HTML special characters"""
+    
     if not text:
         return ''
     return html.escape(str(text))
 
 def format_value(field):
     """Format field value for display"""
+    
     if isinstance(field.get('value'), list):
         return ', '.join(field['value'])
     return str(field.get('value', ''))
 
 def create_product_table(product, file_name):
     """Create HTML table for a product"""
+    
     supplier = format_value(product.get('supplier', {}))
     product_name = format_value(product.get('product_name', {}))
     sku = format_value(product.get('sku_number', {}))
@@ -84,6 +105,7 @@ def create_product_table(product, file_name):
 
 def create_request_details_table(email_context):
     """Create HTML table for request details"""
+    
     return f'''
     <table>
       <tr>
@@ -105,9 +127,12 @@ def create_request_details_table(email_context):
     </table>
     '''
 
-def create_failed_files_section(errors):
+def create_failed_files_section(files):
     """Create HTML section for failed files"""
-    if not errors:
+    
+    failed_files = [f for f in files if f.get('status') == 'failed']
+    
+    if not failed_files:
         return ''
     
     html_parts = [
@@ -117,82 +142,79 @@ def create_failed_files_section(errors):
         '<ul>'
     ]
     
-    for error in errors:
+    for file_info in failed_files:
         html_parts.append(
-            f'<li><strong>{escape_html(error["fileName"])}:</strong> {escape_html(error["error"])}</li>'
+            f'<li><strong>{escape_html(file_info["fileName"])}:</strong> {escape_html(file_info.get("error", "Unknown error"))}</li>'
         )
     
     html_parts.extend(['</ul>', '</div>'])
     return '\n'.join(html_parts)
-
 def main():
     """Main processing logic"""
+    
     try:
         # Read input from command-line argument
         if len(sys.argv) < 2:
             raise ValueError('No input data provided. Expected JSON data as command-line argument.')
         
-        input_data = json.loads(sys.argv[1])
+        input_data = parse_n8n_input(sys.argv[1])
         execution_id = os.environ.get('EXECUTION_ID', 'unknown')
         
         # Get model name for display
         model_name = os.environ.get('LLM_MODEL', 'Unknown')
         model_info = f' using model <strong>{escape_html(model_name)}</strong>'
         
+        # Extract state object
+        if isinstance(input_data, list) and len(input_data) > 0:
+            state = input_data[0].get('json', {})
+        else:
+            raise ValueError('Invalid input format. Expected state object.')
+        
         # Log input
-        log_debug(execution_id, "Result Processor", "input", input_data)
+        log_debug(execution_id, "Result Processor", "input", state)
         
-        # Find email context
-        email_context_item = None
-        pdf_items = []
+        # Extract components from state
+        email_context = state.get('email_context', {})
+        files = state.get('files', [])
+        global_errors = state.get('errors', [])
         
-        for item in input_data:
-            if item.get('json', {}).get('email') and not item.get('json', {}).get('fileName'):
-                email_context_item = item
-            elif item.get('json', {}).get('fileName') or item.get('json', {}).get('error'):
-                pdf_items.append(item)
-        
-        if not email_context_item:
-            raise ValueError('Email context item not found in input')
-        
-        email_context = email_context_item['json']['email']
+        # Validate email context
+        if not email_context.get('from'):
+            raise ValueError('Email context missing required "from" field')
         
         # Process results
         all_products = []
-        errors = []
         summaries = []
         exceptions = []
         
-        valid_pdfs = [i for i in pdf_items if i.get('json', {}).get('fileName') != 'no-pdfs-found']
-        total_attachments = len(valid_pdfs)
+        # Count files by status
+        processed_files = [f for f in files if f.get('status') == 'processed']
+        failed_files = [f for f in files if f.get('status') == 'failed']
+        pdf_files = [f for f in files if 'pdf' in f.get('mimeType', '').lower() or f.get('fileName', '').lower().endswith('.pdf')]
         
-        for item in pdf_items:
-            if not item.get('json', {}).get('valid'):
-                errors.append({
-                    'fileName': item['json'].get('fileName'),
-                    'error': item['json'].get('error'),
-                    'errorType': item['json'].get('errorType')
-                })
-                continue
-            
-            extracted_data = item['json'].get('extractedData', {})
+        total_attachments = len(files)
+        total_pdfs = len(pdf_files)
+        
+        # Extract products from processed files
+        for file_info in processed_files:
+            extracted_data = file_info.get('extractedData', {})
             products = extracted_data.get('products', [])
             summary = extracted_data.get('processing_summary')
             processing_exceptions = extracted_data.get('processing_exceptions')
             
             if summary:
-                summaries.append(f"{item['json']['fileName']}: {summary}")
+                summaries.append(f"{file_info['fileName']}: {summary}")
             
             if processing_exceptions:
                 if isinstance(processing_exceptions, list):
-                    exceptions.extend([f"{item['json']['fileName']}: {ex}" for ex in processing_exceptions])
+                    exceptions.extend([f"{file_info['fileName']}: {ex}" for ex in processing_exceptions])
                 elif isinstance(processing_exceptions, str):
-                    exceptions.append(f"{item['json']['fileName']}: {processing_exceptions}")
+                    exceptions.append(f"{file_info['fileName']}: {processing_exceptions}")
             
             for product in products:
                 all_products.append({
                     'product': product,
-                    'fileName': item['json']['fileName']
+                    'fileName': file_info['fileName']
                 })
 
         # Generate email response
@@ -215,7 +237,7 @@ def main():
             if summaries:
                 extraction_summary = '<ul>' + ''.join([f'<li>{escape_html(s)}</li>' for s in summaries]) + '</ul>'
             else:
-                extraction_summary = f'<ul><li>Processed {len(all_products)} product(s) from {total_attachments} attachment(s).</li></ul>'
+                extraction_summary = f'<ul><li>Processed {len(all_products)} product(s) from {total_pdfs} PDF file(s).</li></ul>'
             
             # Add model info to extraction summary
             extraction_summary += f'<div>{model_info}</div>'
@@ -228,7 +250,7 @@ def main():
                 exceptions_section += '</ul></div>'
             
             # Create failed files section
-            failed_files_section = create_failed_files_section(errors)
+            failed_files_section = create_failed_files_section(files)
             
             # Replace placeholders
             email_body = template.replace('{{productTables}}', ''.join(product_tables))
@@ -245,8 +267,18 @@ def main():
                 template = f.read()
             
             # Create error details
-            if errors:
-                error_details = '<br>'.join([f'<strong>{e["fileName"]}:</strong> {e["error"]}' for e in errors])
+            error_messages = []
+            
+            # Add global errors
+            for error in global_errors:
+                error_messages.append(error.get('error', 'Unknown error'))
+            
+            # Add file-specific errors
+            for file_info in failed_files:
+                error_messages.append(f'<strong>{file_info["fileName"]}:</strong> {file_info.get("error", "Unknown error")}')
+            
+            if error_messages:
+                error_details = '<br>'.join(error_messages)
             else:
                 error_details = 'No specific error details available.'
             
@@ -255,15 +287,12 @@ def main():
             email_body = email_body.replace('{{requestDetails}}', request_details)
             email_body = email_body.replace('{{totalAttachments}}', str(total_attachments))
         
-        # Create result
+        # Create result - only include fields needed by Send Notification node
         result = {
             'json': {
                 'to': email_context['from'],
                 'subject': f"Re: {email_context['subject']} - Materials Extraction {'Complete' if status == 'success' else 'Failed'}",
-                'body': email_body,
-                'messageId': email_context['messageId'],
-                'status': status,
-                'processingTimestamp': datetime.utcnow().isoformat()
+                'body': email_body
             }
         }
         
@@ -276,8 +305,7 @@ def main():
     except Exception as e:
         error_result = [{
             'json': {
-                'error': str(e),
-                'errorType': 'system'
+                'error': str(e)
             }
         }]
         print(json.dumps(error_result))
