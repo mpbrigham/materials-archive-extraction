@@ -6,12 +6,12 @@ services:
     container_name: n8n
     restart: unless-stopped
     ports:
-      - "${VPN_IP}:5678:5678"
+      - "${VPN_IP}:5679:5678"
     environment:
       - GENERIC_TIMEZONE=UTC
       - PYTHONPATH=/app/python
       - N8N_RUNNERS_ENABLED=true
-      - N8N_EDITOR_BASE_URL=http://${VPN_IP}:5678
+      - N8N_EDITOR_BASE_URL=http://${VPN_IP}:5679
       - N8N_USER_FOLDER=/home/node/data
       - N8N_BLOCK_ENV_ACCESS_IN_NODE=true
       - N8N_METRICS=false
@@ -27,7 +27,7 @@ services:
     networks:
       - materials-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5678/healthz"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5679/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
