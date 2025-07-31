@@ -77,7 +77,6 @@
     },
     {
       "parameters": {
-        "fromEmail": "={{ $env.EMAIL_USER }}",
         "toEmail": "={{ $json.to }}",
         "subject": "={{ $json.subject }}",
         "emailFormat": "html",
