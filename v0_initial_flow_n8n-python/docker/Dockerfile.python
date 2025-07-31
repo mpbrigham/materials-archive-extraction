@@ -1,25 +1,29 @@
-FROM n8nio/n8n:latest
+FROM python:3.11-slim
 
-USER root
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Python and essential packages
-RUN apk add --update --no-cache \
-    python3 \
-    py3-pip \
-    py3-numpy \
-    py3-pandas && \
-    python3 -m pip install --upgrade pip
+ENV DOCKER_USER=docker_user
+ENV USER_ID=1000
+ENV GROUP_ID=1000
 
-# Use requirements from docker folder
-COPY docker/requirements-python.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+RUN groupadd -g ${GROUP_ID} ${DOCKER_USER}
+RUN useradd -u ${USER_ID} -g ${GROUP_ID} -s /bin/bash -m ${DOCKER_USER}
 
-# Create app directory
-RUN mkdir -p /app && chown node:node /app
-
-USER node
+RUN apt-get update && apt-get install -y \
+    libmagic1 \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
+COPY docker/requirements-python.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+RUN mkdir -p /data /tmp/n8n/attachments /home/node/data
+
 EXPOSE 8000
+
+RUN chown -R ${DOCKER_USER}:${DOCKER_USER} /data /tmp/n8n/attachments /home/node/data
+
+USER ${DOCKER_USER}
+
 CMD ["uvicorn", "python.app:app", "--host", "0.0.0.0", "--port", "8000"]
