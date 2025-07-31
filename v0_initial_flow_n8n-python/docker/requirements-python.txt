@@ -1,0 +1,7 @@
+# Python dependencies for materials extraction pipeline
+google-generativeai
+pypdf2
+pdfplumber
+python-magic
+fastapi
+uvicorn

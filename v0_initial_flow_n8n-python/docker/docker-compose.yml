@@ -1,10 +1,8 @@
-version: '3.8'
-
 services:
   n8n:
     build:
       context: .
-      dockerfile: docker/Dockerfile.n8n
+      dockerfile: Dockerfile.n8n
     container_name: n8n
     restart: unless-stopped
     ports:
@@ -28,25 +26,17 @@ services:
       - /tmp/n8n/attachments:/tmp/n8n/attachments
     env_file:
       - .env
-    networks:
-      - materials-network
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5678/healthz"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   python-api:
     build:
       context: .
-      dockerfile: docker/Dockerfile.python
+      dockerfile: Dockerfile.python
     container_name: python-api
     restart: unless-stopped
     ports:
       - "${VPN_IP}:8000:8000"
     volumes:
-      - ./python:/app/python:ro
+      - ./python:/python:ro
       - ./prompts:/data/prompts:ro
       - ./email_templates:/data/email_templates:ro
       - ./schema:/data/schema:ro
@@ -54,18 +44,3 @@ services:
       - ./data:/home/node/data
     env_file:
       - .env
-    networks:
-      - materials-network
-    working_dir: /app
-    depends_on:
-      - n8n
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-networks:
-  materials-network:
-    driver: bridge

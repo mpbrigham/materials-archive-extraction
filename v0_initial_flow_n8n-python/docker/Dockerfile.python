@@ -10,12 +10,16 @@ RUN apk add --update --no-cache \
     py3-pandas && \
     python3 -m pip install --upgrade pip
 
-# Copy and install Python requirements
-COPY python/requirements.txt /tmp/requirements.txt
+# Use requirements from docker folder
+COPY docker/requirements-python.txt /tmp/requirements.txt
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+
+# Create app directory
+RUN mkdir -p /app && chown node:node /app
 
 USER node
 
-# Add uvicorn start command alongside n8n
+WORKDIR /app
+
 EXPOSE 8000
 CMD ["uvicorn", "python.app:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -3,3 +3,5 @@ google-generativeai
 pypdf2
 pdfplumber
 python-magic
+fastapi
+uvicorn
