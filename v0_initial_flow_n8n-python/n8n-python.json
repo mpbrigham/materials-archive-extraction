@@ -1,66 +1,78 @@
 {
-  "name": "materials-archive-extraction",
+  "name": "My workflow",
   "nodes": [
     {
       "parameters": {
         "downloadAttachments": true,
         "options": {}
       },
-      "id": "e3342267-7e3b-48dd-b544-068c0fd2cb5d",
+      "id": "a017ddb3-0ae7-45e5-a9d2-1e2e9369f8c4",
       "name": "Email Trigger",
       "type": "n8n-nodes-base.emailReadImap",
       "typeVersion": 2,
       "position": [
-        -320,
-        40
+        240,
+        -160
       ],
       "credentials": {
         "imap": {
-          "id": "email-imap",
-          "name": "Email IMAP"
+          "id": "h0Vity66wkDfDonL",
+          "name": "IMAP account"
         }
       }
     },
     {
       "parameters": {
-        "command": "=python3 /python/document_validator.py '" + JSON.stringify($input.all()) + "'",
+        "url": "http://python-api:8000/validate",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
         "options": {}
       },
-      "id": "aa2a234a-5362-498e-ac76-5b702cfc38eb",
+      "id": "1d8c1563-0ab6-4bb1-9117-49edf2789caf",
       "name": "Document Validator",
-      "type": "n8n-nodes-base.executeCommand",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        -120,
-        40
+        440,
+        -160
       ]
-    },    
+    },
     {
       "parameters": {
-        "command": "=python3 /python/llm_extraction.py '" + $input.first().json.stdout + "'",
+        "url": "http://python-api:8000/extract",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
         "options": {}
       },
-      "id": "f3c28adc-df60-4323-9398-4535071e7e4d",
+      "id": "6733d7f1-769e-46d5-95da-7f9330d901ed",
       "name": "LLM Extraction",
-      "type": "n8n-nodes-base.executeCommand",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        100,
-        40
+        660,
+        -160
       ]
-    },    
+    },
     {
       "parameters": {
-        "command": "=python3 /python/result_processor.py '" + $input.first().json.stdout + "'",
+        "url": "http://python-api:8000/process",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
         "options": {}
       },
-      "id": "19606e46-3541-4fc6-baf2-9f71ac9591ad",
+      "id": "2f9e9e79-c0d7-458a-a92b-9f5a175aba42",
       "name": "Result Processor",
-      "type": "n8n-nodes-base.executeCommand",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        300,
-        40
+        860,
+        -160
       ]
     },
     {
@@ -68,23 +80,23 @@
         "fromEmail": "={{ $env.EMAIL_USER }}",
         "toEmail": "={{ $json.to }}",
         "subject": "={{ $json.subject }}",
-        "html": "={{ $json.body }}",
         "emailFormat": "html",
+        "html": "={{ $json.body }}",
         "options": {}
       },
-      "id": "f349c364-688e-4e7e-a440-2dc8f79d5caf",
+      "id": "e6709bf9-b2e5-4abb-9d04-c914dee479ec",
       "name": "Send Notification",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
       "position": [
-        500,
-        40
+        1060,
+        -160
       ],
       "webhookId": "1ae1ebae-1ce9-46b6-a2b7-660a90b76597",
       "credentials": {
         "smtp": {
-          "id": "email-smtp",
-          "name": "Email SMTP"
+          "id": "l29wKFfdODrn2qgi",
+          "name": "SMTP account"
         }
       }
     }
@@ -140,10 +152,11 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "c2699518-3822-4e17-8841-9ad64c12281a",
+  "versionId": "d2a55bdb-8a3c-4e9e-8653-4cd0bed7cea6",
   "meta": {
-    "instanceId": "e1e0ee79e4c5b81b27275682c295e7cabb465f2da75a30ee8c409c8a6d0154ce"
+    "templateCredsSetupCompleted": true,
+    "instanceId": "05d627df821b57811f26946d0226002bbfd9dcbcaa7902e0c982270490489431"
   },
-  "id": "SjsG0ctMg0DMZCMn",
+  "id": "je2uy7uN1VG30e2S",
   "tags": []
 }

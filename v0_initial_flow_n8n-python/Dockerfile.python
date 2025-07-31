@@ -1,0 +1,21 @@
+FROM n8nio/n8n:latest
+
+USER root
+
+# Install Python and essential packages
+RUN apk add --update --no-cache \
+    python3 \
+    py3-pip \
+    py3-numpy \
+    py3-pandas && \
+    python3 -m pip install --upgrade pip
+
+# Copy and install Python requirements
+COPY python/requirements.txt /tmp/requirements.txt
+RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+
+USER node
+
+# Add uvicorn start command alongside n8n
+EXPOSE 8000
+CMD ["uvicorn", "python.app:app", "--host", "0.0.0.0", "--port", "8000"]

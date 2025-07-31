@@ -1,9 +1,9 @@
 services:
-  n8n-python:
+  n8n:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: n8n-python
+      dockerfile: Dockerfile.n8n
+    container_name: n8n
     restart: unless-stopped
     ports:
       - "${VPN_IP}:5678:5678"
@@ -23,15 +23,24 @@ services:
     volumes:
       - ./data:/home/node/data
       - ./n8n-python.json:/home/node/data/n8n-python.json:ro
+      - /tmp/n8n/attachments:/tmp/n8n/attachments
+    env_file:
+      - .env
+
+  python-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: python-api
+    restart: unless-stopped
+    ports:
+      - "${VPN_IP}:8000:8000"
+    volumes:
       - ./python:/python:ro
       - ./prompts:/data/prompts:ro
       - ./email_templates:/data/email_templates:ro
       - ./schema:/data/schema:ro
+      - /tmp/n8n/attachments:/tmp/n8n/attachments
+      - ./data:/home/node/data
     env_file:
       - .env
-    healthcheck:
-      test: ["CMD", "curl", "-s", "http://localhost:5678/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
