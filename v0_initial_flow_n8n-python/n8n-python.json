@@ -37,7 +37,7 @@
     },    
     {
       "parameters": {
-        "command": "=python3 /python/llm_extraction.py '" + JSON.stringify($input.all()) + "'",
+        "command": "=python3 /python/llm_extraction.py '" + $input.first().json.stdout + "'",
         "options": {}
       },
       "id": "f3c28adc-df60-4323-9398-4535071e7e4d",
@@ -51,7 +51,7 @@
     },    
     {
       "parameters": {
-        "command": "=python3 /python/result_processor.py '" + JSON.stringify($input.all()) + "'",
+        "command": "=python3 /python/result_processor.py '" + $input.first().json.stdout + "'",
         "options": {}
       },
       "id": "19606e46-3541-4fc6-baf2-9f71ac9591ad",
