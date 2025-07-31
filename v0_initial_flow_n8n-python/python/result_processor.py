@@ -3,52 +3,18 @@
 Result Processor - Format extraction results and prepare email response
 """
 
-import json
-import sys
 import os
-from datetime import datetime
 import html
+from common import log_debug
 
-def log_debug(execution_id, node_name, phase, data):
-    """Log debug information to file"""
-    
-    log_entry = {
-        "timestamp": datetime.now(datetime.UTC).isoformat(),
-        "executionId": execution_id,
-        "node": node_name,
-        "phase": phase,
-        "data": data
-    }
-    with open('/home/node/data/debug.log', 'a') as f:
-        f.write(json.dumps(log_entry) + '\n')
-
-def parse_n8n_input(input_data):
-    """Parse input that may be wrapped by n8n's Execute Command node"""
-    
-    # If input is a string, parse it
-    if isinstance(input_data, str):
-        input_data = json.loads(input_data)
-    
-    # If it's a single item with n8n wrapper structure
-    if (len(input_data) == 1 and 
-        isinstance(input_data[0], dict) and 
-        'json' in input_data[0] and 
-        'stdout' in input_data[0].get('json', {})):
-        # Extract the actual output from stdout
-        stdout_data = input_data[0]['json']['stdout']
-        return json.loads(stdout_data)
-    
-    return input_data
 def escape_html(text):
     """Escape HTML special characters"""
-    
     if not text:
         return ''
     return html.escape(str(text))
 
 def format_value(field):
     """Format field value for display"""
-    
     if isinstance(field.get('value'), list):
         return ', '.join(field['value'])
     return str(field.get('value', ''))
@@ -149,15 +115,10 @@ def create_failed_files_section(files):
     
     html_parts.extend(['</ul>', '</div>'])
     return '\n'.join(html_parts)
-def main():
-    """Main processing logic"""
+def process(input_data):
+    """Process state object and format email response"""
     
     try:
-        # Read input from command-line argument
-        if len(sys.argv) < 2:
-            raise ValueError('No input data provided. Expected JSON data as command-line argument.')
-        
-        input_data = parse_n8n_input(sys.argv[1])
         execution_id = os.environ.get('EXECUTION_ID', 'unknown')
         
         # Get model name for display
@@ -185,8 +146,7 @@ def main():
         # Process results
         all_products = []
         summaries = []
-        exceptions = []
-        
+        exceptions = []        
         # Count files by status
         processed_files = [f for f in files if f.get('status') == 'processed']
         failed_files = [f for f in files if f.get('status') == 'failed']
@@ -216,7 +176,6 @@ def main():
                     'product': product,
                     'fileName': file_info['fileName']
                 })
-
         # Generate email response
         status = 'success' if all_products else 'failure'
         request_details = create_request_details_table(email_context)
@@ -247,8 +206,7 @@ def main():
             if exceptions:
                 exceptions_section = '<div class="exceptions"><h3>Processing Exceptions</h3><ul>'
                 exceptions_section += ''.join([f'<li>{escape_html(ex)}</li>' for ex in exceptions])
-                exceptions_section += '</ul></div>'
-            
+                exceptions_section += '</ul></div>'            
             # Create failed files section
             failed_files_section = create_failed_files_section(files)
             
@@ -280,14 +238,13 @@ def main():
             if error_messages:
                 error_details = '<br>'.join(error_messages)
             else:
-                error_details = 'No specific error details available.'
-            
+                error_details = 'No specific error details available.'            
             # Replace placeholders
             email_body = template.replace('{{errorDetails}}', error_details)
             email_body = email_body.replace('{{requestDetails}}', request_details)
             email_body = email_body.replace('{{totalAttachments}}', str(total_attachments))
         
-        # Create result - only include fields needed by Send Notification node
+        # Create result
         result = {
             'json': {
                 'to': email_context['from'],
@@ -299,8 +256,8 @@ def main():
         # Log output
         log_debug(execution_id, "Result Processor", "output", [result])
         
-        # Return result to n8n
-        print(json.dumps([result]))
+        # Return result
+        return [result]
         
     except Exception as e:
         error_result = [{
@@ -308,8 +265,4 @@ def main():
                 'error': str(e)
             }
         }]
-        print(json.dumps(error_result))
-        sys.exit(1)
-
-if __name__ == '__main__':
-    main()
+        return error_result

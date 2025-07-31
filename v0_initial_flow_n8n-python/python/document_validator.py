@@ -3,41 +3,8 @@
 Document Validator - Creates initial state object and validates PDF attachments
 """
 
-import json
-import sys
 import os
-from datetime import datetime
-
-def log_debug(execution_id, node_name, phase, data):
-    """Log debug information to file"""
-    
-    log_entry = {
-        "timestamp": datetime.now(datetime.UTC).isoformat(),
-        "executionId": execution_id,
-        "node": node_name,
-        "phase": phase,
-        "data": data
-    }
-    with open('/home/node/data/debug.log', 'a') as f:
-        f.write(json.dumps(log_entry) + '\n')
-
-def parse_n8n_input(input_data):
-    """Parse input that may be wrapped by n8n's Execute Command node"""
-    
-    # If input is a string, parse it
-    if isinstance(input_data, str):
-        input_data = json.loads(input_data)
-    
-    # If it's a single item with n8n wrapper structure
-    if (len(input_data) == 1 and 
-        isinstance(input_data[0], dict) and 
-        'json' in input_data[0] and 
-        'stdout' in input_data[0].get('json', {})):
-        # Extract the actual output from stdout
-        stdout_data = input_data[0]['json']['stdout']
-        return json.loads(stdout_data)
-    
-    return input_data
+from common import log_debug
 
 def create_initial_state(email_data):
     """Create the initial state object from email data"""
@@ -100,15 +67,10 @@ def create_initial_state(email_data):
     
     return state
 
-def main():
-    """Main validation logic"""
+def process(input_data):
+    """Process email data and validate attachments"""
     
     try:
-        # Read input from command-line argument
-        if len(sys.argv) < 2:
-            raise ValueError('No input data provided. Expected JSON data as command-line argument.')
-        
-        input_data = parse_n8n_input(sys.argv[1])
         execution_id = os.environ.get('EXECUTION_ID', 'unknown')
         
         # Log input
@@ -131,8 +93,8 @@ def main():
         # Log output
         log_debug(execution_id, "Document Validator", "output", state)
         
-        # Return state to n8n (wrapped in array as n8n expects)
-        print(json.dumps([{"json": state}]))
+        # Return state
+        return [{"json": state}]
         
     except Exception as e:
         error_state = {
@@ -142,8 +104,4 @@ def main():
                 "error": str(e)
             }]
         }
-        print(json.dumps([{"json": error_state}]))
-        sys.exit(1)
-
-if __name__ == '__main__':
-    main()
+        return [{"json": error_state}]

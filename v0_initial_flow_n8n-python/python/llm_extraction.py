@@ -4,41 +4,9 @@ LLM Extraction - Extract material metadata from PDFs using Google Gemini
 """
 
 import json
-import sys
 import os
-from datetime import datetime
 import google.generativeai as genai
-
-def log_debug(execution_id, node_name, phase, data):
-    """Log debug information to file"""
-    
-    log_entry = {
-        "timestamp": datetime.now(datetime.UTC).isoformat(),
-        "executionId": execution_id,
-        "node": node_name,
-        "phase": phase,
-        "data": data
-    }
-    with open('/home/node/data/debug.log', 'a') as f:
-        f.write(json.dumps(log_entry) + '\n')
-
-def parse_n8n_input(input_data):
-    """Parse input that may be wrapped by n8n's Execute Command node"""
-    
-    # If input is a string, parse it
-    if isinstance(input_data, str):
-        input_data = json.loads(input_data)
-    
-    # If it's a single item with n8n wrapper structure
-    if (len(input_data) == 1 and 
-        isinstance(input_data[0], dict) and 
-        'json' in input_data[0] and 
-        'stdout' in input_data[0].get('json', {})):
-        # Extract the actual output from stdout
-        stdout_data = input_data[0]['json']['stdout']
-        return json.loads(stdout_data)
-    
-    return input_data
+from common import log_debug
 
 def process_pdf(file_info, api_key, model_name):
     """Process a single PDF with Gemini AI"""
@@ -111,15 +79,10 @@ def process_pdf(file_info, api_key, model_name):
             "error": str(e)
         }
 
-def main():
-    """Main extraction logic"""
+def process(input_data):
+    """Process state object and extract material data from PDFs"""
     
     try:
-        # Read input from command-line argument
-        if len(sys.argv) < 2:
-            raise ValueError('No input data provided. Expected JSON data as command-line argument.')
-        
-        input_data = parse_n8n_input(sys.argv[1])
         execution_id = os.environ.get('EXECUTION_ID', 'unknown')
         
         # Get API credentials
@@ -153,8 +116,8 @@ def main():
         # Log output
         log_debug(execution_id, "LLM Extraction", "output", state)
         
-        # Return updated state to n8n
-        print(json.dumps([{"json": state}]))
+        # Return updated state
+        return [{"json": state}]
         
     except Exception as e:
         # Try to preserve state if possible
@@ -163,7 +126,7 @@ def main():
                 state['errors'].append({
                     "error": str(e)
                 })
-                print(json.dumps([{"json": state}]))
+                return [{"json": state}]
             else:
                 raise
         except:
@@ -174,8 +137,4 @@ def main():
                     "error": str(e)
                 }]
             }
-            print(json.dumps([{"json": error_state}]))
-        sys.exit(1)
-
-if __name__ == '__main__':
-    main()
+            return [{"json": error_state}]
