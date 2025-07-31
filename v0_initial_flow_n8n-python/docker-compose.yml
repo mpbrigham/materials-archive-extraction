@@ -9,7 +9,6 @@ services:
       - "${VPN_IP}:5679:5678"
     environment:
       - GENERIC_TIMEZONE=UTC
-      - PYTHONPATH=/app/python
       - N8N_RUNNERS_ENABLED=true
       - N8N_EDITOR_BASE_URL=http://${VPN_IP}:5679
       - N8N_USER_FOLDER=/home/node/data
@@ -42,6 +41,9 @@ services:
     restart: unless-stopped
     ports:
       - "${VPN_IP}:8000:8000"
+    environment:
+      - GENERIC_TIMEZONE=UTC
+      - PYTHONPATH=/app/python
     volumes:
       - ./python:/app/python:ro
       - ./prompts:/data/prompts:ro
