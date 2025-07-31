@@ -10,16 +10,16 @@ services:
     ports:
       - "${VPN_IP}:5678:5678"
     environment:
+      - GENERIC_TIMEZONE=UTC
+      - PYTHONPATH=/app/python
       - N8N_RUNNERS_ENABLED=true
       - N8N_EDITOR_BASE_URL=http://${VPN_IP}:5678
       - N8N_USER_FOLDER=/home/node/data
       - N8N_BLOCK_ENV_ACCESS_IN_NODE=true
-      - GENERIC_TIMEZONE=UTC
-      - DB_TYPE=sqlite
-      - DB_SQLITE_DATABASE=/home/node/data/database.sqlite
-      - N8N_SECURE_COOKIE=false
       - N8N_METRICS=false
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - DB_TYPE=sqlite
+      - DB_SQLITE_DATABASE=/home/node/data/database.sqlite
     volumes:
       - ./data:/home/node/data
       - ./n8n-python.json:/home/node/data/n8n-python.json:ro
