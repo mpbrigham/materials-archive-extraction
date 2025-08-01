@@ -24,8 +24,8 @@
     {
       "parameters": {
         "operation": "write",
-        "binaryPropertyName": "{{$binary.propertyName}}",
-        "fileName": "/tmp/n8n/attachments/{{$execution.id}}_{{$binary[$binary.propertyName].fileName}}",
+        "dataPropertyName": "={{Object.keys($binary)[0]}}",
+        "fileName": "=/home/node/data/attachments/{{$execution.id}}_{{$binary[Object.keys($binary)[0]].fileName}}",
         "options": {}
       },
       "id": "write-files-node",

@@ -8,10 +8,7 @@ from common import log_debug, create_error_response
 
 def create_initial_state(input_data):
     """Create the initial state object from a list of file data objects from n8n"""
-    
-    # The input from "Write Files to Disk" will be a list of items,
-    # each with its own 'json' and 'binary' properties.
-    # The email context should be the same for all, so we take it from the first item.
+
     first_item_json = input_data[0].get('json', {})
     
     state = {

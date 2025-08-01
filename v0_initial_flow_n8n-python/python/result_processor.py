@@ -182,7 +182,7 @@ def process(input_data):
         
         if status == 'success':
             # Read success template
-            with open('/data/email_templates/success.html', 'r') as f:
+            with open('/app/email_templates/success.html', 'r') as f:
                 template = f.read()
             
             # Create product tables
@@ -221,7 +221,7 @@ def process(input_data):
             
         else:
             # Read failure template
-            with open('/data/email_templates/failure.html', 'r') as f:
+            with open('/app/email_templates/failure.html', 'r') as f:
                 template = f.read()
             
             # Create error details

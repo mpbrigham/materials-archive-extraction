@@ -21,10 +21,10 @@ def process_pdf(file_info, api_key, model_name):
     
     try:
         # Read prompt and schema
-        with open('/data/prompts/llm_extraction.txt', 'r') as f:
+        with open('/app/prompts/llm_extraction.txt', 'r') as f:
             prompt = f.read()
         
-        with open('/data/schema/materials_schema.json', 'r') as f:
+        with open('/app/schema/materials_schema.json', 'r') as f:
             schema = json.load(f)
         
         # Configure Gemini
