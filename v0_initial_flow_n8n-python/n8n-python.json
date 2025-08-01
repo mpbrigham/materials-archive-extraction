@@ -24,7 +24,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const fs = require('fs');\n\n// Get email data\nconst email = $input.item.json;\nconst attachments = $input.item.binary || {};\nconst filePaths = [];\n\n// Write each attachment to disk\nfor (const [key, attachment] of Object.entries(attachments)) {\n  const filePath = `/home/node/data/attachments/${$execution.id}_${attachment.fileName}`;\n  \n  // Write file to disk\n  fs.writeFileSync(filePath, attachment.data, 'base64');\n  \n  filePaths.push({\n    fileName: attachment.fileName,\n    filePath: filePath,\n    mimeType: attachment.mimeType\n  });\n}\n\n// Return single item with email context and all file paths\nreturn [{\n  json: {\n    email_context: {\n      from: email.from,\n      subject: email.subject,\n      messageId: email.messageId,\n      date: email.date\n    },\n    files: filePaths\n  }\n}];"
+        "jsCode": "const fs = require('fs');\n\n// Get email data\nconst email = $input.item.json;\nconst attachments = $input.item.binary || {};\nconst filePaths = [];\n\n// Write each attachment to disk\nfor (const [key, attachment] of Object.entries(attachments)) {\n  const filePath = `/home/node/data/attachments/${$execution.id}_${attachment.fileName}`;\n  \n  // Write file to disk\n  fs.writeFileSync(filePath, attachment.data, 'base64');\n  \n  filePaths.push({\n    fileName: attachment.fileName,\n    filePath: filePath,\n    mimeType: attachment.mimeType\n  });\n}\n\n// Return email data unchanged, just add file paths\nreturn [{\n  json: {\n    ...email,  // Preserve ALL original email fields\n    files: filePaths\n  }\n}];"
       },
       "id": "write-files-node",
       "name": "Write Files to Disk",
@@ -92,7 +92,7 @@
     {
       "parameters": {
         "fromEmail": "={{ $json.from }}",
-        "toEmail": "={{ $json.to }}",
+        "toEmail": "={{ $json.to.text }}",
         "subject": "={{ $json.subject }}",
         "emailFormat": "html",
         "html": "={{ $json.body }}",

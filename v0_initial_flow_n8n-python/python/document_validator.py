@@ -10,19 +10,16 @@ def create_initial_state(input_data):
     """Create the initial state object from the Code node output"""
     
     # Input is the raw data from Write Files node
-    data = input_data[0]  # Direct access, no .get('json', {}) needed
+    data = input_data[0]
     
-    # Extract email context
-    email_context = data.get('email_context', {})
-    email_from = email_context.get('from', {})
-    
+    # Pass through all email fields unchanged
     state = {
         "email_context": {
-            "from": email_from.get('text', ''),  # Use the text representation from n8n's email format
-            "to": email_context.get('to', os.environ.get('EMAIL_USER')),
-            "subject": email_context.get('subject'),
-            "messageId": email_context.get('messageId'),
-            "date": email_context.get('date')
+            "from": data['from'],
+            "to": data.get('to', os.environ.get('EMAIL_USER')), 
+            "subject": data['subject'],
+            "messageId": data['messageId'],
+            "date": data['date']
         },
         "files": [],
         "errors": []
