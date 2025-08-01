@@ -12,12 +12,13 @@ This pipeline provides an automated email-based service for extracting structure
 ## Architecture
 
 ```
-Email Trigger → Document Validator (HTTP) → LLM Extraction (HTTP) → Result Processor (HTTP) → Send Notification
+Email Trigger → Write Files → Document Validator (HTTP) → LLM Extraction (HTTP) → Result Processor (HTTP) → Send Notification
 ```
 
 ### Components
 
 - **Email Trigger**: IMAP monitoring for incoming emails
+- **Write Files**: Saves PDF attachments to `/tmp/n8n/attachments/`
 - **Document Validator**: HTTP endpoint to check valid PDF attachments
 - **LLM Extraction**: HTTP endpoint using Gemini AI for material data extraction
 - **Result Processor**: HTTP endpoint to format extracted data into structured JSON
@@ -77,6 +78,26 @@ v0_initial_flow_n8n-python/
    - Select `/home/node/data/n8n-python.json` or upload from local `n8n-python.json`
    - Save and activate the workflow
 
+### Quick Start Checklist
+
+1. **Copy and configure `.env` file**:
+   ```bash
+   cp .env.template .env
+   # Edit .env and fill in ALL required values
+   ```
+
+2. **Start the services**:
+   ```bash
+   docker compose up -d
+   ```
+
+3. **Import and activate the workflow**:
+   - Open http://localhost:5678 in your browser
+   - Go to Workflows → Import from File → Choose `n8n-python.json`
+   - Click "Save" and then "Active" toggle to enable
+
+That's it! Send an email with PDF attachments to test.
+
 ### Testing
 
 Send an email with PDF attachments to the configured inbox. The pipeline will:
@@ -88,7 +109,7 @@ Send an email with PDF attachments to the configured inbox. The pipeline will:
 
 The FastAPI service exposes the following endpoints on port 8000:
 
-- `POST /validate` - Validate PDF attachments from email
+- `POST /validate` - Validates PDF files from a list of file paths.
 - `POST /extract` - Extract material data using LLM
 - `POST /process` - Format results into email response
 - `GET /health` - Health check endpoint
@@ -96,8 +117,8 @@ The FastAPI service exposes the following endpoints on port 8000:
 ## API Implementation
 
 Each HTTP endpoint is backed by a Python module:
-- `document_validator.py`: Validates PDF files and creates state object
-- `llm_extraction.py`: Extracts material data using Gemini AI
+- `document_validator.py`: Validates PDF files from file paths and creates the initial state object.
+- `llm_extraction.py`: Extracts material data from PDF files using Gemini AI.
 - `result_processor.py`: Formats and validates the output
 - `common.py`: Shared utilities and logging functions
 

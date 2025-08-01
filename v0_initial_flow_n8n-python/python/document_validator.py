@@ -1,75 +1,78 @@
 #!/usr/bin/env python3
 """
-Document Validator - Creates initial state object and validates PDF attachments
+Document Validator - Creates initial state object and validates PDF attachments from file paths
 """
 
 import os
 from common import log_debug, create_error_response
 
-def create_initial_state(email_data):
-    """Create the initial state object from email data"""
+def create_initial_state(input_data):
+    """Create the initial state object from a list of file data objects from n8n"""
+    
+    # The input from "Write Files to Disk" will be a list of items,
+    # each with its own 'json' and 'binary' properties.
+    # The email context should be the same for all, so we take it from the first item.
+    first_item_json = input_data[0].get('json', {})
     
     state = {
         "email_context": {
-            "from": email_data.get('from'),
-            "to": os.environ.get('EMAIL_USER'),  # Add bot's email
-            "subject": email_data.get('subject'),
-            "messageId": email_data.get('metadata', {}).get('message-id', email_data.get('messageId')),
-            "date": email_data.get('date')
+            "from": first_item_json.get('from'),
+            "to": os.environ.get('EMAIL_USER'),
+            "subject": first_item_json.get('subject'),
+            "messageId": first_item_json.get('metadata', {}).get('message-id', first_item_json.get('messageId')),
+            "date": first_item_json.get('date')
         },
         "files": [],
         "errors": []
     }
     
-    # Process attachments
-    attachments = email_data.get('attachments', [])
-    
-    for attachment in attachments:
-        mime_type = attachment.get('mimeType', '')
-        file_name = attachment.get('fileName', '')
-        file_path = attachment.get('filePath', '')
+    # Process each file that was written to disk
+    for item in input_data:
+        item_json = item.get('json', {})
+        file_path = item_json.get('fileName') # The 'Write to File' node outputs the path in 'fileName'
         
-        # Check if it's a PDF
-        is_pdf = mime_type == 'application/pdf' or file_name.lower().endswith('.pdf')
+        if not file_path:
+            state['errors'].append({"error": "Received an item with no fileName."})
+            continue
+
+        file_name = os.path.basename(file_path)
         
-        if is_pdf:
-            if file_path and os.path.exists(file_path):
-                # Valid PDF file
-                state['files'].append({
-                    "fileName": file_name,
-                    "filePath": file_path,
-                    "mimeType": mime_type,
-                    "status": "pending"
-                })
-            else:
-                # PDF file not found
-                state['files'].append({
-                    "fileName": file_name,
-                    "filePath": file_path,
-                    "status": "failed",
-                    "error": f'PDF file not found at path: {file_path}'
-                })
+        # Validate that the file exists
+        if not os.path.exists(file_path):
+            state['files'].append({
+                "fileName": file_name,
+                "status": "failed",
+                "error": f"File not found at path: {file_path}"
+            })
+            continue
+
+        # Check if it's a PDF by extension
+        if file_name.lower().endswith('.pdf'):
+            state['files'].append({
+                "fileName": file_name,
+                "filePath": file_path,
+                "status": "pending"
+            })
         else:
             # Not a PDF file
             state['files'].append({
                 "fileName": file_name,
                 "filePath": file_path,
-                "mimeType": mime_type,
                 "status": "failed",
                 "error": "Not a PDF file"
             })
-    
-    # If no PDF files found, add a global error
-    pdf_count = sum(1 for f in state['files'] if f.get('mimeType', '').lower().startswith('application/pdf') or f.get('fileName', '').lower().endswith('.pdf'))
+            
+    # If no valid PDF files were found to process, add a global error
+    pdf_count = sum(1 for f in state['files'] if f.get('status') == 'pending')
     if pdf_count == 0:
         state['errors'].append({
-            "error": "No PDF attachments found in the email"
+            "error": "No valid PDF files were found to process"
         })
     
     return state
 
 def process(input_data):
-    """Process email data and validate attachments"""
+    """Process file data from n8n's Write Files node and validate attachments"""
     
     try:
         execution_id = os.environ.get('EXECUTION_ID', 'unknown')
@@ -77,24 +80,16 @@ def process(input_data):
         # Log input
         log_debug(execution_id, "Document Validator", "input", input_data)
         
-        # Extract email data (should be first item from Email Trigger)
-        if not input_data or len(input_data) == 0:
-            raise ValueError('No input data received from Email Trigger')
+        if not isinstance(input_data, list) or not input_data:
+            raise ValueError('No input data received from Write Files node')
         
-        email_item = input_data[0]
-        email_data = email_item.get('json', {})
-        
-        # Validate required email fields
-        if not email_data.get('from'):
-            raise ValueError('Email missing required "from" field. Cannot process email without sender information.')
-        
-        # Create initial state object
-        state = create_initial_state(email_data)
+        # Create initial state object from the list of written files
+        state = create_initial_state(input_data)
         
         # Log output
         log_debug(execution_id, "Document Validator", "output", state)
         
-        # Return state
+        # Return a single state object for the next node
         return [{"json": state}]
         
     except Exception as e:

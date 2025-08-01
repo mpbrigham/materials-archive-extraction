@@ -1,5 +1,5 @@
 {
-  "name": "My workflow",
+  "name": "Materials Extraction Pipeline",
   "nodes": [
     {
       "parameters": {
@@ -23,6 +23,21 @@
     },
     {
       "parameters": {
+        "operation": "write",
+        "fileName": "/tmp/n8n/attachments/{{$execution.id}}_{{$binary.attachment.fileName}}",
+        "options": {}
+      },
+      "id": "write-files-node",
+      "name": "Write Files to Disk",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        340,
+        -160
+      ]
+    },
+    {
+      "parameters": {
         "url": "http://python-api:8000/validate",
         "method": "POST",
         "sendBody": true,
@@ -35,7 +50,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        440,
+        540,
         -160
       ]
     },
@@ -53,7 +68,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        660,
+        760,
         -160
       ]
     },
@@ -71,7 +86,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        860,
+        960,
         -160
       ]
     },
@@ -89,7 +104,7 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
       "position": [
-        1060,
+        1160,
         -160
       ],
       "webhookId": "1ae1ebae-1ce9-46b6-a2b7-660a90b76597",
@@ -104,6 +119,17 @@
   "pinData": {},
   "connections": {
     "Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Write Files to Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Files to Disk": {
       "main": [
         [
           {
@@ -148,15 +174,14 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "d2a55bdb-8a3c-4e9e-8653-4cd0bed7cea6",
+  "versionId": "materials-extraction-v2",
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "05d627df821b57811f26946d0226002bbfd9dcbcaa7902e0c982270490489431"
+    "instanceId": "materials-extraction-pipeline"
   },
-  "id": "je2uy7uN1VG30e2S",
+  "id": "materials-extraction-pipeline",
   "tags": []
 }

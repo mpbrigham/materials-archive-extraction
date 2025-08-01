@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LLM Extraction - Extract material metadata from PDFs using Google Gemini
+LLM Extraction - Extract material metadata from PDFs using Google Gemini from file paths
 """
 
 import json
@@ -9,14 +9,14 @@ import google.generativeai as genai
 from common import log_debug, create_error_response
 
 def process_pdf(file_info, api_key, model_name):
-    """Process a single PDF with Gemini AI"""
+    """Process a single PDF with Gemini AI from file path"""
     
     file_path = file_info.get('filePath')
     
-    if not file_path or not os.path.exists(file_path):
+    if not file_path:
         return {
             "status": "failed",
-            "error": f'PDF file not found at path: {file_path}'
+            "error": 'PDF has no file path'
         }
     
     try:
@@ -44,9 +44,15 @@ def process_pdf(file_info, api_key, model_name):
             generation_config=generation_config
         )
         
-        # Read PDF file directly from disk
-        with open(file_path, 'rb') as pdf_file:
-            pdf_bytes = pdf_file.read()
+        # Read the PDF file
+        try:
+            with open(file_path, 'rb') as f:
+                pdf_bytes = f.read()
+        except IOError as e:
+            return {
+                "status": "failed",
+                "error": f"Failed to read file from disk: {str(e)}"
+            }
         
         # Make API request
         response = model.generate_content([
