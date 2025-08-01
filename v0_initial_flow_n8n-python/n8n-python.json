@@ -24,8 +24,7 @@
     },
     {
       "parameters": {
-        "language": "python",
-        "pythonCode": "import os\nimport json\nimport base64\n\n# Get email data\nemail = _input.item.json\nattachments = _input.item.binary or {}\n\n# Prepare output\nfiles = []\n\n# Write each attachment to disk\nfor key, attachment in attachments.items():\n    file_path = f\"/home/node/data/attachments/{_execution.id}_{attachment['fileName']}\"\n    \n    # Write file\n    with open(file_path, 'wb') as f:\n        f.write(base64.b64decode(attachment['data']))\n    \n    # Add to files array\n    files.append({\n        'fileName': attachment['fileName'],\n        'filePath': file_path\n    })\n\n# Return email context + file paths\nreturn [{\n    'json': {\n        'from': email.get('from'),\n        'to': email.get('to'),\n        'subject': email.get('subject'),\n        'messageId': email.get('messageId') or email.get('metadata', {}).get('message-id'),\n        'date': email.get('date'),\n        'files': files\n    }\n}]"
+        "jsCode": "const fs = require('fs');\n\n// Get email data\nconst email = $input.item.json;\nconst attachments = $input.item.binary || {};\nconst filePaths = [];\n\n// Write each attachment to disk\nfor (const [key, attachment] of Object.entries(attachments)) {\n  const filePath = `/home/node/data/attachments/${$execution.id}_${attachment.fileName}`;\n  \n  // Write file to disk\n  fs.writeFileSync(filePath, attachment.data, 'base64');\n  \n  filePaths.push({\n    fileName: attachment.fileName,\n    filePath: filePath,\n    mimeType: attachment.mimeType\n  });\n}\n\n// Return single item with email context and all file paths\nreturn [{\n  json: {\n    email_context: {\n      from: email.from,\n      subject: email.subject,\n      messageId: email.messageId,\n      date: email.date\n    },\n    files: filePaths\n  }\n}];"
       },
       "id": "write-files-node",
       "name": "Write Files to Disk",
@@ -42,7 +41,7 @@
         "method": "POST",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ $json }}",
+        "jsonBody": "={{ [$json] }}",
         "options": {}
       },
       "id": "1d8c1563-0ab6-4bb1-9117-49edf2789caf",
