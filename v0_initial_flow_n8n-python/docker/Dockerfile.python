@@ -18,11 +18,7 @@ WORKDIR /app
 COPY docker/requirements-python.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-RUN mkdir -p /home/node/data /home/node/data/attachments
-
 EXPOSE 8000
-
-RUN chown -R ${DOCKER_USER}:${DOCKER_USER} /home/node/data
 
 USER ${DOCKER_USER}
 

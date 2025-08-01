@@ -20,8 +20,7 @@ services:
       - DB_SQLITE_DATABASE=/home/node/data/database.sqlite
     volumes:
       - ./data:/home/node/data
-      - ./n8n-python.json:/home/node/data/n8n-python.json:ro
-      - /tmp/n8n/attachments:/tmp/n8n/attachments
+      - ./data/attachments:/home/node/data/attachments
     env_file:
       - .env
     networks:
@@ -45,12 +44,12 @@ services:
       - GENERIC_TIMEZONE=UTC
       - PYTHONPATH=/app/python
     volumes:
-      - ./python:/app/python:ro
-      - ./prompts:/data/prompts:ro
-      - ./email_templates:/data/email_templates:ro
-      - ./schema:/data/schema:ro
-      - /tmp/n8n/attachments:/tmp/n8n/attachments
       - ./data:/home/node/data
+      - ./data/attachments:/home/node/data/attachments
+      - ./python:/app/python:ro
+      - ./prompts:/app/prompts:ro
+      - ./email_templates:/app/email_templates:ro
+      - ./schema:/app/schema:ro
     env_file:
       - .env
     networks:
