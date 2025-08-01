@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "downloadAttachments": true,
+        "format": "resolved",
         "options": {}
       },
       "id": "a017ddb3-0ae7-45e5-a9d2-1e2e9369f8c4",
