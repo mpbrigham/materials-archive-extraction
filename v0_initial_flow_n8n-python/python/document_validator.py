@@ -9,16 +9,20 @@ from common import log_debug, create_error_response
 def create_initial_state(input_data):
     """Create the initial state object from the Code node output"""
     
-    # Input should be a single object with email context and files array
-    data = input_data[0].get('json', {})
+    # Input is the raw data from Write Files node
+    data = input_data[0]  # Direct access, no .get('json', {}) needed
+    
+    # Extract email context
+    email_context = data.get('email_context', {})
+    email_from = email_context.get('from', {})
     
     state = {
         "email_context": {
-            "from": data.get('from'),
-            "to": data.get('to', os.environ.get('EMAIL_USER')),
-            "subject": data.get('subject'),
-            "messageId": data.get('messageId'),
-            "date": data.get('date')
+            "from": email_from.get('text', ''),  # Use the text representation from n8n's email format
+            "to": email_context.get('to', os.environ.get('EMAIL_USER')),
+            "subject": email_context.get('subject'),
+            "messageId": email_context.get('messageId'),
+            "date": email_context.get('date')
         },
         "files": [],
         "errors": []
