@@ -4,7 +4,7 @@ Document Validator - Creates initial state object and validates PDF attachments
 """
 
 import os
-from common import log_debug
+from common import log_debug, create_error_response
 
 def create_initial_state(email_data):
     """Create the initial state object from email data"""
@@ -98,11 +98,4 @@ def process(input_data):
         return [{"json": state}]
         
     except Exception as e:
-        error_state = {
-            "email_context": {},
-            "files": [],
-            "errors": [{
-                "error": str(e)
-            }]
-        }
-        return [{"json": error_state}]
+        return create_error_response(e)

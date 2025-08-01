@@ -17,3 +17,13 @@ def log_debug(execution_id, node_name, phase, data):
     }
     with open('/home/node/data/debug.log', 'a') as f:
         f.write(json.dumps(log_entry) + '\n')
+
+def create_error_response(e):
+    """Create standard error response structure"""
+    return [{
+        "json": {
+            "email_context": {},
+            "files": [],
+            "errors": [{"error": str(e)}]
+        }
+    }]

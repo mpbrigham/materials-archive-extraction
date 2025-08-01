@@ -6,7 +6,7 @@ LLM Extraction - Extract material metadata from PDFs using Google Gemini
 import json
 import os
 import google.generativeai as genai
-from common import log_debug
+from common import log_debug, create_error_response
 
 def process_pdf(file_info, api_key, model_name):
     """Process a single PDF with Gemini AI"""
@@ -130,11 +130,4 @@ def process(input_data):
             else:
                 raise
         except:
-            error_state = {
-                "email_context": {},
-                "files": [],
-                "errors": [{
-                    "error": str(e)
-                }]
-            }
-            return [{"json": error_state}]
+            return create_error_response(e)

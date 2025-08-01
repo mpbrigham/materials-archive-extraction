@@ -45,7 +45,7 @@
         "method": "POST",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ $json }}",
+        "jsonBody": "=[{{ $json }}]",
         "options": {}
       },
       "id": "6733d7f1-769e-46d5-95da-7f9330d901ed",
@@ -63,7 +63,7 @@
         "method": "POST",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ $json }}",
+        "jsonBody": "=[{{ $json }}]",
         "options": {}
       },
       "id": "2f9e9e79-c0d7-458a-a92b-9f5a175aba42",

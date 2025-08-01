@@ -5,7 +5,7 @@ Result Processor - Format extraction results and prepare email response
 
 import os
 import html
-from common import log_debug
+from common import log_debug, create_error_response
 
 def escape_html(text):
     """Escape HTML special characters"""
@@ -261,9 +261,4 @@ def process(input_data):
         return [result]
         
     except Exception as e:
-        error_result = [{
-            'json': {
-                'error': str(e)
-            }
-        }]
-        return error_result
+        return create_error_response(e)
