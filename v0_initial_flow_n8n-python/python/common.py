@@ -4,12 +4,12 @@ Common utilities for materials extraction pipeline
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 def log_debug(execution_id, node_name, phase, data):
     """Log debug information to file"""
     log_entry = {
-        "timestamp": datetime.now(datetime.UTC).isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "executionId": execution_id,
         "node": node_name,
         "phase": phase,
