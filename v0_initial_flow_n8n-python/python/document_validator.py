@@ -10,7 +10,7 @@ def create_initial_state(input_data):
     """Create the initial state object from the Code node output"""
     
     # Input is the raw data from Write Files node
-    data = input_data[0]
+    data = input_data[0]['json']
     
     # Pass through all email fields unchanged
     state = {
