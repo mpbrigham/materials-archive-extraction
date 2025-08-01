@@ -247,7 +247,8 @@ def process(input_data):
         # Create result
         result = {
             'json': {
-                'to': email_context['from'],
+                'from': email_context['to'],     # Bot's email
+                'to': email_context['from'],     # User's email  
                 'subject': f"Re: {email_context['subject']} - Materials Extraction {'Complete' if status == 'success' else 'Failed'}",
                 'body': email_body
             }

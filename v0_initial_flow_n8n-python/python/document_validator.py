@@ -12,6 +12,7 @@ def create_initial_state(email_data):
     state = {
         "email_context": {
             "from": email_data.get('from'),
+            "to": os.environ.get('EMAIL_USER'),  # Add bot's email
             "subject": email_data.get('subject'),
             "messageId": email_data.get('metadata', {}).get('message-id', email_data.get('messageId')),
             "date": email_data.get('date')
