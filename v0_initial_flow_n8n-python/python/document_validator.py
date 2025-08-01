@@ -7,33 +7,32 @@ import os
 from common import log_debug, create_error_response
 
 def create_initial_state(input_data):
-    """Create the initial state object from a list of file data objects from n8n"""
-
-    first_item_json = input_data[0].get('json', {})
+    """Create the initial state object from the Code node output"""
+    
+    # Input should be a single object with email context and files array
+    data = input_data[0].get('json', {})
     
     state = {
         "email_context": {
-            "from": first_item_json.get('from'),
-            "to": os.environ.get('EMAIL_USER'),
-            "subject": first_item_json.get('subject'),
-            "messageId": first_item_json.get('metadata', {}).get('message-id', first_item_json.get('messageId')),
-            "date": first_item_json.get('date')
+            "from": data.get('from'),
+            "to": data.get('to', os.environ.get('EMAIL_USER')),
+            "subject": data.get('subject'),
+            "messageId": data.get('messageId'),
+            "date": data.get('date')
         },
         "files": [],
         "errors": []
     }
     
-    # Process each file that was written to disk
-    for item in input_data:
-        item_json = item.get('json', {})
-        file_path = item_json.get('fileName') # The 'Write to File' node outputs the path in 'fileName'
+    # Process each file from the files array
+    for file_info in data.get('files', []):
+        file_path = file_info.get('filePath')
+        file_name = file_info.get('fileName')
         
         if not file_path:
-            state['errors'].append({"error": "Received an item with no fileName."})
+            state['errors'].append({"error": f"No file path for {file_name}"})
             continue
 
-        file_name = os.path.basename(file_path)
-        
         # Validate that the file exists
         if not os.path.exists(file_path):
             state['files'].append({
