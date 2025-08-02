@@ -36,6 +36,7 @@ cp .env.template .env
 ```
 
 Required configuration:
+- `VPN_IP`: IP address to bind services (use 0.0.0.0 for all interfaces)
 - `IMAP_HOST`, `IMAP_port`: Email server for receiving
 - `SMTP_HOST`, `SMTP_port`: Email server for sending
 - `EMAIL_USER`, `EMAIL_PASS`: Email credentials
@@ -72,7 +73,7 @@ v0_initial_flow_n8n-python/
    ```bash
    docker compose up -d
    ```
-3. Access n8n interface at http://localhost:5678
+3. Access n8n interface at http://<your-VPN_IP>:5679
 4. Import the workflow:
    - Go to Workflows → Import from File
    - Select `/home/node/data/n8n-python.json` or upload from local `n8n-python.json`
@@ -92,7 +93,7 @@ v0_initial_flow_n8n-python/
    ```
 
 3. **Import and activate the workflow**:
-   - Open http://localhost:5678 in your browser
+   - Open http://<your-VPN_IP>:5679 in your browser
    - Go to Workflows → Import from File → Choose `n8n-python.json`
    - Click "Save" and then "Active" toggle to enable
 
@@ -124,37 +125,20 @@ Each HTTP endpoint is backed by a Python module:
 
 ## Extracted Data Schema
 
-The pipeline extracts the following material properties:
+The pipeline extracts material properties with confidence scores for each field. Each field includes:
+- `value`: The extracted data
+- `confidence`: A confidence score (0-1) indicating extraction reliability
 
-```json
-{
-  "manufacturer": "string",
-  "productName": "string",
-  "productType": "string",
-  "material": "string",
-  "dimensions": {},
-  "weight": {},
-  "color": [],
-  "finish": "string",
-  "fireRating": "string",
-  "acousticRating": {},
-  "thermalProperties": {},
-  "certifications": [],
-  "applications": [],
-  "price": {}
-}
-```
-
-See `schema/materials_schema.json` for complete schema definition.
+See `schema/materials_schema.json` for the complete schema definition with all fields and enum constraints.
 
 ## Monitoring
 
 - Container logs: `docker compose logs -f`
 - n8n execution history: Available in web interface
-- FastAPI docs: http://localhost:8000/docs (when container is running)
+- FastAPI docs: http://<your-VPN_IP>:8000/docs (when container is running)
 - Health endpoints:
-  - n8n: http://localhost:5678/healthz
-  - FastAPI: http://localhost:8000/health
+  - n8n: http://<your-VPN_IP>:5679/healthz
+  - FastAPI: http://<your-VPN_IP>:8000/health
 
 ## PROJECT_SPEC
 ```spec

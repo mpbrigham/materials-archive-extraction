@@ -11,10 +11,7 @@
       "name": "Email Trigger",
       "type": "n8n-nodes-base.emailReadImap",
       "typeVersion": 2,
-      "position": [
-        240,
-        -160
-      ],
+      "position": [240, -160],
       "credentials": {
         "imap": {
           "id": "h0Vity66wkDfDonL",
@@ -24,34 +21,21 @@
     },
     {
       "parameters": {
-        "jsCode": "const fs = require('fs');\n\n// Get email data\nconst email = $input.item.json;\nconst attachments = $input.item.binary || {};\nconst filePaths = [];\n\n// Write each attachment to disk\nfor (const [key, attachment] of Object.entries(attachments)) {\n  const filePath = `/home/node/data/attachments/${$execution.id}_${attachment.fileName}`;\n  \n  // Write file to disk\n  fs.writeFileSync(filePath, attachment.data, 'base64');\n  \n  filePaths.push({\n    fileName: attachment.fileName,\n    filePath: filePath,\n    mimeType: attachment.mimeType\n  });\n}\n\n// Return email data unchanged, just add file paths\nreturn [{\n  json: {\n    ...email,  // Preserve ALL original email fields\n    files: filePaths\n  }\n}];"
-      },
-      "id": "write-files-node",
-      "name": "Write Files to Disk",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        340,
-        -160
-      ]
-    },
-    {
-      "parameters": {
         "url": "http://python-api:8000/validate",
         "method": "POST",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ [$json] }}",
-        "options": {}
+        "jsonBody": "={{ { email_context: $json, attachments: Object.values($binary).map(a => ({fileName: a.fileName, mimeType: a.mimeType, data: a.data})) } }}",
+        "options": {
+          "retryOnFail": true,
+          "retryLimit": 3
+        }
       },
       "id": "1d8c1563-0ab6-4bb1-9117-49edf2789caf",
       "name": "Document Validator",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        540,
-        -160
-      ]
+      "position": [460, -160]
     },
     {
       "parameters": {
@@ -60,16 +44,16 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ [$json] }}",
-        "options": {}
+        "options": {
+          "retryOnFail": true,
+          "retryLimit": 3
+        }
       },
       "id": "6733d7f1-769e-46d5-95da-7f9330d901ed",
       "name": "LLM Extraction",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        760,
-        -160
-      ]
+      "position": [680, -160]
     },
     {
       "parameters": {
@@ -78,21 +62,21 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ [$json] }}",
-        "options": {}
+        "options": {
+          "retryOnFail": true,
+          "retryLimit": 3
+        }
       },
       "id": "2f9e9e79-c0d7-458a-a92b-9f5a175aba42",
       "name": "Result Processor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        960,
-        -160
-      ]
+      "position": [900, -160]
     },
     {
       "parameters": {
         "fromEmail": "={{ $json.from }}",
-        "toEmail": "={{ $json.to.text }}",
+        "toEmail": "={{ $json.to }}",
         "subject": "={{ $json.subject }}",
         "emailFormat": "html",
         "html": "={{ $json.body }}",
@@ -102,11 +86,7 @@
       "name": "Send Notification",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
-      "position": [
-        1160,
-        -160
-      ],
-      "webhookId": "1ae1ebae-1ce9-46b6-a2b7-660a90b76597",
+      "position": [1120, -160],
       "credentials": {
         "smtp": {
           "id": "l29wKFfdODrn2qgi",
@@ -118,69 +98,22 @@
   "pinData": {},
   "connections": {
     "Email Trigger": {
-      "main": [
-        [
-          {
-            "node": "Write Files to Disk",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Write Files to Disk": {
-      "main": [
-        [
-          {
-            "node": "Document Validator",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[{ "node": "Document Validator", "type": "main", "index": 0 }]]
     },
     "Document Validator": {
-      "main": [
-        [
-          {
-            "node": "LLM Extraction",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[{ "node": "LLM Extraction", "type": "main", "index": 0 }]]
     },
     "LLM Extraction": {
-      "main": [
-        [
-          {
-            "node": "Result Processor",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[{ "node": "Result Processor", "type": "main", "index": 0 }]]
     },
     "Result Processor": {
-      "main": [
-        [
-          {
-            "node": "Send Notification",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[{ "node": "Send Notification", "type": "main", "index": 0 }]]
     }
   },
   "active": false,
-  "settings": {
-    "executionOrder": "v1"
-  },
+  "settings": { "executionOrder": "v1" },
   "versionId": "materials-extraction-v2",
-  "meta": {
-    "instanceId": "materials-extraction-pipeline"
-  },
+  "meta": { "instanceId": "materials-extraction-pipeline" },
   "id": "materials-extraction-pipeline",
   "tags": []
 }

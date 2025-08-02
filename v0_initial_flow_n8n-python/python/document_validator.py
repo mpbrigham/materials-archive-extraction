@@ -1,93 +1,75 @@
 #!/usr/bin/env python3
 """
-Document Validator - Creates initial state object and validates PDF attachments from file paths
+Document Validator - Creates initial state object and validates PDF attachments from base64 array
 """
 
 import os
+import base64  # For optional decoding/size check
 from common import log_debug, create_error_response
 
 def create_initial_state(input_data):
-    """Create the initial state object from the Code node output"""
-    
-    # Input is the raw data from Write Files node
-    data = input_data[0]
-    
-    # Pass through all email fields unchanged
-    state = {
-        "email_context": {
-            "from": data['from'],
-            "to": data.get('to', os.environ.get('EMAIL_USER')), 
-            "subject": data['subject'],
-            "messageId": data['messageId'],
-            "date": data['date']
-        },
-        "files": [],
-        "errors": []
-    }
-    
-    # Process each file from the files array
-    for file_info in data.get('files', []):
-        file_path = file_info.get('filePath')
-        file_name = file_info.get('fileName')
-        
-        if not file_path:
-            state['errors'].append({"error": f"No file path for {file_name}"})
-            continue
-
-        # Validate that the file exists
-        if not os.path.exists(file_path):
-            state['files'].append({
+    """Create the initial state object from input JSON"""
+    email_context = input_data.get('email_context', {})
+    attachments = input_data.get('attachments', [])
+    files = []
+    for attachment in attachments:
+        file_name = attachment.get('fileName')
+        mime_type = attachment.get('mimeType', '')
+        data = attachment.get('data')
+        if not data:
+            files.append({
                 "fileName": file_name,
                 "status": "failed",
-                "error": f"File not found at path: {file_path}"
+                "error": "Missing data"
             })
             continue
-
-        # Check if it's a PDF by extension
-        if file_name.lower().endswith('.pdf'):
-            state['files'].append({
+        # Validate MIME/extension (prioritize MIME)
+        if mime_type != 'application/pdf' and not file_name.lower().endswith('.pdf'):
+            files.append({
                 "fileName": file_name,
-                "filePath": file_path,
-                "status": "pending"
-            })
-        else:
-            # Not a PDF file
-            state['files'].append({
-                "fileName": file_name,
-                "filePath": file_path,
                 "status": "failed",
                 "error": "Not a PDF file"
             })
-            
-    # If no valid PDF files were found to process, add a global error
-    pdf_count = sum(1 for f in state['files'] if f.get('status') == 'pending')
-    if pdf_count == 0:
-        state['errors'].append({
-            "error": "No valid PDF files were found to process"
+            continue
+        # Optional: Check base64 validity and size (~4MB decoded limit)
+        try:
+            pdf_bytes = base64.b64decode(data)
+            if len(pdf_bytes) > 4 * 1024 * 1024:
+                files.append({
+                    "fileName": file_name,
+                    "status": "failed",
+                    "error": "PDF too large (>4MB)"
+                })
+                continue
+        except base64.binascii.Error:
+            files.append({
+                "fileName": file_name,
+                "status": "failed",
+                "error": "Invalid base64 data"
+            })
+            continue
+        files.append({
+            "fileName": file_name,
+            "mimeType": mime_type,
+            "data": data,  # Keep base64 for state
+            "status": "pending"
         })
-    
-    return state
+    errors = []
+    if not any(f["status"] == "pending" for f in files):
+        errors.append({"error": "No valid PDF files found"})
+    return {"email_context": email_context, "files": files, "errors": errors}
 
 def process(input_data):
-    """Process file data from n8n's Write Files node and validate attachments"""
-    
+    """Process input JSON and validate attachments"""
+    execution_id = os.environ.get('EXECUTION_ID', 'unknown')
+    # Log input (metadata only to avoid huge base64 in logs)
+    log_input = input_data.copy()
+    if 'attachments' in log_input:
+        log_input['attachments'] = [{"fileName": a['fileName'], "mimeType": a['mimeType']} for a in log_input['attachments']]
+    log_debug(execution_id, "Document Validator", "input", log_input)
     try:
-        execution_id = os.environ.get('EXECUTION_ID', 'unknown')
-        
-        # Log input
-        log_debug(execution_id, "Document Validator", "input", input_data)
-        
-        if not isinstance(input_data, list) or not input_data:
-            raise ValueError('No input data received from Write Files node')
-        
-        # Create initial state object from the list of written files
         state = create_initial_state(input_data)
-        
-        # Log output
         log_debug(execution_id, "Document Validator", "output", state)
-        
-        # Return a single state object for the next node
         return [{"json": state}]
-        
     except Exception as e:
         return create_error_response(e)
