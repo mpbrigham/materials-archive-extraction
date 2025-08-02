@@ -150,7 +150,7 @@ def process(input_data):
         # Count files by status
         processed_files = [f for f in files if f.get('status') == 'processed']
         failed_files = [f for f in files if f.get('status') == 'failed']
-        pdf_files = [f for f in files if 'pdf' in f.get('mimeType', '').lower() or f.get('fileName', '').lower().endswith('.pdf')]
+        pdf_files = [f for f in files if f.get('mimeType') == 'application/pdf']
         
         total_attachments = len(files)
         total_pdfs = len(pdf_files)

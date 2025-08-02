@@ -9,7 +9,11 @@ from common import log_debug, create_error_response
 
 def create_initial_state(input_data):
     """Create the initial state object from input JSON"""
-    email_context = input_data.get('email_context', {})
+    EXPECTED_EMAIL_CONTEXT_FIELDS = ['from', 'subject', 'date', 'messageId']
+    raw_email_context = input_data.get('email_context', {})
+    email_context = {
+        k: raw_email_context[k] for k in EXPECTED_EMAIL_CONTEXT_FIELDS if k in raw_email_context
+    }
     attachments = input_data.get('attachments', [])
     files = []
     for attachment in attachments:
