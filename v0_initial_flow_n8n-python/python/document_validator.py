@@ -4,7 +4,7 @@ Document Validator - Creates initial state object and validates PDF attachments 
 """
 
 import os
-import base64  # For optional decoding/size check
+import base64
 from common import log_debug, create_error_response
 
 def create_initial_state(input_data):
@@ -62,10 +62,7 @@ def create_initial_state(input_data):
 def process(input_data):
     """Process input JSON and validate attachments"""
     execution_id = os.environ.get('EXECUTION_ID', 'unknown')
-    log_input = input_data.copy()
-    if 'attachments' in log_input:
-        log_input['attachments'] = [{"fileName": a['fileName'], "mimeType": a['mimeType']} for a in log_input['attachments']]
-    log_debug(execution_id, "Document Validator", "input", log_input)
+    log_debug(execution_id, "Document Validator", "input", input_data)
     try:
         state = create_initial_state(input_data)
         log_debug(execution_id, "Document Validator", "output", state)
