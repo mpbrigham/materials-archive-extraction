@@ -9,11 +9,7 @@ from common import log_debug, create_error_response
 
 def create_initial_state(input_data):
     """Create the initial state object from input JSON"""
-    EXPECTED_EMAIL_CONTEXT_FIELDS = ['from', 'subject', 'date', 'messageId']
-    raw_email_context = input_data.get('email_context', {})
-    email_context = {
-        k: raw_email_context[k] for k in EXPECTED_EMAIL_CONTEXT_FIELDS if k in raw_email_context
-    }
+    email_context = input_data.get('email_context', {})
     attachments = input_data.get('attachments', [])
     files = []
     for attachment in attachments:
@@ -66,7 +62,6 @@ def create_initial_state(input_data):
 def process(input_data):
     """Process input JSON and validate attachments"""
     execution_id = os.environ.get('EXECUTION_ID', 'unknown')
-    # Log input (metadata only to avoid huge base64 in logs)
     log_input = input_data.copy()
     if 'attachments' in log_input:
         log_input['attachments'] = [{"fileName": a['fileName'], "mimeType": a['mimeType']} for a in log_input['attachments']]

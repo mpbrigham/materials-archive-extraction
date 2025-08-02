@@ -6,13 +6,13 @@
         "format": "resolved",
         "options": {}
       },
-      "id": "7e3143d2-a805-4988-a852-1a9e99001329",
+      "id": "454f22c3-d32a-4f7c-a1e8-3aa35009e3ca",
       "name": "Email Trigger",
       "type": "n8n-nodes-base.emailReadImap",
       "typeVersion": 2,
       "position": [
-        -32,
-        -160
+        -16,
+        32
       ],
       "credentials": {
         "imap": {
@@ -27,16 +27,16 @@
         "url": "http://python-api:8000/validate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { email_context: $json, attachments: $json.attachments } }}",
+        "jsonBody": "={{ $json }}",
         "options": {}
       },
-      "id": "1295579e-41be-434b-9a17-3322a77afe96",
+      "id": "fc73502c-0fb2-4a02-b5a5-95b3b4bb87aa",
       "name": "Document Validator",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        336,
-        -160
+        352,
+        32
       ]
     },
     {
@@ -48,13 +48,13 @@
         "jsonBody": "={{ [$json] }}",
         "options": {}
       },
-      "id": "02dc3149-dc68-4758-975e-d02f58a2544d",
+      "id": "e7b3356c-4628-4b72-9566-8b4a46067bb3",
       "name": "LLM Extraction",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        512,
-        -160
+        528,
+        32
       ]
     },
     {
@@ -66,13 +66,13 @@
         "jsonBody": "={{ [$json] }}",
         "options": {}
       },
-      "id": "d2ff04d4-6793-421b-8ef7-ee5081bd4355",
+      "id": "213648f4-4b1d-4424-8362-86dc704a3329",
       "name": "Result Processor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        736,
-        -160
+        752,
+        32
       ]
     },
     {
@@ -84,13 +84,13 @@
         "html": "={{ $json.body }}",
         "options": {}
       },
-      "id": "495e47d9-5a89-43be-bff6-862ccb024b01",
+      "id": "8f0c3466-54b6-4b32-a813-e008a435f49f",
       "name": "Send Notification",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
       "position": [
-        944,
-        -160
+        960,
+        32
       ],
       "webhookId": "f2078588-7a6e-4e6e-8a59-037efbe2ab58",
       "credentials": {
@@ -102,12 +102,16 @@
     },
     {
       "parameters": {
-        "code": "const emailContext = { ...item.json };\nconst attachments = [];\n\nfor (const [attachmentKey, attachment] of Object.entries(item.binary || {})) {\n  attachments.push({\n    fileName: attachment.fileName,\n    mimeType: attachment.mimeType,\n    fileSize: attachment.data.length,\n    data: attachment.data\n  });\n}\n\nreturn [\n  {\n    json: {\n      ...emailContext,\n      attachments\n    }\n  }\n];"
+        "jsCode": "const allItems = $input.all();\nconst out = [];\n\nfor (const item of allItems) {\n  const email_context = {\n    from: item.json.from,\n    subject: item.json.subject,\n    date: item.json.date,\n    messageId: item.json.messageId\n  };\n\n  const attachments = [];\n\n  for (const [attachmentKey, attachment] of Object.entries(item.binary || {})) {\n    if (!attachment.fileName) throw new Error(`Missing fileName for attachment: ${attachmentKey}`);\n    if (!attachment.mimeType) throw new Error(`Missing mimeType for attachment: ${attachmentKey}`);\n    if (!attachment.data) throw new Error(`Missing data (base64) for attachment: ${attachmentKey}`);\n    attachments.push({\n      fileName: attachment.fileName,\n      mimeType: attachment.mimeType,\n      fileSize: attachment.data.length,\n      data: attachment.data\n    });\n  }\n\n  out.push({\n    json: {\n      email_context,\n      attachments\n    }\n  });\n}\n\nreturn out;"
       },
       "name": "Convert Binary to JSON",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
-      "position": [200, -160]
+      "position": [
+        176,
+        32
+      ],
+      "id": "7e4f09f8-cb98-443f-88a8-e6214c2634f6"
     }
   ],
   "pinData": {},
@@ -172,7 +176,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "ecdec93a-e99c-4bd1-8e7f-3b8df04cc429",
+  "versionId": "6260ccae-0063-4467-a9fd-9b989a22fd29",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "05d627df821b57811f26946d0226002bbfd9dcbcaa7902e0c982270490489431"
