@@ -36,10 +36,12 @@ cp .env.template .env
 ```
 
 Required configuration:
-- `VPN_IP`: IP address to bind services (use 0.0.0.0 for all interfaces)
-- `IMAP_HOST`, `IMAP_port`: Email server for receiving
-- `SMTP_HOST`, `SMTP_port`: Email server for sending
-- `EMAIL_USER`, `EMAIL_PASS`: Email credentials
+- `IP`: IP address to bind services (use 0.0.0.0 for all interfaces)
+- `PORT`: Port for n8n web interface (e.g., 5678)
+- `IMAP_HOST`, `IMAP_PORT`: Email server for receiving
+- `SMTP_HOST`, `SMTP_PORT`: Email server for sending
+- `EMAIL_USER`, `EMAIL_PASS`: Email credentials for the service
+- `EMAIL_USER_TEST`, `EMAIL_USER_TEST_PASS`: Test email credentials (optional, for testing)
 - `LLM_API_KEY`: Google Gemini API key
 - `LLM_MODEL`: Model name (e.g., gemini-2.0-flash)
 - `N8N_ENCRYPTION_KEY`: Auto-generated if not set
@@ -49,15 +51,17 @@ Required configuration:
 ```
 v0_initial_flow_n8n-python/
 ├── docker-compose.yml    # Container configuration
-├── Dockerfile           # n8n with Python and FastAPI
+├── docker/              # Docker build files
+│   ├── Dockerfile.n8n   # n8n container configuration
+│   ├── Dockerfile.python # Python FastAPI container
+│   └── requirements-python.txt # Python dependencies
 ├── n8n-python.json      # Workflow definition
 ├── python/              # Python microservices
 │   ├── app.py          # FastAPI application
 │   ├── common.py       # Shared utilities
 │   ├── document_validator.py
 │   ├── llm_extraction.py
-│   ├── result_processor.py
-│   └── requirements.txt
+│   └── result_processor.py
 ├── prompts/            # LLM extraction prompts
 ├── schema/             # Material data JSON schema
 ├── email_templates/    # Success/failure templates
@@ -73,7 +77,7 @@ v0_initial_flow_n8n-python/
    ```bash
    docker compose up -d
    ```
-3. Access n8n interface at http://<your-VPN_IP>:5679
+3. Access n8n interface at http://<your-IP>:${PORT}
 4. Import the workflow:
    - Go to Workflows → Import from File
    - Select `/home/node/data/n8n-python.json` or upload from local `n8n-python.json`
@@ -93,7 +97,7 @@ v0_initial_flow_n8n-python/
    ```
 
 3. **Import and activate the workflow**:
-   - Open http://<your-VPN_IP>:5679 in your browser
+   - Open http://<your-IP>:${PORT} in your browser (where IP and PORT are from your .env file)
    - Go to Workflows → Import from File → Choose `n8n-python.json`
    - Click "Save" and then "Active" toggle to enable
 
@@ -110,7 +114,7 @@ Send an email with PDF attachments to the configured inbox. The pipeline will:
 
 The FastAPI service exposes the following endpoints on port 8000:
 
-- `POST /validate` - Validates PDF files from a list of file paths.
+- `POST /validate` - Validates PDF files from a list of file paths
 - `POST /extract` - Extract material data using LLM
 - `POST /process` - Format results into email response
 - `GET /health` - Health check endpoint
@@ -118,10 +122,13 @@ The FastAPI service exposes the following endpoints on port 8000:
 ## API Implementation
 
 Each HTTP endpoint is backed by a Python module:
-- `document_validator.py`: Validates PDF files from file paths and creates the initial state object.
-- `llm_extraction.py`: Extracts material data from PDF files using Gemini AI.
+- `document_validator.py`: Validates PDF files from file paths and creates the initial state object
+- `llm_extraction.py`: Extracts material data from PDF files using Gemini AI
 - `result_processor.py`: Formats and validates the output
 - `common.py`: Shared utilities and logging functions
+
+Note: Python dependencies are defined in `docker/requirements-python.txt`
+
 
 ## Extracted Data Schema
 
@@ -135,10 +142,10 @@ See `schema/materials_schema.json` for the complete schema definition with all f
 
 - Container logs: `docker compose logs -f`
 - n8n execution history: Available in web interface
-- FastAPI docs: http://<your-VPN_IP>:8000/docs (when container is running)
+- FastAPI docs: http://<your-IP>:8000/docs (when container is running)
 - Health endpoints:
-  - n8n: http://<your-VPN_IP>:5679/healthz
-  - FastAPI: http://<your-VPN_IP>:8000/health
+  - n8n: http://<your-IP>:${PORT}/healthz
+  - FastAPI: http://<your-IP>:8000/health
 
 ## PROJECT_SPEC
 ```spec
