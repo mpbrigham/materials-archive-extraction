@@ -1,4 +1,4 @@
-google-generativeai
+google-genai
 pypdf2
 pdfplumber
 python-magic

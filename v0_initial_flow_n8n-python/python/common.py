@@ -1,22 +1,6 @@
-#!/usr/bin/env python3
 """
 Common utilities for materials extraction pipeline
 """
-
-import json
-from datetime import datetime, timezone
-
-def log_debug(execution_id, node_name, phase, data):
-    """Log debug information to file"""
-    log_entry = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "executionId": execution_id,
-        "node": node_name,
-        "phase": phase,
-        "data": data
-    }
-    with open('/home/node/data/debug.log', 'a') as f:
-        f.write(json.dumps(log_entry) + '\n')
 
 def create_error_response(e):
     """Create standard error response structure"""
@@ -27,3 +11,21 @@ def create_error_response(e):
             "errors": [{"error": str(e)}]
         }
     }]
+    
+def dict_to_html_table(d, headers=None, skip_fields=None, css_class=''):
+    """Render a dict as an HTML table, with optional header mapping and skip-fields."""
+
+    skip_fields = skip_fields or set()
+    headers = headers or {}
+
+    html = [f'<table class="{css_class}">'] if css_class else ['<table>']
+    html.append('<tbody>')
+
+    for key, value in d.items():
+        if key in skip_fields:
+            continue
+        label = headers.get(key, key)
+        html.append(f'<tr><th>{label}</th><td>{value}</td></tr>')
+
+    html.append('</tbody></table>')
+    return ''.join(html)

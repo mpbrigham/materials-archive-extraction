@@ -45,7 +45,7 @@
         "url": "http://python-api:8000/extract",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ [$json] }}",
+        "jsonBody": "={{ $json }}",
         "options": {}
       },
       "id": "e7b3356c-4628-4b72-9566-8b4a46067bb3",
@@ -63,7 +63,7 @@
         "url": "http://python-api:8000/process",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ [$json] }}",
+        "jsonBody": "={{ $json }}",
         "options": {}
       },
       "id": "213648f4-4b1d-4424-8362-86dc704a3329",
@@ -102,7 +102,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const allItems = $input.all();\nconst out = [];\n\nfor (const item of allItems) {\n  const email_context = {\n    from: item.json.from.value,\n    subject: item.json.subject,\n    date: item.json.date,\n    messageId: item.json.messageId\n  };\n\n  const attachments = [];\n\n  for (const [attachmentKey, attachment] of Object.entries(item.binary || {})) {\n    if (!attachment.fileName) throw new Error(`Missing fileName for attachment: ${attachmentKey}`);\n    if (!attachment.mimeType) throw new Error(`Missing mimeType for attachment: ${attachmentKey}`);\n    if (!attachment.data) throw new Error(`Missing data (base64) for attachment: ${attachmentKey}`);\n    attachments.push({\n      fileName: attachment.fileName,\n      mimeType: attachment.mimeType,\n      fileSize: attachment.data.length,\n      data: attachment.data\n    });\n  }\n\n  out.push({\n    json: {\n      email_context,\n      attachments\n    }\n  });\n}\n\nreturn out;"
+        "jsCode": "const allItems = $input.all();\nconst out = [];\n\nfor (const item of allItems) {\n  const emailContext = {\n    from: item.json.from.value[0].address,\n    fromName: item.json.from.value[0].name,\n    subject: item.json.subject,\n    date: item.json.date,\n    messageId: item.json.messageId\n  };\n  \n  const attachments = [];\n  let attachmentIndex = 0;\n  \n  for (const [attachmentKey, attachment] of Object.entries(item.binary || {})) {\n    attachmentIndex++;\n    const fileName = attachment.fileName || `attachment ${attachmentIndex}`;\n    const mimeType = attachment.mimeType || 'Missing mime type';\n    let data = attachment.data || [];\n    \n    if (!attachment.mimeType) {\n      data = [];\n    }\n    \n    attachments.push({\n      fileName: fileName,\n      mimeType: mimeType,\n      data: data\n    });\n  }\n\n  out.push({\n    json: {\n      executionId: $execution.id,\n      emailContext,\n      attachments,\n      errors: []\n    }\n  });\n}\n\nreturn out;"
       },
       "name": "Convert Binary to JSON",
       "type": "n8n-nodes-base.code",
@@ -176,7 +176,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "6260ccae-0063-4467-a9fd-9b989a22fd29",
+  "versionId": "6260ccae-0063-4467-a9fd-9b989a22fd29-refactored",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "05d627df821b57811f26946d0226002bbfd9dcbcaa7902e0c982270490489431"

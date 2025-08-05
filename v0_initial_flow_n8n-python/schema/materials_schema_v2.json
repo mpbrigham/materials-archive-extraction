@@ -6,369 +6,145 @@
       "items": {
         "type": "object",
         "properties": {
-          "product_name": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "supplier": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "sku_number": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
+          "product_name": { "type": "string" },
+          "supplier": { "type": "string" },
+          "sku_number": { "type": "string" },
           "material_category": {
-            "type": "object",
-            "properties": {
-              "value": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "enum": [
-                    "STONES & CERAMICS",
-                    "WOOD",
-                    "RESILIENT FLOORING",
-                    "CARPETS",
-                    "ENGINEERED SURFACES",
-                    "METALS",
-                    "GLASS & MIRRORS",
-                    "SURFACE FINISHES",
-                    "TEXTILES",
-                    "ACOUSTIC SOLUTIONS",
-                    "FF&E"
-                  ]
-                }
-              },
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "STONES & CERAMICS",
+                "WOOD",
+                "RESILIENT FLOORING",
+                "CARPETS",
+                "ENGINEERED SURFACES",
+                "METALS",
+                "GLASS & MIRRORS",
+                "SURFACE FINISHES",
+                "TEXTILES",
+                "ACOUSTIC SOLUTIONS",
+                "FF&E"
+              ]
+            }
           },
-          "material_class": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },          
-          "composition": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "format": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "dimensions": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "weight": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "mounting": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
+          "material_class": { "type": "string" },
+          "composition": { "type": "string" },
+          "format": { "type": "string" },
+          "dimensions": { "type": "string" },
+          "weight": { "type": "string" },
+          "mounting": { "type": "string" },
           "available_colors": {
-            "type": "object",
-            "properties": {
-              "value": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                    "enum": [
-                      "Beige",
-                      "Black",
-                      "Blue",
-                      "Bronze",
-                      "Brown",
-                      "Gold",
-                      "Green",
-                      "Grey",
-                      "Multicolors",
-                      "Orange",
-                      "Pink",
-                      "Purple",
-                      "Red",
-                      "Silver",
-                      "Transparent",
-                      "White",
-                      "Yellow"
-                    ]
-                }
-              },
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Beige",
+                "Black",
+                "Blue",
+                "Bronze",
+                "Brown",
+                "Gold",
+                "Green",
+                "Grey",
+                "Multicolors",
+                "Orange",
+                "Pink",
+                "Purple",
+                "Red",
+                "Silver",
+                "Transparent",
+                "White",
+                "Yellow"
+              ]
+            }
           },
-          "design_range": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "transparency": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "flammability": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "slip_resistance_with_shoes": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "slip_resistance_barefoot": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "castor_chair_suitability": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "durability": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "wet_abrasion_resistance": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "pilling": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "sound_absorption": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "impact_noise_reduction": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "light_fastness": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "resistance_to_chemicals": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "resistance_to_stains": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "tvoc_at_28_days": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
+          "design_range": { "type": "string" },
+          "transparency": { "type": "string" },
+          "flammability": { "type": "string" },
+          "slip_resistance_with_shoes": { "type": "string" },
+          "slip_resistance_barefoot": { "type": "string" },
+          "castor_chair_suitability": { "type": "string" },
+          "durability": { "type": "string" },
+          "wet_abrasion_resistance": { "type": "string" },
+          "pilling": { "type": "string" },
+          "sound_absorption": { "type": "string" },
+          "impact_noise_reduction": { "type": "string" },
+          "light_fastness": { "type": "string" },
+          "resistance_to_chemicals": { "type": "string" },
+          "resistance_to_stains": { "type": "string" },
+          "tvoc_at_28_days": { "type": "string" },
           "sourcing_type": {
-            "type": "object",
-            "properties": {
-              "value": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "enum": [
-                    "Bio & Geo-sourced",
-                    "Reused",
-                    "100% Recycled",
-                    "Partially Recycled",
-                    "Renewable Resources"
-                  ]
-                }
-              },
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Bio & Geo-sourced",
+                "Reused",
+                "100% Recycled",
+                "Partially Recycled",
+                "Renewable Resources"
+              ]
+            }
           },
           "production_and_manufacturing": {
-            "type": "object",
-            "properties": {
-              "value": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "enum": [
-                    "EPD",
-                    "LCA",
-                    "HPD",
-                    "Low VOC",
-                    "Formaldehyde-free",
-                    "PFAS-free",
-                    "Renewable Energy"
-                  ]
-                }
-              },
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "EPD",
+                "LCA",
+                "HPD",
+                "Low VOC",
+                "Formaldehyde-free",
+                "PFAS-free",
+                "Renewable Energy"
+              ]
+            }
           },
-          "place_of_production": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "string"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
-          "embodied_carbon": {
-            "type": "object",
-            "properties": {
-              "value": {"type": "number"},
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
-          },
+          "place_of_production": { "type": "string" },
+          "embodied_carbon": { "type": "number" },
           "end_of_life": {
-            "type": "object",
-            "properties": {
-              "value": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "enum": [
-                    "Non-Recyclable",
-                    "Conventional Disposal",
-                    "Recyclable/Return to Supplier",
-                    "Compostable/Return to Earth"
-                  ]
-                }
-              },
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Non-Recyclable",
+                "Conventional Disposal",
+                "Recyclable/Return to Supplier",
+                "Compostable/Return to Earth"
+              ]
+            }
           },
           "labels_and_certifications": {
-            "type": "object",
-            "properties": {
-              "value": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "enum": [
-                    "Cradle to Cradle Certified",
-                    "Ecocert",
-                    "REACH Compliant",
-                    "EU Ecolabel",
-                    "BREEAM",
-                    "LEED",
-                    "GOTS Certified",
-                    "OEKO-TEX Standard 100",
-                    "GUT",
-                    "FSC Certified",
-                    "PEFC Certified"
-                  ]
-                }
-              },
-              "confidence": {"type": "number"}
-            },
-            "required": ["value", "confidence"]
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Cradle to Cradle Certified",
+                "Ecocert",
+                "REACH Compliant",
+                "EU Ecolabel",
+                "BREEAM",
+                "LEED",
+                "GOTS Certified",
+                "OEKO-TEX Standard 100",
+                "GUT",
+                "FSC Certified",
+                "PEFC Certified"
+              ]
+            }
           }
         },
         "required": ["product_name", "supplier", "sku_number", "material_category"]
       }
     },
-    "processing_summary": {
-      "type": "string"
-    },
+    "processing_summary": { "type": "string" },
     "processing_exceptions": {
-      "type": "string"
+      "type": "array",
+      "items": { "type": "string" }
     }
   },
   "required": ["products", "processing_summary", "processing_exceptions"]
 }
+

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 FastAPI microservice for materials extraction pipeline
 """
@@ -12,7 +11,7 @@ app = FastAPI(title="Materials Extraction Service")
 
 @app.post("/validate")
 async def validate(request: Request):
-    """Validate PDF attachments from email"""
+    """Validate PDF attachments"""
     data = await request.json()
     return document_validator.process(data)
 

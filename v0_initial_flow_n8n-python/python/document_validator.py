@@ -1,71 +1,42 @@
-#!/usr/bin/env python3
 """
-Document Validator - Creates initial state object and validates PDF attachments from base64 array
+Document Validator - Creates initial state object and validates PDF attachments
 """
 
-import os
 import base64
-from common import log_debug, create_error_response
 
-def create_initial_state(input_data):
+pdf_bytes_max = 4 * 1024 * 1024
+service_name = "Document Validator"
+
+def validate_attachments(state):
     """Create the initial state object from input JSON"""
-    email_context = input_data.get('email_context', {})
-    attachments = input_data.get('attachments', [])
-    files = []
+    attachments = state['attachments']
+    errors = state['errors']
+    attachments_out = []
+    
     for attachment in attachments:
-        file_name = attachment.get('fileName')
-        mime_type = attachment.get('mimeType', '')
-        data = attachment.get('data')
-        if not data:
-            files.append({
-                "fileName": file_name,
-                "status": "failed",
-                "error": "Missing data"
-            })
+        file_name = attachment['fileName']
+        mime_type = attachment['mimeType']
+        data = attachment['data']
+        if mime_type != 'application/pdf':
+            errors.append(f"[{service_name}] Attachment {file_name} is not a PDF file")
             continue
-        # Validate MIME/extension (prioritize MIME)
-        if mime_type != 'application/pdf' and not file_name.lower().endswith('.pdf'):
-            files.append({
-                "fileName": file_name,
-                "status": "failed",
-                "error": "Not a PDF file"
-            })
-            continue
-        # Optional: Check base64 validity and size (~4MB decoded limit)
         try:
             pdf_bytes = base64.b64decode(data)
-            if len(pdf_bytes) > 4 * 1024 * 1024:
-                files.append({
-                    "fileName": file_name,
-                    "status": "failed",
-                    "error": "PDF too large (>4MB)"
-                })
+            if len(pdf_bytes) > pdf_bytes_max:
+                errors.append(f"[{service_name}] Attachment {file_name} is too large (>4MB)")
                 continue
         except base64.binascii.Error:
-            files.append({
-                "fileName": file_name,
-                "status": "failed",
-                "error": "Invalid base64 data"
-            })
+            errors.append(f"[{service_name}] Attachment {file_name} has invalid base64 data")
             continue
-        files.append({
+        attachments_out.append({
             "fileName": file_name,
-            "mimeType": mime_type,
-            "data": data,  # Keep base64 for state
-            "status": "pending"
+            "data": data,
+            "status": f"{service_name} pass"
         })
-    errors = []
-    if not any(f["status"] == "pending" for f in files):
-        errors.append({"error": "No valid PDF files found"})
-    return {"email_context": email_context, "files": files, "errors": errors}
+    state["attachments"] = attachments_out
+    return state
 
-def process(input_data):
+def process(state):
     """Process input JSON and validate attachments"""
-    execution_id = os.environ.get('EXECUTION_ID', 'unknown')
-    log_debug(execution_id, "Document Validator", "input", input_data)
-    try:
-        state = create_initial_state(input_data)
-        log_debug(execution_id, "Document Validator", "output", state)
-        return [{"json": state}]
-    except Exception as e:
-        return create_error_response(e)
+    state = validate_attachments(state)
+    return state
