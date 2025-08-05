@@ -1,0 +1,6 @@
+google-genai
+pypdf2
+pdfplumber
+python-magic
+fastapi
+uvicorn

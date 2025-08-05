@@ -1,0 +1,150 @@
+{
+  "type": "object",
+  "properties": {
+    "products": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_name": { "type": "string" },
+          "supplier": { "type": "string" },
+          "sku_number": { "type": "string" },
+          "material_category": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "STONES & CERAMICS",
+                "WOOD",
+                "RESILIENT FLOORING",
+                "CARPETS",
+                "ENGINEERED SURFACES",
+                "METALS",
+                "GLASS & MIRRORS",
+                "SURFACE FINISHES",
+                "TEXTILES",
+                "ACOUSTIC SOLUTIONS",
+                "FF&E"
+              ]
+            }
+          },
+          "material_class": { "type": "string" },
+          "composition": { "type": "string" },
+          "format": { "type": "string" },
+          "dimensions": { "type": "string" },
+          "weight": { "type": "string" },
+          "mounting": { "type": "string" },
+          "available_colors": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Beige",
+                "Black",
+                "Blue",
+                "Bronze",
+                "Brown",
+                "Gold",
+                "Green",
+                "Grey",
+                "Multicolors",
+                "Orange",
+                "Pink",
+                "Purple",
+                "Red",
+                "Silver",
+                "Transparent",
+                "White",
+                "Yellow"
+              ]
+            }
+          },
+          "design_range": { "type": "string" },
+          "transparency": { "type": "string" },
+          "flammability": { "type": "string" },
+          "slip_resistance_with_shoes": { "type": "string" },
+          "slip_resistance_barefoot": { "type": "string" },
+          "castor_chair_suitability": { "type": "string" },
+          "durability": { "type": "string" },
+          "wet_abrasion_resistance": { "type": "string" },
+          "pilling": { "type": "string" },
+          "sound_absorption": { "type": "string" },
+          "impact_noise_reduction": { "type": "string" },
+          "light_fastness": { "type": "string" },
+          "resistance_to_chemicals": { "type": "string" },
+          "resistance_to_stains": { "type": "string" },
+          "tvoc_at_28_days": { "type": "string" },
+          "sourcing_type": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Bio & Geo-sourced",
+                "Reused",
+                "100% Recycled",
+                "Partially Recycled",
+                "Renewable Resources"
+              ]
+            }
+          },
+          "production_and_manufacturing": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "EPD",
+                "LCA",
+                "HPD",
+                "Low VOC",
+                "Formaldehyde-free",
+                "PFAS-free",
+                "Renewable Energy"
+              ]
+            }
+          },
+          "place_of_production": { "type": "string" },
+          "embodied_carbon": { "type": "number" },
+          "end_of_life": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Non-Recyclable",
+                "Conventional Disposal",
+                "Recyclable/Return to Supplier",
+                "Compostable/Return to Earth"
+              ]
+            }
+          },
+          "labels_and_certifications": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Cradle to Cradle Certified",
+                "Ecocert",
+                "REACH Compliant",
+                "EU Ecolabel",
+                "BREEAM",
+                "LEED",
+                "GOTS Certified",
+                "OEKO-TEX Standard 100",
+                "GUT",
+                "FSC Certified",
+                "PEFC Certified"
+              ]
+            }
+          }
+        },
+        "required": ["product_name", "supplier", "sku_number", "material_category"]
+      }
+    },
+    "processing_summary": { "type": "string" },
+    "processing_exceptions": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["products", "processing_summary", "processing_exceptions"]
+}
+
