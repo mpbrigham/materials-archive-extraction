@@ -61,9 +61,9 @@ v1_standard_flow/
 ├── python/              # Python microservices
 │   ├── app.py          # FastAPI application
 │   ├── common.py       # Shared utilities
-│   ├── document_validator.py
+│   ├── document_validation.py
 │   ├── llm_extraction.py
-│   └── result_processor.py
+│   └── email_formatting.py
 ├── prompts/            # LLM extraction prompts
 ├── schema/             # Material data JSON schema
 ├── email_templates/    # Success/failure templates
@@ -144,15 +144,15 @@ The FastAPI service exposes the following endpoints on port 8000:
 
 - `POST /validate` - Validates individual PDF attachment (MIME type, size, encoding)
 - `POST /extract` - Extracts material data using LLM from single attachment
-- `POST /process` - Formats aggregated results into email response
+- `POST /email-format` - Formats aggregated results into email response
 - `GET /health` - Health check endpoint
 
 ## API Implementation
 
 Each HTTP endpoint is backed by a Python module:
-- `document_validator.py`: Validates single PDF attachment and updates status
+- `document_validation.py`: Validates single PDF attachment and updates status
 - `llm_extraction.py`: Extracts material data from PDF using Gemini AI (removes base64 data after processing for memory optimization)
-- `result_processor.py`: Aggregates all processed attachments and formats email response
+- `email_formatting.py`: Formats aggregated results into email response
 - `common.py`: Shared utilities for HTML table generation
 
 Note: Python dependencies are defined in `docker/requirements-python.txt`
