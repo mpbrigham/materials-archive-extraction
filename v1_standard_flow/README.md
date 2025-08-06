@@ -12,16 +12,18 @@ This pipeline provides an automated email-based service for extracting structure
 ## Architecture
 
 ```
-Email Trigger → Write Files → Document Validator (HTTP) → LLM Extraction (HTTP) → Result Processor (HTTP) → Send Notification
+Email Trigger → Convert Binary → Split Attachments → Document Validator (HTTP) → LLM Extraction (HTTP) → Aggregate → Result Processor (HTTP) → Send Notification
 ```
 
 ### Components
 
-- **Email Trigger**: IMAP monitoring for incoming emails
-- **Write Files**: Saves PDF attachments to `/tmp/n8n/attachments/`
-- **Document Validator**: HTTP endpoint to check valid PDF attachments
+- **Email Trigger**: IMAP monitoring for incoming emails with PDF attachments
+- **Convert Binary to JSON**: Transforms email attachments into processable JSON format
+- **Split Out Attachments**: Processes each attachment individually for scalability
+- **Document Validator**: HTTP endpoint validating PDF files (type, size, encoding)
 - **LLM Extraction**: HTTP endpoint using Gemini AI for material data extraction
-- **Result Processor**: HTTP endpoint to format extracted data into structured JSON
+- **Aggregate Processed Attachments**: Collects all processed attachments back together
+- **Result Processor**: HTTP endpoint formatting extracted data and errors into email response
 - **Send Notification**: SMTP email with success/failure templates
 - **FastAPI Service**: Python microservices exposed on port 8000
 
@@ -36,10 +38,12 @@ cp .env.template .env
 ```
 
 Required configuration:
-- `VPN_IP`: IP address to bind services (use 0.0.0.0 for all interfaces)
-- `IMAP_HOST`, `IMAP_port`: Email server for receiving
-- `SMTP_HOST`, `SMTP_port`: Email server for sending
-- `EMAIL_USER`, `EMAIL_PASS`: Email credentials
+- `IP`: IP address to bind services (use 0.0.0.0 for all interfaces)
+- `PORT`: Port for n8n web interface (e.g., 5678)
+- `IMAP_HOST`, `IMAP_PORT`: Email server for receiving
+- `SMTP_HOST`, `SMTP_PORT`: Email server for sending
+- `EMAIL_USER`, `EMAIL_PASS`: Email credentials for the service
+- `EMAIL_USER_TEST`, `EMAIL_USER_TEST_PASS`: Test email credentials (optional, for testing)
 - `LLM_API_KEY`: Google Gemini API key
 - `LLM_MODEL`: Model name (e.g., gemini-2.0-flash)
 - `N8N_ENCRYPTION_KEY`: Auto-generated if not set
@@ -47,17 +51,19 @@ Required configuration:
 ### Directory Structure
 
 ```
-v0_initial_flow_n8n-python/
+v1_standard_flow/
 ├── docker-compose.yml    # Container configuration
-├── Dockerfile           # n8n with Python and FastAPI
+├── docker/              # Docker build files
+│   ├── Dockerfile.n8n   # n8n container configuration
+│   ├── Dockerfile.python # Python FastAPI container
+│   └── requirements-python.txt # Python dependencies
 ├── n8n-python.json      # Workflow definition
 ├── python/              # Python microservices
 │   ├── app.py          # FastAPI application
 │   ├── common.py       # Shared utilities
 │   ├── document_validator.py
 │   ├── llm_extraction.py
-│   ├── result_processor.py
-│   └── requirements.txt
+│   └── result_processor.py
 ├── prompts/            # LLM extraction prompts
 ├── schema/             # Material data JSON schema
 ├── email_templates/    # Success/failure templates
@@ -73,7 +79,7 @@ v0_initial_flow_n8n-python/
    ```bash
    docker compose up -d
    ```
-3. Access n8n interface at http://<your-VPN_IP>:5679
+3. Access n8n interface at http://<your-IP>:${PORT}
 4. Import the workflow:
    - Go to Workflows → Import from File
    - Select `/home/node/data/n8n-python.json` or upload from local `n8n-python.json`
@@ -93,7 +99,7 @@ v0_initial_flow_n8n-python/
    ```
 
 3. **Import and activate the workflow**:
-   - Open http://<your-VPN_IP>:5679 in your browser
+   - Open http://<your-IP>:${PORT} in your browser (where IP and PORT are from your .env file)
    - Go to Workflows → Import from File → Choose `n8n-python.json`
    - Click "Save" and then "Active" toggle to enable
 
@@ -102,26 +108,55 @@ That's it! Send an email with PDF attachments to test.
 ### Testing
 
 Send an email with PDF attachments to the configured inbox. The pipeline will:
-1. Process each PDF attachment
-2. Extract material metadata
-3. Reply with structured JSON results
+1. Process each PDF attachment individually
+2. Extract material metadata using AI
+3. Reply with structured JSON results or detailed error information
+
+## Error Handling
+
+The pipeline implements robust error handling at multiple levels:
+
+### Per-Attachment Processing
+- Each PDF attachment is processed independently
+- Failed attachments don't block processing of valid ones
+- Errors are tracked per attachment with clear descriptions
+
+### Error Feedback
+Email responses include:
+- **Success emails**: List any attachments that failed with specific reasons
+- **Failure emails**: Detailed error messages for debugging
+- **Error format**: `[Service Name] Attachment filename.pdf: specific error description`
+
+### Common Error Scenarios
+- **Invalid file type**: Non-PDF attachments are rejected with clear message
+- **File size limits**: PDFs over 4MB are rejected to prevent timeouts
+- **LLM extraction failures**: API errors or timeouts are captured and reported
+- **Base64 encoding issues**: Corrupted attachments are identified
+
+### Monitoring
+- **Execution History**: View all workflow executions in n8n UI at http://<your-IP>:${PORT}
+- **Execution Details**: Click any execution to see detailed error messages per node
+- **Container Logs**: Use `docker compose logs -f` for system-level debugging
 
 ## Microservices API
 
 The FastAPI service exposes the following endpoints on port 8000:
 
-- `POST /validate` - Validates PDF files from a list of file paths.
-- `POST /extract` - Extract material data using LLM
-- `POST /process` - Format results into email response
+- `POST /validate` - Validates individual PDF attachment (MIME type, size, encoding)
+- `POST /extract` - Extracts material data using LLM from single attachment
+- `POST /process` - Formats aggregated results into email response
 - `GET /health` - Health check endpoint
 
 ## API Implementation
 
 Each HTTP endpoint is backed by a Python module:
-- `document_validator.py`: Validates PDF files from file paths and creates the initial state object.
-- `llm_extraction.py`: Extracts material data from PDF files using Gemini AI.
-- `result_processor.py`: Formats and validates the output
-- `common.py`: Shared utilities and logging functions
+- `document_validator.py`: Validates single PDF attachment and updates status
+- `llm_extraction.py`: Extracts material data from PDF using Gemini AI (removes base64 data after processing for memory optimization)
+- `result_processor.py`: Aggregates all processed attachments and formats email response
+- `common.py`: Shared utilities for HTML table generation
+
+Note: Python dependencies are defined in `docker/requirements-python.txt`
+
 
 ## Extracted Data Schema
 
@@ -135,10 +170,10 @@ See `schema/materials_schema.json` for the complete schema definition with all f
 
 - Container logs: `docker compose logs -f`
 - n8n execution history: Available in web interface
-- FastAPI docs: http://<your-VPN_IP>:8000/docs (when container is running)
+- FastAPI docs: http://<your-IP>:8000/docs (when container is running)
 - Health endpoints:
-  - n8n: http://<your-VPN_IP>:5679/healthz
-  - FastAPI: http://<your-VPN_IP>:8000/health
+  - n8n: http://<your-IP>:${PORT}/healthz
+  - FastAPI: http://<your-IP>:8000/health
 
 ## PROJECT_SPEC
 ```spec

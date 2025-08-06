@@ -1,0 +1,249 @@
+{
+  "name": "Materials Extraction Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "format": "resolved",
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "id": "454f22c3-d32a-4f7c-a1e8-3aa35009e3ca",
+      "name": "Email Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        32
+      ],
+      "credentials": {
+        "imap": {
+          "id": "h0Vity66wkDfDonL",
+          "name": "IMAP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const allItems = $input.all();\nconst out = [];\n\nfor (const item of allItems) {\n  const emailContext = {\n    from: item.json.from.value[0].address,\n    fromName: item.json.from.value[0].name,\n    subject: item.json.subject,\n    date: item.json.date,\n    messageId: item.json.messageId\n  };\n  \n  const attachments = [];\n  let attachmentIndex = 0;\n  \n  for (const [attachmentKey, attachment] of Object.entries(item.binary || {})) {\n    attachmentIndex++;\n    attachments.push({\n      fileName: attachment.fileName || `attachment_${attachmentIndex}`,\n      mimeType: attachment.mimeType || '',\n      data: attachment.data || ''\n    });\n  }\n\n  out.push({\n    json: {\n      executionId: $execution.id,\n      emailContext,\n      attachments,\n      errors: []\n    }\n  });\n}\n\nreturn out;"
+      },
+      "name": "Convert Binary to JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        176,
+        32
+      ],
+      "id": "7e4f09f8-cb98-443f-88a8-e6214c2634f6"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "attachments",
+        "include": "allOtherFields",
+        "options": {
+        }
+      },
+      "name": "Split Out Attachments",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        352,
+        32
+      ],
+      "id": "split-attachments-node"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://python-api:8000/validate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "timeout": 60000
+        },
+        "continueOnFail": true,
+        "alwaysOutputData": true
+      },
+      "id": "fc73502c-0fb2-4a02-b5a5-95b3b4bb87aa",
+      "name": "Document Validator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        528,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://python-api:8000/extract",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "timeout": 60000
+        },
+        "continueOnFail": true,
+        "alwaysOutputData": true
+      },
+      "id": "e7b3356c-4628-4b72-9566-8b4a46067bb3",
+      "name": "LLM Extraction",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        704,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "=",
+        "options": {}
+      },
+      "name": "Aggregate Processed Attachments",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        880,
+        32
+      ],
+      "id": "aggregate-attachments-node"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://python-api:8000/process",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "213648f4-4b1d-4424-8362-86dc704a3329",
+      "name": "Result Processor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1056,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $json.from }}",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.body }}",
+        "options": {}
+      },
+      "id": "8f0c3466-54b6-4b32-a813-e008a435f49f",
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        32
+      ],
+      "webhookId": "f2078588-7a6e-4e6e-8a59-037efbe2ab58",
+      "credentials": {
+        "smtp": {
+          "id": "l29wKFfdODrn2qgi",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Convert Binary to JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Binary to JSON": {
+      "main": [
+        [
+          {
+            "node": "Split Out Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Attachments": {
+      "main": [
+        [
+          {
+            "node": "Document Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document Validator": {
+      "main": [
+        [
+          {
+            "node": "LLM Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Extraction": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Processed Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Processed Attachments": {
+      "main": [
+        [
+          {
+            "node": "Result Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Result Processor": {
+      "main": [
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6260ccae-0063-4467-a9fd-9b989a22fd29-step3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "05d627df821b57811f26946d0226002bbfd9dcbcaa7902e0c982270490489431"
+  },
+  "id": "je2uy7uN1VG30e2S",
+  "tags": []
+}

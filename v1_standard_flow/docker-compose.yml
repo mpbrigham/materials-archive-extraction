@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.n8n
-    container_name: n8n
+    container_name: n8n-v1_standard_flow
     restart: unless-stopped
     ports:
       - "${IP}:${PORT}:5678"
@@ -36,7 +36,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.python
-    container_name: python-api
+    container_name: python-api-v1_standard_flow
     restart: unless-stopped
     environment:
       - GENERIC_TIMEZONE=UTC
