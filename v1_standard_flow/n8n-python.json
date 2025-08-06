@@ -43,7 +43,7 @@
         "options": {
         }
       },
-      "name": "Split Out Attachments",
+      "name": "Split Attachments",
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
@@ -60,13 +60,12 @@
         "specifyBody": "json",
         "jsonBody": "={{ $json }}",
         "options": {
-          "timeout": 60000
         },
         "continueOnFail": true,
         "alwaysOutputData": true
       },
       "id": "fc73502c-0fb2-4a02-b5a5-95b3b4bb87aa",
-      "name": "Document Validator",
+      "name": "Document Validation",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -99,10 +98,10 @@
     {
       "parameters": {
         "aggregate": "aggregateAllItemData",
-        "destinationFieldName": "=",
+        "destinationFieldName": "data",
         "options": {}
       },
-      "name": "Aggregate Processed Attachments",
+      "name": "Aggregate Attachments",
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
       "position": [
@@ -113,19 +112,32 @@
     },
     {
       "parameters": {
+        "jsCode": "const items = $input.all();\nconst data = items[0].json.data;\n\nreturn [{\n  json: {\n    executionId: data[0].executionId,\n    emailContext: data[0].emailContext,\n    attachments: data.map(item => item.attachments),\n    errors: data.flatMap(item => item.errors || [])\n  }\n}];\n"
+      },
+      "id": "data-formatting-node",
+      "name": "Data Formatting",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        32
+      ]
+    },
+    {
+      "parameters": {
         "method": "POST",
-        "url": "http://python-api:8000/process",
+        "url": "http://python-api:8000/email-format",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ $json }}",
         "options": {}
       },
       "id": "213648f4-4b1d-4424-8362-86dc704a3329",
-      "name": "Result Processor",
+      "name": "Email Formatting",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1056,
+        1232,
         32
       ]
     },
@@ -139,11 +151,11 @@
         "options": {}
       },
       "id": "8f0c3466-54b6-4b32-a813-e008a435f49f",
-      "name": "Send Notification",
+      "name": "Send Email",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
       "position": [
-        1264,
+        1440,
         32
       ],
       "webhookId": "f2078588-7a6e-4e6e-8a59-037efbe2ab58",
@@ -172,25 +184,25 @@
       "main": [
         [
           {
-            "node": "Split Out Attachments",
+            "node": "Split Attachments",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Split Out Attachments": {
+    "Split Attachments": {
       "main": [
         [
           {
-            "node": "Document Validator",
+            "node": "Document Validation",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Document Validator": {
+    "Document Validation": {
       "main": [
         [
           {
@@ -205,29 +217,40 @@
       "main": [
         [
           {
-            "node": "Aggregate Processed Attachments",
+            "node": "Aggregate Attachments",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Aggregate Processed Attachments": {
+    "Aggregate Attachments": {
       "main": [
         [
           {
-            "node": "Result Processor",
+            "node": "Data Formatting",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Result Processor": {
+    "Data Formatting": {
       "main": [
         [
           {
-            "node": "Send Notification",
+            "node": "Email Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Formatting": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
             "type": "main",
             "index": 0
           }

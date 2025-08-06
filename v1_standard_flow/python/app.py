@@ -3,9 +3,9 @@ FastAPI microservice for materials extraction pipeline
 """
 
 from fastapi import FastAPI, Request
-import document_validator
+import document_validation
 import llm_extraction
-import result_processor
+import email_formatting
     
 app = FastAPI(title="Materials Extraction Service")
 
@@ -15,7 +15,7 @@ async def validate(request: Request):
     
     try:
         data = await request.json()
-        return document_validator.process(data)
+        return document_validation.process(data)
     except Exception as e:
         # Return state with error, don't crash
         return {
@@ -37,13 +37,13 @@ async def extract(request: Request):
             "errors": [f"[LLM Extraction] Unexpected error: {str(e)}"]
         }
 
-@app.post("/process")
+@app.post("/email-format")
 async def process_results(request: Request):
     """Process results into email format"""
     
     try:
         data = await request.json()
-        return result_processor.process(data)
+        return email_formatting.process(data)
     except Exception as e:
         # Return state with error, don't crash
         return {

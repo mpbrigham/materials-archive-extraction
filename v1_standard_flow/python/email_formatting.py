@@ -6,45 +6,35 @@ import os
 import html
 from common import dict_to_html_table
 
-service_name = "Result Processor"
-
-def format_email_response(attachments):
+service_name = "Email Formatting"
+   
+def collect_products(attachments):
+    """Collect products from attachments"""
+    
+    products  = []
+    for attachment in attachments:
+        if attachment['status'] == f"LLM Extraction pass":
+            for product in attachment['products']:
+                product['fileName'] = attachment['fileName']
+                products.append(product)
+                
+    return products
+    
+def format_email_response(state):
     """Format aggregated attachments into email response data"""
     
-    if not attachments:
-        raise ValueError(f"[{service_name}] No attachments to process")
-    
-    email_context = attachments[0]['emailContext']
+    email_context = state['emailContext']
+    attachments = state['attachments']
     products = collect_products(attachments)
-    errors = collect_errors(attachments)
-    
+    errors = state['errors']
     template_name = 'success' if products else 'failure'
 
     return {
         'from': os.environ['EMAIL_USER'],
         'to': email_context['from'],
         'subject': format_subject(email_context['subject'], bool(products)),
-        'body': render_template(template_name, attachments, email_context, products, errors)
+        'body': render_template(template_name, email_context, attachments, products, errors)
     }
-
-def collect_products(attachments):
-    """Extract all products from processed attachments"""
-    
-    all_products = []
-    for attachment in attachments:
-        if attachment['attachments']['status'] == f"LLM Extraction pass":
-            all_products.extend(attachment['products'])
-
-    return all_products
-
-def collect_errors(attachments):
-    """Collect all errors from processed attachments"""
-    
-    all_errors = []
-    for attachment in attachments:
-        all_errors.extend(attachment['errors'])
-        
-    return all_errors
     
 def format_subject(original_subject, success):
     """Format email subject line"""
@@ -52,7 +42,7 @@ def format_subject(original_subject, success):
     status = "Complete" if success else "Failed"
     return f"Re: {original_subject} - Materials Extraction {status}"
 
-def render_template(template_name, attachments, email_context, products, errors):
+def render_template(template_name, email_context, attachments, products, errors):
     """Load template and substitute data"""
     
     template_path = f'/app/email_templates/{template_name}.html'
@@ -60,28 +50,26 @@ def render_template(template_name, attachments, email_context, products, errors)
         template = f.read()
     
     if template_name == 'success':
-        return render_success_template(template, attachments, email_context, products)
+        return render_success_template(template, email_context, attachments, products, errors)
     else:
-        return render_failure_template(template, email_context, errors, attachments)
+        return render_failure_template(template, email_context, attachments, errors)
 
-def render_success_template(template, attachments, email_context, products):
+def render_success_template(template, email_context, attachments, products, errors):
     """Render success template with products"""
     
-    product_html = build_products_html(products)
+    product_html = build_products_html(products) if len(products)>0 else '<p>No products extracted.</p>' 
     request_details = build_request_details(email_context)
     model_name = os.environ['LLM_MODEL']
     
     summaries = []
     exceptions = []
     for attachment in attachments:
-        if attachment['attachments']['status'] == f"LLM Extraction pass":
-            products = attachment['products']
-            file_name = attachment['attachments']['fileName']
-            if 'processing_summary' in products:
-                summaries.append(f"{file_name}: {products['processing_summary']}")
-            if 'processing_exceptions' in products:
-                for exception in products['processing_exceptions']:
-                    exceptions.append(f"{file_name}: {exception}")
+        file_name = attachment['fileName']
+        if 'processing_summary' in attachment:
+            summaries.append(f"{file_name}: {attachment['processing_summary']}")
+        if 'processing_exceptions' in attachment:
+            for exception in attachment['processing_exceptions']:
+                exceptions.append(f"{file_name}: {exception}")
     
     if summaries:
         extraction_summary = '<ul>' + ''.join(f'<li>{html.escape(s)}</li>' for s in summaries) + '</ul>'
@@ -95,15 +83,19 @@ def render_success_template(template, attachments, email_context, products):
         exceptions_section += ''.join(f'<li>{html.escape(ex)}</li>' for ex in exceptions)
         exceptions_section += '</ul></div>'
     
-    failed_attachments = [a for a in attachments if 'failed' in a['attachments']['status']]
+    failed_attachments = [
+        attachment
+        for attachment in attachments
+        if 'failed' in attachment['status']
+    ]
+    
     failed_section = ''
     if failed_attachments:
         failed_section = '<div class="failed-attachments"><h3>Processing Issues</h3><ul>'
         for attachment in failed_attachments:
             file_name = attachment['fileName']
-            attachment_errors = attachment.get('errors', [])
-            error = attachment_errors[-1] if attachment_errors else 'Processing failed'
-            failed_section += f'<li><strong>{html.escape(file_name)}:</strong> {html.escape(error)}</li>'
+            for error in attachment['errors']:
+                failed_section += f'<li><strong>{html.escape(file_name)}:</strong> {html.escape(error)}</li>'
         failed_section += '</ul></div>'
     
     body = template.replace('{{productTables}}', product_html)
@@ -116,7 +108,7 @@ def render_success_template(template, attachments, email_context, products):
     
     return body
 
-def render_failure_template(template, email_context, errors, attachments):
+def render_failure_template(template, email_context, attachments, errors):
     """Render failure template with errors"""
     
     error_details = '<br>'.join(html.escape(error) for error in errors) if errors else 'No specific errors recorded'
@@ -130,9 +122,6 @@ def render_failure_template(template, email_context, errors, attachments):
 
 def build_products_html(products):
     """Build HTML for all products"""
-    
-    if not products:
-        return '<p>No products extracted.</p>'
     
     html_parts = []
     for idx, product in enumerate(products):
@@ -191,5 +180,5 @@ def build_request_details(email_context):
     return dict_to_html_table(request_data, headers=headers)
 
 def process(state):
-    """Process aggregated attachments array and format email response"""   
+    """Process aggregated attachments array and format email response"""
     return format_email_response(state)

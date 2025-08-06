@@ -20,8 +20,9 @@ def extract_from_attachment(state, api_key, model_name, prompt, response_schema)
     try:
         pdf_bytes = base64.b64decode(pdf_base64)
     except Exception as e:
-        error = f"[{service_name}] Attachment {file_name} failed base64 decoding: {e}"
-        return {"status": f"{service_name} failed"}, error
+        state['errors'].append(f"[{service_name}] Attachment {file_name} failed base64 decoding: {e}")
+        attachment["status"] = f"{service_name} failed"
+        return state
         
     try:
         client = genai.Client(api_key=api_key)
@@ -41,55 +42,57 @@ def extract_from_attachment(state, api_key, model_name, prompt, response_schema)
             config=config,
         )
         
-        products = response.parsed       
-        products['fileName'] = file_name
-        
-        return {"status": f"{service_name} pass", "products": products}, None
-        
+        if hasattr(response, "parsed"):
+            attachment["status"] = f"{service_name} pass"
+            attachment.update(response.parsed)
+            return state
+            
+        else:
+            state['errors'].append(
+                f"[{service_name}] Attachment {file_name} failed LLM processing: no output JSON"
+            )
+            attachment["status"] = f"{service_name} failed"
+            return state
+
     except Exception as e:
-        error = f"[{service_name}] Attachment {file_name} failed LLM processing: {str(e)}"
-        return {"status": f"{service_name} failed"}, error
+        state['errors'].append(
+            f"[{service_name}] Attachment {file_name} failed LLM processing: {str(e)}"
+        )
+        attachment["status"] = f"{service_name} failed"
+        return state
 
 def process(state):
     """Process single attachment and extract PDF metadata"""
     
     model_name = os.environ['LLM_MODEL']  
     api_key = os.environ.get('LLM_API_KEY')
-    errors = state.get('errors', [])
+    attachment = state['attachments']
     
     try:
         filepath = '/app/prompts/llm_extraction.txt'
         with open(filepath, 'r') as f:
             prompt = f.read()
+            
     except Exception as e:
-        error = f'[{service_name}] Could not open prompt {filepath}: {e}'
-        errors.append(error)
-        state['errors'] = errors
-        state['status'] = f"{service_name} failed"
+        state['errors'].append(f'[{service_name}] Could not open prompt {filepath}: {e}')
+        attachment['status'] = f"{service_name} failed"
         return state
         
     try:
         filepath = '/app/prompts/materials_schema.json'
         with open(filepath, 'r') as f:
             response_schema = json.load(f)
+            
     except Exception as e:
-        error = f'[{service_name}] Could not open schema {filepath}: {e}'
-        errors.append(error)
-        state['errors'] = errors
-        state['status'] = f"{service_name} failed"
+        state['errors'].append(f'[{service_name}] Could not open schema {filepath}: {e}')
+        attachment['status'] = f"{service_name} failed"
         return state
 
-    extracted_data, error = extract_from_attachment(
+    state = extract_from_attachment(
         state, api_key, model_name, prompt, response_schema
     )
-    
-    state.update(extracted_data)
-    
-    if 'data' in state['attachments']:
-        del state['attachments']['data']
-    
-    if error is not None:
-        errors.append(error)
-    state['errors'] = errors
-    
+
+    if 'data' in attachment:
+        del attachment['data']
+
     return state

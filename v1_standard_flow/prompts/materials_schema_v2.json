@@ -16,23 +16,20 @@
             "type": "string"
           },
           "material_category": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": [
-                "STONES & CERAMICS",
-                "WOOD",
-                "RESILIENT FLOORING",
-                "CARPETS",
-                "ENGINEERED SURFACES",
-                "METALS",
-                "GLASS & MIRRORS",
-                "SURFACE FINISHES",
-                "TEXTILES",
-                "ACOUSTIC SOLUTIONS",
-                "FF&E"
-              ]
-            }
+            "type": "string",
+            "enum": [
+              "STONES & CERAMICS",
+              "WOOD",
+              "RESILIENT FLOORING",
+              "CARPETS",
+              "ENGINEERED SURFACES",
+              "METALS",
+              "GLASS & MIRRORS",
+              "SURFACE FINISHES",
+              "TEXTILES",
+              "ACOUSTIC SOLUTIONS",
+              "FF&E"
+            ]
           },
           "material_class": {
             "type": "string"
