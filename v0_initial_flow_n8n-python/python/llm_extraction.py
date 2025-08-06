@@ -44,7 +44,7 @@ def extract_from_attachment(attachment, api_key, model_name, prompt, response_sc
 
         if 'products' in extracted_data:
             for product in extracted_data['products']:
-                product['sourceFileName'] = attachment['fileName']
+                product['sourceFileName'] = file_name
         
         return {"status": f"{service_name} pass", "extractedData": extracted_data}, None
         
