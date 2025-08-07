@@ -1,0 +1,37 @@
+services:
+  n8n:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.n8n
+    container_name: n8n-v1_standard_flow-n8n
+    restart: unless-stopped
+    ports:
+      - "${IP}:${PORT}:5678"
+    environment:
+      - GENERIC_TIMEZONE=UTC
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_EDITOR_BASE_URL=http://${IP}:${PORT}
+      - N8N_USER_FOLDER=/home/node/data
+      - N8N_METRICS=false
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_SECURE_COOKIE=false
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=true
+      - NODE_FUNCTION_ALLOW_BUILTIN=*
+      - DB_TYPE=sqlite
+      - DB_SQLITE_DATABASE=/home/node/data/database.sqlite
+    volumes:
+      - ./data:/home/node/data
+    env_file:
+      - .env
+    networks:
+      - materials-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:${PORT}/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  materials-network:
+    driver: bridge

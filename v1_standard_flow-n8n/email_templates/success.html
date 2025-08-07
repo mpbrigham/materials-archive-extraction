@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Materials Extraction Report</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* Reset and base styles */
+        body, table, td, div, p, a { 
+            -webkit-text-size-adjust: 100%; 
+            -ms-text-size-adjust: 100%; 
+        }
+        
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            min-width: 100% !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+        }        
+        /* Container */
+        .email-wrapper {
+            background-color: #f9fafb;
+            padding: 20px 10px;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        
+        /* Header styles */
+        .header-section {
+            background-color: #1e293b;
+            color: #ffffff;
+            padding: 24px;
+            text-align: center;
+            border-bottom: 4px solid #e5e7eb;
+        }
+        
+        .header-status-complete {
+            border-bottom-color: #22c55e;
+        }
+        
+        .header-status-warning {
+            border-bottom-color: #f59e0b;
+        }
+        
+        .header-status-error {
+            border-bottom-color: #ef4444;
+        }        
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+        
+        .header-stats {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Product card styles */
+        .product-card {
+            border-left: 4px solid #e5e7eb;
+            margin: 20px;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        
+        .product-card-complete {
+            border-left-color: #22c55e;
+        }
+        
+        .product-card-warning {
+            border-left-color: #f59e0b;
+        }
+        
+        .product-card-error {
+            border-left-color: #ef4444;
+        }        
+        .product-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 8px;
+        }
+        
+        .product-meta {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 16px;
+            line-height: 1.8;
+        }
+        
+        /* Properties table */
+        .properties-section {
+            margin-top: 16px;
+        }
+        
+        .section-header {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 8px;
+        }        
+        .properties-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .property-row {
+            border-bottom: 1px solid #f9fafb;
+        }
+        
+        .property-name {
+            padding: 4px 12px 4px 0;
+            font-size: 13px;
+            color: #6b7280;
+            width: 40%;
+            vertical-align: top;
+        }
+        
+        .property-value {
+            padding: 4px 0;
+            font-size: 13px;
+            color: #1f2937;
+            vertical-align: top;
+        }
+        
+        /* PDF-level extraction notes */
+        .pdf-notes-section {
+            background-color: #f9fafb;
+            border-left: 4px solid #3b82f6;
+            margin: 20px;
+            padding: 20px;
+        }        
+        .pdf-notes-section .section-header {
+            color: #1e293b;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Extraction notes */
+        .notes-section {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .note-item {
+            font-size: 12px;
+            color: #6b7280;
+            padding: 2px 0;
+            line-height: 1.5;
+        }
+        
+        .note-success {
+            color: #22c55e;
+        }
+        
+        .note-warning {
+            color: #f59e0b;
+        }
+        
+        .note-info {
+            color: #3b82f6;
+        }        
+        /* Footer */
+        .footer-section {
+            background-color: #f8fafc;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .footer-section a {
+            color: #6b7280;
+            text-decoration: underline;
+        }
+        
+        /* Mobile responsive */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+            }
+            
+            .product-card {
+                margin: 10px !important;
+                padding: 15px !important;
+            }
+            
+            .pdf-notes-section {
+                margin: 10px !important;
+                padding: 15px !important;
+            }            
+            .property-name,
+            .property-value {
+                display: block !important;
+                width: 100% !important;
+                padding: 2px 0 !important;
+            }
+            
+            .property-name {
+                font-weight: 600;
+            }
+        }
+        
+        /* Print styles */
+        @media print {
+            .email-wrapper {
+                background-color: white;
+            }
+            
+            .product-card,
+            .pdf-notes-section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- Header -->            <div class="header-section header-status-{{ summary.status }}">
+                <h1 class="header-title">
+                    {{ summary.status_icon }} Materials Extraction Complete
+                </h1>
+                <div class="header-stats">
+                    {{ summary.product_count }} products extracted from {{ summary.pdf_count }} PDFs<br>
+                    Model: {{ summary.model }}
+                </div>
+            </div>
+            
+            <!-- PDF Groups with Products and Extraction Notes -->
+            {{ pdf_groups_html }}
+            
+            <!-- Footer -->
+            <div class="footer-section">
+                Processed by {{ metadata.system }}<br>
+                <a href="mailto:{{ metadata.contact }}">{{ metadata.contact }}</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

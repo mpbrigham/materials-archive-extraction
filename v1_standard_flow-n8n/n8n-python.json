@@ -1,0 +1,433 @@
+{
+  "name": "Materials Extraction Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "format": "simple",
+        "options": {
+          "downloadAttachments": true,
+          "dataPropertyAttachmentsPrefixName": "attachment_"
+        }
+      },
+      "id": "454f22c3-d32a-4f7c-a1e8-3aa35009e3ca",
+      "name": "Email Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        32
+      ],
+      "credentials": {
+        "imap": {
+          "id": "h0Vity66wkDfDonL",
+          "name": "IMAP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract email context and prepare attachments array\n\nconst allItems = $input.all();\nconst out = [];\n\nfor (const item of allItems) {\n  // Extract email metadata from simple format\n  const emailContext = {\n    from: item.json.from || '',\n    fromName: item.json.from || '',\n    subject: item.json.subject || '',\n    date: item.json.date || '',\n    messageId: item.json['message-id'] || item.json.messageId || ''\n  };\n  \n  const attachments = [];\n  \n  // Process binary attachments with attachment_ prefix\n  for (const [attachmentKey, attachment] of Object.entries(item.binary || {})) {\n    if (attachmentKey.startsWith('attachment_')) {\n      attachments.push({\n        fileName: attachment.fileName || attachmentKey,\n        mimeType: attachment.mimeType || '',\n        data: attachment.data || '',\n        binaryKey: attachmentKey  // Keep reference to binary property\n      });\n    }\n  }\n\n  out.push({\n    json: {\n      executionId: $execution.id,\n      emailContext,\n      attachments,\n      errors: []\n    },\n    binary: item.binary  // Preserve binary data for downstream nodes\n  });\n}\n\nreturn out;"
+      },
+      "name": "Convert Binary to JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        176,
+        32
+      ],
+      "id": "7e4f09f8-cb98-443f-88a8-e6214c2634f6"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "attachments",
+        "include": "allOtherFields",
+        "options": {
+          "includeBinary": true
+        }
+      },
+      "name": "Split Attachments",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        352,
+        32
+      ],
+      "id": "split-attachments-node"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate each PDF attachment\n\nfor (const item of $input.all()) {\n  const attachment = item.json.attachments;\n  const fileName = attachment.fileName;\n  const mimeType = attachment.mimeType;\n  const data = attachment.data;\n  const binaryKey = attachment.binaryKey;\n  \n  // Initialize validation result structure\n  item.json.validation = {\n    valid: false,\n    errors: [],\n    fileName: fileName,\n    status: '',\n    binaryKey: binaryKey  // Preserve for Extract PDF node\n  };\n  \n  // Check if attachment data exists\n  if (!data || data === '') {\n    item.json.validation.errors.push(`[Document Validator] Attachment ${fileName}: Missing attachment data`);\n    item.json.validation.status = 'Document Validator failed';\n    item.json.attachments.status = 'Document Validator failed';\n    continue;\n  }\n  \n  // Validate MIME type - must be PDF\n  if (mimeType !== 'application/pdf') {\n    item.json.validation.errors.push(`[Document Validator] Attachment ${fileName} is not a PDF file`);\n    item.json.validation.status = 'Document Validator failed';\n    item.json.attachments.status = 'Document Validator failed';\n    continue;\n  }\n  \n  try {\n    // Calculate actual file size from base64 (accounting for padding)\n    const base64Length = data.length;\n    const padding = (data.match(/=+$/) || [''])[0].length;\n    const sizeInBytes = (base64Length * 3) / 4 - padding;\n    const maxSize = 4 * 1024 * 1024; // 4MB limit\n    \n    if (sizeInBytes > maxSize) {\n      const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);\n      item.json.validation.errors.push(`[Document Validator] Attachment ${fileName} is too large (${sizeInMB}MB > 4MB)`);\n      item.json.validation.status = 'Document Validator failed';\n      item.json.attachments.status = 'Document Validator failed';\n      continue;\n    }\n    \n    // Verify base64 encoding is valid\n    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;\n    if (!base64Regex.test(data)) {\n      item.json.validation.errors.push(`[Document Validator] Attachment ${fileName} has invalid base64 data`);\n      item.json.validation.status = 'Document Validator failed';\n      item.json.attachments.status = 'Document Validator failed';\n      continue;\n    }\n    \n  } catch (error) {\n    item.json.validation.errors.push(`[Document Validator] Attachment ${fileName}: Validation error - ${error.message}`);\n    item.json.validation.status = 'Document Validator failed';\n    item.json.attachments.status = 'Document Validator failed';\n    continue;\n  }\n  \n  // Passed all validation checks\n  item.json.validation.valid = true;\n  item.json.validation.status = 'Document Validator pass';\n  item.json.attachments.status = 'Document Validator pass';\n  \n  // Merge errors into main errors array\n  if (item.json.validation.errors.length > 0) {\n    item.json.errors = item.json.errors.concat(item.json.validation.errors);\n  }\n}\n\nreturn $input.all();"
+      },
+      "name": "Document Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        32
+      ],
+      "id": "fc73502c-0fb2-4a02-b5a5-95b3b4bb87aa"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.validation.valid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Route Valid/Invalid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        704,
+        32
+      ],
+      "id": "route-valid-invalid-node"
+    },    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "={{ $json.validation.binaryKey }}",
+        "options": {
+          "format": "text"
+        }
+      },
+      "name": "Extract PDF Content",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -64
+      ],
+      "id": "extract-pdf-node"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "attachmentStatus",
+              "value": "failed"
+            },
+            {
+              "name": "errorSummary",
+              "value": "={{ $json.validation.errors.join('; ') }}"
+            }
+          ]
+        },
+        "options": {
+          "keepOnlySet": false
+        }
+      },
+      "name": "Set Error Status",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        880,
+        128
+      ],
+      "id": "set-error-status-node"
+    },    {
+      "parameters": {
+        "text": "=={{ $json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "{{ $vars.materials_extraction_prompt }}",
+          "maxIterations": 3,
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "ai-agent-extraction-node",
+      "name": "AI Agent Extraction",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "={{ $env.LLM_MODEL }}",
+        "options": {
+          "temperature": 0.1,
+          "maxOutputTokens": 8000
+        }
+      },
+      "id": "gemini-chat-model-node",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        -200
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "googlePalmCredentials",
+          "name": "Google Palm API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "={{ $vars.materials_schema }}",
+        "autoFix": true
+      },
+      "id": "structured-output-parser-node",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1056,
+        -320
+      ]
+    },    {
+      "parameters": {
+        "jsCode": "// Process extraction results and format for aggregation\n\nfor (const item of $input.all()) {\n  const attachment = item.json.attachments;\n  const fileName = attachment.fileName;\n  \n  try {\n    // Check if AI extraction was successful\n    if (item.json.products && Array.isArray(item.json.products)) {\n      attachment.status = 'LLM Extraction pass';\n      // Copy extracted data to attachment object\n      attachment.products = item.json.products;\n      attachment.processing_summary = item.json.processing_summary;\n      attachment.processing_exceptions = item.json.processing_exceptions;\n    } else {\n      // No products extracted\n      attachment.status = 'LLM Extraction failed';\n      item.json.errors.push(`[LLM Extraction] Attachment ${fileName}: No products extracted`);\n    }\n  } catch (error) {\n    attachment.status = 'LLM Extraction failed';\n    item.json.errors.push(`[LLM Extraction] Attachment ${fileName}: ${error.message}`);\n  }\n  \n  // Remove the base64 data to reduce payload size\n  if (attachment.data) {\n    delete attachment.data;\n  }\n}\n\nreturn $input.all();"
+      },
+      "id": "process-extraction-results-node",
+      "name": "Process Extraction Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "data",
+        "options": {}
+      },
+      "name": "Aggregate Attachments",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        32
+      ],
+      "id": "aggregate-attachments-node"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format aggregated data for email processing\n\nconst items = $input.all();\nconst data = items[0].json.data;\n\nreturn [{\n  json: {\n    executionId: data[0].executionId,\n    emailContext: data[0].emailContext,\n    attachments: data.map(item => item.attachments),\n    errors: data.flatMap(item => item.errors || [])\n  }\n}];\n"
+      },
+      "id": "data-formatting-node",
+      "name": "Data Formatting",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        32
+      ]
+    },    {
+      "parameters": {
+        "jsCode": "// Format aggregated extraction results into email response\n\nconst items = $input.all();\nconst data = items[0].json.data;\n\n// Extract email context and attachments from aggregated data\nconst emailContext = data[0].emailContext;\nconst attachments = data.map(item => item.attachments);\nconst errors = data.flatMap(item => item.errors || []);\n\n// Status configuration for visual hierarchy\nconst STATUS_CONFIG = {\n  complete: { icon: '✅', color: '#22c55e', level: 'complete' },\n  warning: { icon: '⚠️', color: '#f59e0b', level: 'warning' },\n  error: { icon: '❌', color: '#ef4444', level: 'error' }\n};\n\n// Field display names mapping\nconst FIELD_NAMES = {\n  material_class: 'Material',\n  voc_emissions: 'VOC',\n  water_absorption: 'Water Abs.',\n  compressive_strength: 'Compressive',\n  flexural_strength: 'Flexural',\n  abrasion_resistance: 'Abrasion',\n  frost_resistance: 'Frost',\n  slip_resistance: 'Slip Rating',\n  recycled_content: 'Recycled',\n  fire_rating: 'Fire Rating',\n  acoustic_properties: 'Sound',\n  thermal_properties: 'Thermal',\n  uv_resistance: 'UV Resistance',\n  chemical_resistance: 'Chemical Res.',\n  antimicrobial: 'Antimicrobial',\n  warranty: 'Warranty',\n  composition: 'Composition',\n  format: 'Format',\n  dimensions: 'Dimensions',\n  weight: 'Weight',\n  mounting: 'Mounting',\n  installation: 'Installation',\n  maintenance: 'Maintenance',\n  certifications: 'Certificates',\n  country_of_origin: 'Origin'\n};\n\nfunction formatEmailData(attachments, emailContext) {\n  // Transform raw attachments into structured email context grouped by PDF\n  \n  const pdfGroups = [];\n  let totalProducts = 0;\n  const pdfCount = attachments.length;\n  \n  for (const attachment of attachments) {\n    const pdfGroup = {\n      filename: attachment.fileName,\n      products: [],\n      processing_summary: null,\n      processing_exceptions: [],\n      status: analyzeAttachmentStatus(attachment)\n    };\n    \n    // Extract products from this PDF\n    if (attachment.status === 'LLM Extraction pass' && attachment.products) {\n      for (const product of attachment.products) {\n        const formattedProduct = formatProduct(product, attachment);\n        pdfGroup.products.push(formattedProduct);\n        totalProducts++;\n      }\n    }\n    \n    // Extract PDF-level processing notes\n    if (attachment.processing_summary) {\n      pdfGroup.processing_summary = attachment.processing_summary;\n    }\n    \n    if (attachment.processing_exceptions) {\n      pdfGroup.processing_exceptions = attachment.processing_exceptions;\n    }\n    \n    pdfGroups.push(pdfGroup);\n  }\n  \n  const overallStatus = determineOverallStatus(attachments);\n  \n  return {\n    summary: {\n      status: overallStatus,\n      status_icon: STATUS_CONFIG[overallStatus].icon,\n      product_count: totalProducts,\n      pdf_count: pdfCount,\n      model: $env.LLM_MODEL || 'gemini-2.0-flash'\n    },\n    pdf_groups: pdfGroups,\n    metadata: {\n      generated_at: new Date().toISOString(),\n      system: 'Materials Library System',\n      contact: 'data@materiatek.com'\n    }\n  };\n}\n\nfunction formatProduct(product, attachment) {\n  // Structure single product data with all properties visible\n  \n  const status = analyzeProductStatus(product);\n  \n  return {\n    name: product.product_name,\n    status: status,\n    company: {\n      supplier: product.supplier,\n      category: product.material_category\n    },\n    sku: product.sku_number || null,\n    properties: extractAllProperties(product)\n  };\n}\n\nfunction extractAllProperties(product) {\n  // Extract all properties in schema order\n  \n  const EXCLUDE_FIELDS = new Set([\n    'product_name', 'supplier', 'material_category',\n    'sku_number', 'fileName', 'status'\n  ]);\n  \n  const properties = [];\n  \n  // Process all fields from the product\n  for (const [field, value] of Object.entries(product)) {\n    if (!EXCLUDE_FIELDS.has(field) && value) {\n      properties.push({\n        name: formatFieldName(field),\n        value: formatFieldValue(value)\n      });\n    }\n  }\n  \n  return properties;\n}\n\nfunction analyzeAttachmentStatus(attachment) {\n  // Determine extraction status based on attachment status\n  \n  if (attachment.status === 'failed' || attachment.status === 'Document Validator failed') {\n    return { ...STATUS_CONFIG.error };\n  }\n  \n  // Check if there are processing exceptions\n  if (attachment.processing_exceptions && attachment.processing_exceptions.length > 0) {\n    return { ...STATUS_CONFIG.warning };\n  }\n  \n  return { ...STATUS_CONFIG.complete };\n}\n\nfunction analyzeProductStatus(product) {\n  // Determine product-level status\n  \n  // Check for missing critical fields\n  if (!product.sku_number) {\n    return { ...STATUS_CONFIG.warning };\n  }\n  \n  return { ...STATUS_CONFIG.complete };\n}\n\nfunction determineOverallStatus(attachments) {\n  // Determine overall extraction status\n  \n  if (!attachments || attachments.length === 0) {\n    return 'error';\n  }\n  \n  let hasAnySuccess = false;\n  let hasAnyWarning = false;\n  \n  for (const attachment of attachments) {\n    if (attachment.status === 'LLM Extraction pass') {\n      hasAnySuccess = true;\n      if (attachment.processing_exceptions && attachment.processing_exceptions.length > 0) {\n        hasAnyWarning = true;\n      }\n    }\n  }\n  \n  if (!hasAnySuccess) {\n    return 'error';\n  } else if (hasAnyWarning) {\n    return 'warning';\n  } else {\n    return 'complete';\n  }\n}\n\nfunction formatFieldName(field) {\n  // Convert field name to display format\n  \n  if (FIELD_NAMES[field]) {\n    return FIELD_NAMES[field];\n  }\n  \n  // Default formatting\n  return field.replace(/_/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase());\n}\n\nfunction formatFieldValue(value) {\n  // Format field value for display\n  \n  if (value === null || value === '') {\n    return 'Not specified';\n  } else if (typeof value === 'boolean') {\n    return value ? 'Yes' : 'No';\n  } else if (Array.isArray(value)) {\n    return value.join(', ');\n  } else {\n    return String(value);\n  }\n}\n\nfunction formatSubject(originalSubject, success) {\n  // Format email subject line\n  \n  const status = success ? 'Complete' : 'Failed';\n  return `Re: ${originalSubject} - Materials Extraction ${status}`;\n}\n\nfunction escapeHtml(text) {\n  // Escape HTML special characters\n  \n  const map = {\n    '&': '&amp;',\n    '<': '&lt;',\n    '>': '&gt;',\n    '\"': '&quot;',\n    \"'\": '&#39;'\n  };\n  return text.replace(/[&<>\"']/g, m => map[m]);\n}\n\nfunction renderProductCard(product, filename) {\n  // Render single product card HTML\n  \n  const statusClass = `product-card-${product.status.level}`;\n  \n  // Build properties rows\n  const propertiesHtml = product.properties.map(prop => `\n    <tr class=\"property-row\">\n      <td class=\"property-name\">${escapeHtml(prop.name)}:</td>\n      <td class=\"property-value\">${escapeHtml(prop.value)}</td>\n    </tr>\n  `).join('');\n  \n  // Build complete product card\n  const cardHtml = `\n    <div class=\"product-card ${statusClass}\">\n      <div class=\"product-header\">\n        ${product.status.icon} ${escapeHtml(product.name).toUpperCase()}\n      </div>\n      \n      <div class=\"product-meta\">\n        📄 ${escapeHtml(filename)}<br>\n        🏢 ${escapeHtml(product.company.supplier)} · ${escapeHtml(product.company.category)}<br>\n        🏷️ ${product.sku ? escapeHtml(product.sku) : 'Missing SKU'}\n      </div>\n      \n      ${propertiesHtml ? `<div class=\"properties-section\"><div class=\"section-header\">PROPERTIES</div><table class=\"properties-table\" role=\"presentation\">${propertiesHtml}</table></div>` : ''}\n    </div>\n  `;\n  \n  return cardHtml;\n}\n\nfunction renderPdfExtractionNotes(filename, processingSummary, processingExceptions) {\n  // Render PDF-level extraction notes section\n  \n  const notesItems = [];\n  \n  // Add processing summary with info icon\n  if (processingSummary) {\n    notesItems.push(`\n      <div class=\"note-item note-info\">\n        ℹ️ ${escapeHtml(processingSummary)}\n      </div>\n    `);\n  }\n  \n  // Add each exception with warning icon\n  for (const exception of processingExceptions) {\n    notesItems.push(`\n      <div class=\"note-item note-warning\">\n        ⚠️ ${escapeHtml(exception)}\n      </div>\n    `);\n  }\n  \n  // Only render if there are notes to show\n  if (notesItems.length === 0) {\n    return '';\n  }\n  \n  const notesHtml = `\n    <div class=\"pdf-notes-section\">\n      <div class=\"section-header\">EXTRACTION NOTES - ${escapeHtml(filename)}</div>\n      ${notesItems.join('')}\n    </div>\n  `;\n  \n  return notesHtml;\n}\n\nfunction renderPdfGroup(pdfGroup) {\n  // Render a PDF group with all its products and extraction notes\n  \n  const groupHtmlParts = [];\n  \n  // Render each product in this PDF\n  for (const product of pdfGroup.products) {\n    const productHtml = renderProductCard(product, pdfGroup.filename);\n    groupHtmlParts.push(productHtml);\n  }\n  \n  // Add PDF-level extraction notes if any exist\n  if (pdfGroup.processing_summary || pdfGroup.processing_exceptions.length > 0) {\n    const notesHtml = renderPdfExtractionNotes(\n      pdfGroup.filename,\n      pdfGroup.processing_summary,\n      pdfGroup.processing_exceptions\n    );\n    groupHtmlParts.push(notesHtml);\n  }\n  \n  return groupHtmlParts.join('\\n');\n}\n\nfunction renderSuccessBody(emailData) {\n  // Render success email body with dynamic content\n  \n  const template = $vars.email_success_template || '';\n  let body = template;\n  \n  // Replace summary section placeholders\n  body = body.replace('{{ summary.status }}', emailData.summary.status);\n  body = body.replace('{{ summary.status_icon }}', emailData.summary.status_icon);\n  body = body.replace('{{ summary.product_count }}', String(emailData.summary.product_count));\n  body = body.replace('{{ summary.pdf_count }}', String(emailData.summary.pdf_count));\n  body = body.replace('{{ summary.model }}', escapeHtml(emailData.summary.model));\n  \n  // Build PDF groups HTML\n  const pdfGroupsHtml = emailData.pdf_groups.map(pdfGroup => renderPdfGroup(pdfGroup)).join('\\n');\n  body = body.replace('{{ pdf_groups_html }}', pdfGroupsHtml);\n  \n  // Replace metadata\n  body = body.replace('{{ metadata.system }}', escapeHtml(emailData.metadata.system));\n  body = body.replace('{{ metadata.contact }}', escapeHtml(emailData.metadata.contact));\n  \n  return body;\n}\n\nfunction renderFailureBody(emailData, errors) {\n  // Render failure email body with error details\n  \n  const template = $vars.email_failure_template || '';\n  let body = template;\n  \n  // Format error details\n  let errorList;\n  if (errors && errors.length > 0) {\n    errorList = '<ul>' + errors.map(error => `<li>${escapeHtml(error)}</li>`).join('') + '</ul>';\n  } else {\n    errorList = '<p>No valid products could be extracted from the provided PDFs.</p>';\n  }\n  \n  body = body.replace('{{ error_details }}', errorList);\n  body = body.replace('{{ summary.pdf_count }}', String(emailData.summary.pdf_count));\n  body = body.replace('{{ metadata.system }}', escapeHtml(emailData.metadata.system));\n  body = body.replace('{{ metadata.contact }}', escapeHtml(emailData.metadata.contact));\n  \n  return body;\n}\n\n// Main processing logic\nconst emailData = formatEmailData(attachments, emailContext);\n\n// Determine template based on extraction results\nconst isSuccess = emailData.pdf_groups.some(group => group.products.length > 0);\n\n// Prepare email body\nlet emailBody;\nif (isSuccess) {\n  emailBody = renderSuccessBody(emailData);\n} else {\n  emailBody = renderFailureBody(emailData, errors);\n}\n\n// Return formatted email data\nreturn [{\n  json: {\n    from: $env.EMAIL_USER,\n    to: emailContext.from,\n    subject: formatSubject(emailContext.subject, isSuccess),\n    body: emailBody,\n    isHtml: true\n  }\n}];"
+      },
+      "id": "result-processor-node",
+      "name": "Result Processor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $json.from }}",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.body }}",
+        "options": {}
+      },
+      "id": "8f0c3466-54b6-4b32-a813-e008a435f49f",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        1968,
+        32
+      ],
+      "webhookId": "f2078588-7a6e-4e6e-8a59-037efbe2ab58",
+      "credentials": {
+        "smtp": {
+          "id": "l29wKFfdODrn2qgi",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},  "connections": {
+    "Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Convert Binary to JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Binary to JSON": {
+      "main": [
+        [
+          {
+            "node": "Split Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Attachments": {
+      "main": [
+        [
+          {
+            "node": "Document Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document Validation": {
+      "main": [
+        [
+          {
+            "node": "Route Valid/Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Valid/Invalid": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Error Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Content": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Error Status": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },    "AI Agent Extraction": {
+      "main": [
+        [
+          {
+            "node": "Process Extraction Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "ai_languageModel": [
+        [
+          {
+            "node": "Google Gemini Chat Model",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ],
+      "ai_outputParser": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Extraction Results": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Attachments": {
+      "main": [
+        [
+          {
+            "node": "Data Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Formatting": {
+      "main": [
+        [
+          {
+            "node": "Result Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Result Processor": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "phase3-ai-agent",
+  "id": "materials-extraction-pipeline-v3",
+  "meta": {
+    "instanceId": "materials-extraction"
+  },
+  "tags": []
+}
