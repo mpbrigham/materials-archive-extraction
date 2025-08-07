@@ -1,274 +1,263 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Materials Extraction Report</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        /* Reset and base styles */
+        body, table, td, div, p, a { 
+            -webkit-text-size-adjust: 100%; 
+            -ms-text-size-adjust: 100%; 
+        }
+        
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            min-width: 100% !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            margin: 0;
-            padding: 32px;
-            background-color: #f8fafc;
-            color: #1e293b;
+            color: #1f2937;
+        }        
+        /* Container */
+        .email-wrapper {
+            background-color: #f9fafb;
+            padding: 20px 10px;
         }
         
-        .container {
-            max-width: 1000px;
+        .email-container {
+            max-width: 600px;
             margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            overflow: hidden;
+            background-color: #ffffff;
         }
         
-        .header {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: white;
-            padding: 32px;
-            text-align: center;
-        }
-        
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 600;
-            letter-spacing: -0.025em;
-        }
-        
-        .content {
-            padding: 32px;
-        }
-        
-        .product-section {
-            margin-bottom: 48px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-        }
-        
-        .header-table { 
-            width: 100%;
-            border-collapse: collapse;
-            margin: 0;
-            background: #f1f5f9;
-        }
-        
-        .header-table th { 
-            background: #475569;
-            color: white; 
-            padding: 16px 20px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border: none;
-        }
-        
-        .header-table td { 
-            padding: 16px 20px;
-            font-weight: 600;
-            font-size: 16px;
-            color: #1e293b;
-            border: none;
-        }
-        
-        .data-table { 
-            width: 100%;
-            border-collapse: collapse;
-            margin: 0;
-            background: white;
-        }
-        
-        .data-table th { 
-            background: #64748b;
-            color: white;
-            padding: 12px 20px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border: none;
-        }
-        
-        .data-table td { 
-            padding: 12px 20px;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: top;
-        }
-        
-        .data-table tr:nth-child(even) { 
-            background-color: #f8fafc;
-        }
-        
-        .data-table tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .section {
-            margin: 32px 0;
+        /* Header styles */
+        .header-section {
+            background-color: #1e293b;
+            color: #ffffff;
             padding: 24px;
-            border-radius: 8px;
-            border-left: 4px solid;
+            text-align: center;
+            border-bottom: 4px solid #e5e7eb;
         }
         
-        .summary { 
-            background-color: #f0fdf4;
+        .header-status-complete {
+            border-bottom-color: #22c55e;
+        }
+        
+        .header-status-warning {
+            border-bottom-color: #f59e0b;
+        }
+        
+        .header-status-error {
+            border-bottom-color: #ef4444;
+        }        
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+        
+        .header-stats {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Product card styles */
+        .product-card {
+            border-left: 4px solid #e5e7eb;
+            margin: 20px;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        
+        .product-card-complete {
             border-left-color: #22c55e;
         }
         
-        .summary h3 {
-            color: #166534;
-            margin: 0 0 16px 0;
-            font-size: 18px;
-            font-weight: 600;
-        }
-        
-        .summary ul {
-            margin: 0;
-            padding-left: 20px;
-            color: #166534;
-        }
-        
-        .summary li {
-            margin-bottom: 8px;
-            line-height: 1.5;
-        }
-        
-        .exceptions { 
-            background-color: #fffbeb;
+        .product-card-warning {
             border-left-color: #f59e0b;
         }
         
-        .exceptions h3 {
-            color: #92400e;
-            margin: 0 0 16px 0;
-            font-size: 18px;
-            font-weight: 600;
-        }
-        
-        .exceptions ul {
-            margin: 0;
-            padding-left: 20px;
-            color: #92400e;
-        }
-        
-        .exceptions li {
-            margin-bottom: 8px;
-            line-height: 1.5;
-        }
-        
-        .failed-files { 
-            background-color: #fef2f2;
+        .product-card-error {
             border-left-color: #ef4444;
-        }
-        
-        .failed-files h3 {
-            color: #dc2626;
-            margin: 0 0 16px 0;
-            font-size: 18px;
+        }        
+        .product-header {
+            font-size: 16px;
             font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 8px;
         }
         
-        .failed-files p {
-            color: #dc2626;
-            margin: 0 0 12px 0;
+        .product-meta {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 16px;
+            line-height: 1.8;
         }
         
-        .failed-files ul {
-            margin: 0;
-            padding-left: 20px;
-            color: #dc2626;
+        /* Properties table */
+        .properties-section {
+            margin-top: 16px;
         }
         
-        .failed-files li {
+        .section-header {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
             margin-bottom: 8px;
-            line-height: 1.5;
-        }
-        
-        .request-details { 
-            background-color: #f8fafc;
-            border-left-color: #64748b;
-        }
-        
-        .request-details h3 {
-            color: #475569;
-            margin: 0 0 16px 0;
-            font-size: 18px;
-            font-weight: 600;
-        }
-        
-        .request-details table { 
+        }        
+        .properties-table {
             width: 100%;
             border-collapse: collapse;
-            border-radius: 6px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
         }
         
-        .request-details th { 
-            background: #64748b;
-            color: white;
-            padding: 12px 16px;
-            text-align: left;
-            font-weight: 600;
+        .property-row {
+            border-bottom: 1px solid #f9fafb;
+        }
+        
+        .property-name {
+            padding: 4px 12px 4px 0;
             font-size: 13px;
-            border: none;
+            color: #6b7280;
+            width: 40%;
+            vertical-align: top;
         }
         
-        .request-details td { 
-            padding: 12px 16px;
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
+        .property-value {
+            padding: 4px 0;
+            font-size: 13px;
+            color: #1f2937;
+            vertical-align: top;
         }
         
-        .request-details tr:last-child td {
-            border-bottom: none;
+        /* PDF-level extraction notes */
+        .pdf-notes-section {
+            background-color: #f9fafb;
+            border-left: 4px solid #3b82f6;
+            margin: 20px;
+            padding: 20px;
+        }        
+        .pdf-notes-section .section-header {
+            color: #1e293b;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         
-        .footer {
-            margin-top: 48px;
-            padding-top: 32px;
-            border-top: 1px solid #e2e8f0;
-            text-align: center;
+        /* Extraction notes */
+        .notes-section {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
         }
         
-        .footer p {
-            color: #64748b;
-            font-size: 14px;
-            margin: 8px 0;
+        .note-item {
+            font-size: 12px;
+            color: #6b7280;
+            padding: 2px 0;
             line-height: 1.5;
+        }
+        
+        .note-success {
+            color: #22c55e;
+        }
+        
+        .note-warning {
+            color: #f59e0b;
+        }
+        
+        .note-info {
+            color: #3b82f6;
+        }        
+        /* Footer */
+        .footer-section {
+            background-color: #f8fafc;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .footer-section a {
+            color: #6b7280;
+            text-decoration: underline;
+        }
+        
+        /* Mobile responsive */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+            }
+            
+            .product-card {
+                margin: 10px !important;
+                padding: 15px !important;
+            }
+            
+            .pdf-notes-section {
+                margin: 10px !important;
+                padding: 15px !important;
+            }            
+            .property-name,
+            .property-value {
+                display: block !important;
+                width: 100% !important;
+                padding: 2px 0 !important;
+            }
+            
+            .property-name {
+                font-weight: 600;
+            }
+        }
+        
+        /* Print styles */
+        @media print {
+            .email-wrapper {
+                background-color: white;
+            }
+            
+            .product-card,
+            .pdf-notes-section {
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Materials Extraction Complete</h1>
-        </div>
-        
-        <div class="content">
-            {{productTables}}
-            
-            <div class="section summary">
-                <h3>Extraction Summary</h3>
-                {{extractionSummary}}
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- Header -->            <div class="header-section header-status-{{ summary.status }}">
+                <h1 class="header-title">
+                    {{ summary.status_icon }} Materials Extraction Complete
+                </h1>
+                <div class="header-stats">
+                    {{ summary.product_count }} products extracted from {{ summary.pdf_count }} PDFs<br>
+                    Model: {{ summary.model }}
+                </div>
             </div>
             
-            {{exceptionsSection}}
+            <!-- PDF Groups with Products and Extraction Notes -->
+            {{ pdf_groups_html }}
             
-            {{failedAttachmentsSection}}
-            
-            <div class="section request-details">
-                <h3>Request Details</h3>
-                {{requestDetails}}
-            </div>
-            
-            <div class="footer">
-                <p><strong>Processed {{totalProducts}} product(s) from {{totalAttachments}} attachment(s)</strong></p>
-                <p>Generated automatically by Materials Library Extraction System</p>
+            <!-- Footer -->
+            <div class="footer-section">
+                Processed by {{ metadata.system }}<br>
+                <a href="mailto:{{ metadata.contact }}">{{ metadata.contact }}</a>
             </div>
         </div>
     </div>

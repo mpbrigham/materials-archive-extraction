@@ -1,184 +1,353 @@
 """
-Result Processor - Format extraction results from aggregated attachments
+Email Formatting - Transform extraction results into structured email data
 """
 
 import os
-import html
-from common import dict_to_html_table
+from datetime import datetime
+import constants
 
 service_name = "Email Formatting"
-   
-def collect_products(attachments):
-    """Collect products from attachments"""
-    
-    products  = []
-    for attachment in attachments:
-        if attachment['status'] == f"LLM Extraction pass":
-            for product in attachment['products']:
-                product['fileName'] = attachment['fileName']
-                products.append(product)
-                
-    return products
-    
-def format_email_response(state):
-    """Format aggregated attachments into email response data"""
+
+# Status configuration for visual hierarchy
+STATUS_CONFIG = {
+    'complete': {'icon': '✅', 'color': '#22c55e', 'level': 'complete'},
+    'warning': {'icon': '⚠️', 'color': '#f59e0b', 'level': 'warning'},
+    'error': {'icon': '❌', 'color': '#ef4444', 'level': 'error'}
+}
+
+def process(state):
+    """Process aggregated attachments and format email response."""
     
     email_context = state['emailContext']
     attachments = state['attachments']
-    products = collect_products(attachments)
-    errors = state['errors']
-    template_name = 'success' if products else 'failure'
-
+    
+    # Transform data for template
+    email_data = format_email_data(attachments, email_context)
+    
+    # Determine template based on extraction results
+    template_name = 'success' if email_data['pdf_groups'] else 'failure'
+    
     return {
         'from': os.environ['EMAIL_USER'],
         'to': email_context['from'],
-        'subject': format_subject(email_context['subject'], bool(products)),
-        'body': render_template(template_name, email_context, attachments, products, errors)
+        'subject': format_subject(email_context['subject'], template_name == 'success'),
+        'body': render_template(template_name, email_data, state['errors'])
+    }
+
+def format_email_data(attachments, email_context):
+    """Transform raw attachments into structured email context grouped by PDF."""
+    
+    # Group products by their source PDF
+    pdf_groups = []
+    total_products = 0
+    pdf_count = len(attachments)
+    
+    for attachment in attachments:
+        pdf_group = {
+            'filename': attachment['fileName'],
+            'products': [],
+            'processing_summary': None,
+            'processing_exceptions': [],
+            'status': analyze_attachment_status(attachment)
+        }
+        
+        # Extract products from this PDF
+        if attachment['status'] == 'LLM Extraction pass' and 'products' in attachment:
+            for product in attachment['products']:
+                formatted_product = format_product(product, attachment)
+                pdf_group['products'].append(formatted_product)
+                total_products += 1
+        
+        # Extract PDF-level processing notes
+        if 'processing_summary' in attachment and attachment['processing_summary']:
+            pdf_group['processing_summary'] = attachment['processing_summary']
+        
+        if 'processing_exceptions' in attachment and attachment['processing_exceptions']:
+            pdf_group['processing_exceptions'] = attachment['processing_exceptions']
+        
+        pdf_groups.append(pdf_group)
+    
+    overall_status = determine_overall_status(attachments)
+    
+    return {
+        'summary': {
+            'status': overall_status,
+            'status_icon': STATUS_CONFIG[overall_status]['icon'],
+            'product_count': total_products,
+            'pdf_count': pdf_count,
+            'model': os.environ['LLM_MODEL']
+        },
+        'pdf_groups': pdf_groups,
+        'metadata': {
+            'generated_at': datetime.now().isoformat(),
+            'system': 'Materials Library System',
+            'contact': 'data@materiatek.com'
+        }
+    }
+
+def format_product(product, attachment):
+    """Structure single product data with all properties visible."""
+    
+    status = analyze_product_status(product)
+    
+    return {
+        'name': product['product_name'],
+        'status': status,
+        'company': {
+            'supplier': product['supplier'],
+            'category': product['material_category']
+        },
+        'sku': product['sku_number'] if product['sku_number'] else None,
+        'properties': extract_all_properties(product)
+    }
+
+def extract_all_properties(product):
+    """Extract all properties in schema order."""
+    
+    # Fields already shown in header section
+    EXCLUDE_FIELDS = {
+        'product_name', 'supplier', 'material_category', 
+        'sku_number', 'fileName', 'status'
     }
     
+    properties = []
+    
+    # Process all fields from the product
+    for field, value in product.items():
+        if field not in EXCLUDE_FIELDS and value:
+            properties.append({
+                'name': format_field_name(field),
+                'value': format_field_value(value)
+            })
+    
+    return properties
+
+def analyze_attachment_status(attachment):
+    """Determine extraction status based on attachment status."""
+    
+    if attachment['status'] == 'failed':
+        return STATUS_CONFIG['error'].copy()
+    
+    # Check if there are processing exceptions
+    if 'processing_exceptions' in attachment and attachment['processing_exceptions']:
+        return STATUS_CONFIG['warning'].copy()
+    
+    return STATUS_CONFIG['complete'].copy()
+
+def analyze_product_status(product):
+    """Determine product-level status."""
+    
+    # Check for missing critical fields
+    if not product.get('sku_number'):
+        return STATUS_CONFIG['warning'].copy()
+    
+    return STATUS_CONFIG['complete'].copy()
+
+def determine_overall_status(attachments):
+    """Determine overall extraction status."""
+    
+    if not attachments:
+        return 'error'
+    
+    has_any_success = False
+    has_any_warning = False
+    
+    for attachment in attachments:
+        if attachment['status'] == 'LLM Extraction pass':
+            has_any_success = True
+            if 'processing_exceptions' in attachment and attachment['processing_exceptions']:
+                has_any_warning = True
+        
+    if not has_any_success:
+        return 'error'
+    elif has_any_warning:
+        return 'warning'
+    else:
+        return 'complete'
+
+def format_field_name(field):
+    """Convert field name to display format."""
+    
+    if field in constants.field_names:
+        return constants.field_names[field]
+    
+    # Default formatting
+    return field.replace('_', ' ').title()
+
+def format_field_value(value):
+    """Format field value for display."""
+    
+    if value is None or value == '':
+        return 'Not specified'
+    elif isinstance(value, bool):
+        return 'Yes' if value else 'No'
+    elif isinstance(value, list):
+        return ', '.join(str(v) for v in value)
+    else:
+        return str(value)
+
 def format_subject(original_subject, success):
-    """Format email subject line"""
+    """Format email subject line."""
     
     status = "Complete" if success else "Failed"
     return f"Re: {original_subject} - Materials Extraction {status}"
 
-def render_template(template_name, email_context, attachments, products, errors):
-    """Load template and substitute data"""
+def render_template(template_name, email_data, errors):
+    """Load template and substitute data."""
+    
+    import html
     
     template_path = f'/app/email_templates/{template_name}.html'
     with open(template_path, 'r') as f:
         template = f.read()
     
     if template_name == 'success':
-        return render_success_template(template, email_context, attachments, products, errors)
+        return render_success_template(template, email_data)
     else:
-        return render_failure_template(template, email_context, attachments, errors)
+        return render_failure_template(template, email_data, errors)
 
-def render_success_template(template, email_context, attachments, products, errors):
-    """Render success template with products"""
+def render_success_template(template, email_data):
+    """Render success template with structured data."""
     
-    product_html = build_products_html(products) if len(products)>0 else '<p>No products extracted.</p>' 
-    request_details = build_request_details(email_context)
-    model_name = os.environ['LLM_MODEL']
+    import html
     
-    summaries = []
-    exceptions = []
-    for attachment in attachments:
-        file_name = attachment['fileName']
-        if 'processing_summary' in attachment:
-            summaries.append(f"{file_name}: {attachment['processing_summary']}")
-        if 'processing_exceptions' in attachment:
-            for exception in attachment['processing_exceptions']:
-                exceptions.append(f"{file_name}: {exception}")
+    # Replace template variables with actual data
+    body = template
     
-    if summaries:
-        extraction_summary = '<ul>' + ''.join(f'<li>{html.escape(s)}</li>' for s in summaries) + '</ul>'
-    else:
-        extraction_summary = f'<ul><li>Processed {len(products)} product(s) from attachments.</li></ul>'
-    extraction_summary += f'<div> using model <strong>{html.escape(model_name)}</strong></div>'
+    # Replace summary section - using simple placeholders now
+    body = body.replace('{{ summary.status }}', email_data['summary']['status'])
+    body = body.replace('{{ summary.status_icon }}', email_data['summary']['status_icon'])
+    body = body.replace('{{ summary.product_count }}', str(email_data['summary']['product_count']))
+    body = body.replace('{{ summary.pdf_count }}', str(email_data['summary']['pdf_count']))
+    body = body.replace('{{ summary.model }}', html.escape(email_data['summary']['model']))
     
-    exceptions_section = ''
-    if exceptions:
-        exceptions_section = '<div class="exceptions"><h3>Processing Exceptions</h3><ul>'
-        exceptions_section += ''.join(f'<li>{html.escape(ex)}</li>' for ex in exceptions)
-        exceptions_section += '</ul></div>'
+    # Build PDF groups HTML
+    pdf_groups_html = []
+    for pdf_group in email_data['pdf_groups']:
+        pdf_html = render_pdf_group(pdf_group)
+        pdf_groups_html.append(pdf_html)
     
-    failed_attachments = [
-        attachment
-        for attachment in attachments
-        if 'failed' in attachment['status']
-    ]
+    body = body.replace('{{ pdf_groups_html }}', '\n'.join(pdf_groups_html))
     
-    failed_section = ''
-    if failed_attachments:
-        failed_section = '<div class="failed-attachments"><h3>Processing Issues</h3><ul>'
-        for attachment in failed_attachments:
-            file_name = attachment['fileName']
-            for error in attachment['errors']:
-                failed_section += f'<li><strong>{html.escape(file_name)}:</strong> {html.escape(error)}</li>'
-        failed_section += '</ul></div>'
-    
-    body = template.replace('{{productTables}}', product_html)
-    body = body.replace('{{extractionSummary}}', extraction_summary)
-    body = body.replace('{{exceptionsSection}}', exceptions_section)
-    body = body.replace('{{failedAttachmentsSection}}', failed_section)
-    body = body.replace('{{requestDetails}}', request_details)
-    body = body.replace('{{totalProducts}}', str(len(products)))
-    body = body.replace('{{totalAttachments}}', str(len(attachments)))
+    # Replace metadata
+    body = body.replace('{{ metadata.system }}', html.escape(email_data['metadata']['system']))
+    body = body.replace('{{ metadata.contact }}', html.escape(email_data['metadata']['contact']))
     
     return body
 
-def render_failure_template(template, email_context, attachments, errors):
-    """Render failure template with errors"""
+def render_failure_template(template, email_data, errors):
+    """Render failure template with errors."""
     
-    error_details = '<br>'.join(html.escape(error) for error in errors) if errors else 'No specific errors recorded'
-    request_details = build_request_details(email_context)
+    import html
     
-    body = template.replace('{{errorDetails}}', error_details)
-    body = body.replace('{{requestDetails}}', request_details)
-    body = body.replace('{{totalAttachments}}', str(len(attachments)))
+    # Replace template variables
+    body = template
+    
+    # Format error details
+    if errors:
+        error_list = '<ul>' + ''.join(f'<li>{html.escape(error)}</li>' for error in errors) + '</ul>'
+    else:
+        error_list = '<p>No valid products could be extracted from the provided PDFs.</p>'
+    
+    body = body.replace('{{ error_details }}', error_list)
+    body = body.replace('{{ summary.pdf_count }}', str(email_data['summary']['pdf_count']))
+    body = body.replace('{{ metadata.system }}', html.escape(email_data['metadata']['system']))
+    body = body.replace('{{ metadata.contact }}', html.escape(email_data['metadata']['contact']))
     
     return body
 
-def build_products_html(products):
-    """Build HTML for all products"""
+def render_pdf_group(pdf_group):
+    """Render a PDF group with all its products and extraction notes."""
     
-    html_parts = []
-    for idx, product in enumerate(products):
-        if idx > 0:
-            html_parts.append('<br>')
-        
-        header_data = {
-            'supplier': product['supplier'],
-            'product_name': product['product_name'],
-            'sku_number': product['sku_number'],
-            'material_category': product['material_category'],
-            'source_file': product['fileName']
-        }
-        header_labels = {
-            'supplier': 'Supplier',
-            'product_name': 'Product Name', 
-            'sku_number': 'SKU',
-            'material_category': 'Material Category',
-            'source_file': 'Source File'
-        }
-        
-        header_html = dict_to_html_table(
-            header_data,
-            headers=header_labels,
-            css_class='header-table'
+    import html
+    
+    group_html_parts = []
+    
+    # Render each product in this PDF
+    for product in pdf_group['products']:
+        product_html = render_product_card(product, pdf_group['filename'])
+        group_html_parts.append(product_html)
+    
+    # Add PDF-level extraction notes if any exist
+    if pdf_group['processing_summary'] or pdf_group['processing_exceptions']:
+        notes_html = render_pdf_extraction_notes(
+            pdf_group['filename'],
+            pdf_group['processing_summary'],
+            pdf_group['processing_exceptions']
         )
-        html_parts.append(header_html)
-        
-        skip_fields = {'supplier', 'product_name', 'sku_number', 'material_category', 'fileName'}
-        data_html = dict_to_html_table(
-            product,
-            skip_fields=skip_fields,
-            css_class='data-table'
-        )
-        html_parts.append(data_html)
+        group_html_parts.append(notes_html)
     
-    return '\n'.join(html_parts)
+    return '\n'.join(group_html_parts)
 
-def build_request_details(email_context):
-    """Build request details HTML"""
+def render_product_card(product, filename):
+    """Render single product card HTML."""
     
-    request_data = {
-        'from': email_context.get('from', ''),
-        'subject': email_context.get('subject', ''),
-        'date': email_context.get('date', ''),
-        'messageId': email_context.get('messageId', '')
-    }
+    import html
     
-    headers = {
-        'from': 'From',
-        'subject': 'Subject',
-        'date': 'Date',
-        'messageId': 'Message ID'
-    }
+    # Determine status class
+    status_class = f"product-card-{product['status']['level']}"
     
-    return dict_to_html_table(request_data, headers=headers)
+    # Build properties rows
+    properties_html = []
+    for prop in product['properties']:
+        properties_html.append(f'''
+            <tr class="property-row">
+                <td class="property-name">{html.escape(prop['name'])}:</td>
+                <td class="property-value">{html.escape(prop['value'])}</td>
+            </tr>
+        ''')
+    
+    # Build complete product card
+    card_html = f'''
+        <div class="product-card {status_class}">
+            <div class="product-header">
+                {product['status']['icon']} {html.escape(product['name']).upper()}
+            </div>
+            
+            <div class="product-meta">
+                📄 {html.escape(filename)}<br>
+                🏢 {html.escape(product['company']['supplier'])} · {html.escape(product['company']['category'])}<br>
+                🏷️ {html.escape(product['sku']) if product['sku'] else 'Missing SKU'}
+            </div>
+            
+            {'<div class="properties-section"><div class="section-header">PROPERTIES</div><table class="properties-table" role="presentation">' + ''.join(properties_html) + '</table></div>' if properties_html else ''}
+        </div>
+    '''
+    
+    return card_html
 
-def process(state):
-    """Process aggregated attachments array and format email response"""
-    return format_email_response(state)
+def render_pdf_extraction_notes(filename, processing_summary, processing_exceptions):
+    """Render PDF-level extraction notes section."""
+    
+    import html
+    
+    notes_items = []
+    
+    # Add processing summary with info icon
+    if processing_summary:
+        notes_items.append(f'''
+            <div class="note-item note-info">
+                ℹ️ {html.escape(processing_summary)}
+            </div>
+        ''')
+    
+    # Add each exception with warning icon
+    for exception in processing_exceptions:
+        notes_items.append(f'''
+            <div class="note-item note-warning">
+                ⚠️ {html.escape(exception)}
+            </div>
+        ''')
+    
+    # Only render if there are notes to show
+    if not notes_items:
+        return ''
+    
+    notes_html = f'''
+        <div class="pdf-notes-section">
+            <div class="section-header">EXTRACTION NOTES - {html.escape(filename)}</div>
+            {''.join(notes_items)}
+        </div>
+    '''
+    
+    return notes_html

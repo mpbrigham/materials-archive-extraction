@@ -1,0 +1,43 @@
+"""
+Common constants
+"""
+    
+field_names = {
+    'material_class': 'Material',
+    'voc_emissions': 'VOC',
+    'water_absorption': 'Water Abs.',
+    'compressive_strength': 'Compressive',
+    'flexural_strength': 'Flexural',
+    'abrasion_resistance': 'Abrasion',
+    'frost_resistance': 'Frost',
+    'slip_resistance': 'Slip Rating',
+    'recycled_content': 'Recycled',
+    'fire_rating': 'Fire Rating',
+    'acoustic_properties': 'Sound',
+    'thermal_properties': 'Thermal',
+    'uv_resistance': 'UV Resistance',
+    'chemical_resistance': 'Chemical Res.',
+    'antimicrobial': 'Antimicrobial',
+    'warranty': 'Warranty',
+    'composition': 'Composition',
+    'format': 'Format',
+    'dimensions': 'Dimensions',
+    'weight': 'Weight',
+    'mounting': 'Mounting',
+    'installation': 'Installation',
+    'maintenance': 'Maintenance',
+    'certifications': 'Certificates',
+    'country_of_origin': 'Origin',
+    'flammability': 'Flammability',
+    'slip_resistance_with_shoes': 'Slip Resistance With Shoes',
+    'slip_resistance_barefoot': 'Slip Resistance Barefoot',
+    'durability': 'Durability',
+    'sound_absorption': 'Sound Absorption',
+    'tvoc_at_28_days': 'Tvoc At 28 Days',
+    'sourcing_type': 'Sourcing Type',
+    'production_and_manufacturing': 'Production And Manufacturing',
+    'end_of_life': 'End Of Life',
+    'labels_and_certifications': 'Labels And Certifications',
+    'resistance_to_chemicals': 'Resistance To Chemicals',
+    'place_of_production': 'Place Of Production'
+}
